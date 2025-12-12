@@ -33,6 +33,7 @@ import {
   Search,
 } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { voucherService, letterService, leaveService, locatorService, adminToPGOService, othersService, travelOrderService, overtimeService } from '@/services/firestoreService';
 
 interface Record {
   id: string;
@@ -55,7 +56,138 @@ export default function DashboardPage() {
 
   // Load records on mount
   useEffect(() => {
-    setRecords([]);
+    const loadAllPendingRecords = async () => {
+      try {
+        const allRecords: Record[] = [];
+
+        // Fetch vouchers
+        const vouchers = await voucherService.getVouchers();
+        vouchers.forEach((v: any) => {
+          if (v.status === 'Pending') {
+            allRecords.push({
+              id: v.id,
+              trackingId: v.trackingId,
+              title: `Voucher - ${v.payee}`,
+              date: new Date(v.dateTimeIn).toLocaleDateString(),
+              status: 'pending',
+              category: 'Voucher'
+            });
+          }
+        });
+
+        // Fetch letters
+        const letters = await letterService.getLetters();
+        letters.forEach((l: any) => {
+          if (l.status === 'Pending') {
+            allRecords.push({
+              id: l.id,
+              trackingId: l.trackingId,
+              title: `Letter - ${l.fullName}`,
+              date: new Date(l.dateTimeIn).toLocaleDateString(),
+              status: 'pending',
+              category: 'Letter'
+            });
+          }
+        });
+
+        // Fetch leaves
+        const leaves = await leaveService.getLeaves();
+        leaves.forEach((lv: any) => {
+          if (lv.status === 'Pending') {
+            allRecords.push({
+              id: lv.id,
+              trackingId: lv.trackingId,
+              title: `Leave - ${lv.fullName}`,
+              date: new Date(lv.dateTimeIn).toLocaleDateString(),
+              status: 'pending',
+              category: 'Leave'
+            });
+          }
+        });
+
+        // Fetch locators
+        const locators = await locatorService.getLocators();
+        locators.forEach((loc: any) => {
+          if (loc.status === 'Pending') {
+            allRecords.push({
+              id: loc.id,
+              trackingId: loc.trackingId,
+              title: `Locator - ${loc.fullName}`,
+              date: new Date(loc.dateTimeIn).toLocaleDateString(),
+              status: 'pending',
+              category: 'Locator'
+            });
+          }
+        });
+
+        // Fetch admin to PGO
+        const adminToPGO = await adminToPGOService.getRecords();
+        adminToPGO.forEach((a: any) => {
+          if (a.status === 'Pending') {
+            allRecords.push({
+              id: a.id,
+              trackingId: a.trackingId,
+              title: `Admin to PGO - ${a.fullName}`,
+              date: new Date(a.dateTimeIn).toLocaleDateString(),
+              status: 'pending',
+              category: 'Admin to PGO'
+            });
+          }
+        });
+
+        // Fetch others
+        const others = await othersService.getRecords();
+        others.forEach((o: any) => {
+          if (o.status === 'Pending') {
+            allRecords.push({
+              id: o.id,
+              trackingId: o.trackingId,
+              title: `Others - ${o.fullName}`,
+              date: new Date(o.dateTimeIn).toLocaleDateString(),
+              status: 'pending',
+              category: 'Others'
+            });
+          }
+        });
+
+        // Fetch travel orders
+        const travelOrders = await travelOrderService.getTravelOrders();
+        travelOrders.forEach((t: any) => {
+          if (t.status === 'Pending') {
+            allRecords.push({
+              id: t.id,
+              trackingId: t.trackingId,
+              title: `Travel Order - ${t.fullName}`,
+              date: new Date(t.dateTimeIn).toLocaleDateString(),
+              status: 'pending',
+              category: 'Travel Order'
+            });
+          }
+        });
+
+        // Fetch overtimes
+        const overtimes = await overtimeService.getOvertimes();
+        overtimes.forEach((ot: any) => {
+          if (ot.status === 'Pending') {
+            allRecords.push({
+              id: ot.id,
+              trackingId: ot.trackingId,
+              title: `Overtime - ${ot.fullName}`,
+              date: new Date(ot.dateTimeIn).toLocaleDateString(),
+              status: 'pending',
+              category: 'Overtime'
+            });
+          }
+        });
+
+        setRecords(allRecords);
+      } catch (err) {
+        console.error('Error loading records:', err);
+        setError('Failed to load records');
+      }
+    };
+
+    loadAllPendingRecords();
   }, []);
 
   const handleLogout = () => {

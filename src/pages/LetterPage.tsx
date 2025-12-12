@@ -92,6 +92,7 @@ export default function LetterPage() {
   });
 
   const [designationOptions] = useState<string[]>(['Admin', 'Manager', 'Staff', 'Officer']);
+  const [statusFilter, setStatusFilter] = useState('Pending');
 
   // Load letters from Firestore on mount
   useEffect(() => {
@@ -363,91 +364,99 @@ export default function LetterPage() {
                       {editingId ? 'Update the letter record details' : 'Fill in the form to add a new letter record'}
                     </DialogDescription>
                   </DialogHeader>
-                  <div className="space-y-4">
+                  <div className="space-y-3">
                     {/* Tracking ID - Display Only */}
                     {!editingId && (
-                      <div className="space-y-2">
-                        <Label className="text-sm font-medium text-gray-700">Tracking ID</Label>
+                      <div className="space-y-1">
+                        <Label className="text-xs font-medium text-gray-700">Tracking ID</Label>
                         <Input
                           type="text"
                           value={generateTrackingId()}
                           disabled
-                          className="bg-gray-100"
+                          className="bg-gray-100 h-8 text-xs"
                         />
                       </div>
                     )}
 
-                    {/* Date/Time In */}
-                    <div className="space-y-2">
-                      <Label htmlFor="dateTimeIn" className="text-sm font-medium text-gray-700">Date/Time IN *</Label>
-                      <Input
-                        id="dateTimeIn"
-                        type="datetime-local"
-                        value={formData.dateTimeIn}
-                        onChange={(e) => setFormData({ ...formData, dateTimeIn: e.target.value })}
-                      />
+                    <div className="grid grid-cols-2 gap-3">
+                      {/* Date/Time In */}
+                      <div className="space-y-1">
+                        <Label htmlFor="dateTimeIn" className="text-xs font-medium text-gray-700">Date/Time IN *</Label>
+                        <Input
+                          id="dateTimeIn"
+                          type="datetime-local"
+                          value={formData.dateTimeIn}
+                          onChange={(e) => setFormData({ ...formData, dateTimeIn: e.target.value })}
+                          className="h-8 text-xs"
+                        />
+                      </div>
+
+                      {/* Full Name */}
+                      <div className="space-y-1">
+                        <Label htmlFor="fullName" className="text-xs font-medium text-gray-700">Full Name *</Label>
+                        <Input
+                          id="fullName"
+                          value={formData.fullName}
+                          onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
+                          placeholder="Full Name"
+                          className="h-8 text-xs"
+                        />
+                      </div>
                     </div>
 
                     {editingId && user?.role === 'admin' && (
-                      <div className="space-y-2">
-                        <Label htmlFor="dateTimeOut" className="text-sm font-medium text-gray-700">Date/Time OUT</Label>
+                      <div className="space-y-1">
+                        <Label htmlFor="dateTimeOut" className="text-xs font-medium text-gray-700">Date/Time OUT</Label>
                         <Input
                           id="dateTimeOut"
                           type="datetime-local"
                           value={formData.dateTimeOut || ''}
                           onChange={(e) => setFormData({ ...formData, dateTimeOut: e.target.value })}
+                          className="h-8 text-xs"
                         />
                       </div>
                     )}
 
-                    {/* Full Name */}
-                    <div className="space-y-2">
-                      <Label htmlFor="fullName" className="text-sm font-medium text-gray-700">Full Name *</Label>
-                      <Input
-                        id="fullName"
-                        value={formData.fullName}
-                        onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
-                        placeholder="Enter full name"
-                      />
-                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      {/* Designation / Office */}
+                      <div className="space-y-1">
+                        <Label htmlFor="designationOffice" className="text-xs font-medium text-gray-700">Designation / Office *</Label>
+                        <Select value={formData.designationOffice} onValueChange={(value) => setFormData({ ...formData, designationOffice: value })}>
+                          <SelectTrigger 
+                            id="designationOffice" 
+                            className="w-full h-8 text-xs"
+                            title={formData.designationOffice || "Select designation"}
+                          >
+                            <SelectValue placeholder="Select">
+                              {formData.designationOffice ? getAcronym(formData.designationOffice) : 'Select'}
+                            </SelectValue>
+                          </SelectTrigger>
+                          <SelectContent>
+                            {designationOptions.map((option) => (
+                              <SelectItem key={option} value={option}>
+                                {option}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
 
-                    {/* Designation / Office */}
-                    <div className="space-y-2">
-                      <Label htmlFor="designationOffice" className="text-sm font-medium text-gray-700">Designation / Office *</Label>
-                      <Select value={formData.designationOffice} onValueChange={(value) => setFormData({ ...formData, designationOffice: value })}>
-                        <SelectTrigger 
-                          id="designationOffice" 
-                          className="w-full"
-                          title={formData.designationOffice || "Select designation"}
-                        >
-                          <SelectValue placeholder="Select designation">
-                            {formData.designationOffice ? getAcronym(formData.designationOffice) : 'Select designation'}
-                          </SelectValue>
-                        </SelectTrigger>
-                        <SelectContent>
-                          {designationOptions.map((option) => (
-                            <SelectItem key={option} value={option}>
-                              {option}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    {/* Particulars */}
-                    <div className="space-y-2">
-                      <Label htmlFor="particulars" className="text-sm font-medium text-gray-700">Particulars *</Label>
-                      <Input
-                        id="particulars"
-                        value={formData.particulars}
-                        onChange={(e) => setFormData({ ...formData, particulars: e.target.value })}
-                        placeholder="Enter particulars"
-                      />
+                      {/* Particulars */}
+                      <div className="space-y-1">
+                        <Label htmlFor="particulars" className="text-xs font-medium text-gray-700">Particulars *</Label>
+                        <Input
+                          id="particulars"
+                          value={formData.particulars}
+                          onChange={(e) => setFormData({ ...formData, particulars: e.target.value })}
+                          placeholder="Particulars"
+                          className="h-8 text-xs"
+                        />
+                      </div>
                     </div>
 
                     {/* Add/Update Button - Full Width */}
                     <Button
-                      className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 mt-6"
+                      className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 mt-2 h-9 text-sm"
                       onClick={handleAddOrUpdate}
                       disabled={isLoading}
                     >
@@ -476,8 +485,8 @@ export default function LetterPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {letters.length > 0 ? (
-                    letters.map((letter) => (
+                  {letters.filter(l => l.status === 'Pending').length > 0 ? (
+                    letters.filter(l => l.status === 'Pending').map((letter) => (
                       <TableRow key={letter.id} className="hover:bg-gray-50">
                         <TableCell className="font-bold italic wrap-break-word whitespace-normal text-center text-xs text-indigo-600">{letter.trackingId}</TableCell>
                         <TableCell className="wrap-break-word whitespace-normal text-center text-xs">{new Date(letter.dateTimeIn).toLocaleString()}</TableCell>

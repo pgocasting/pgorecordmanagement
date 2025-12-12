@@ -400,33 +400,48 @@ export default function AdminToPGOPage() {
                       {editingId ? 'Update the record details' : 'Fill in the form to add a new record'}
                     </DialogDescription>
                   </DialogHeader>
-                  <div className="space-y-4">
+                  <div className="space-y-3">
                     {!editingId && (
-                      <div className="space-y-2">
-                        <Label htmlFor="trackingId">Tracking ID</Label>
+                      <div className="space-y-1">
+                        <Label htmlFor="trackingId" className="text-xs font-medium text-gray-700">Tracking ID</Label>
                         <Input
                           id="trackingId"
                           type="text"
                           value={nextTrackingId}
                           disabled
-                          className="bg-gray-100"
+                          className="bg-gray-100 h-8 text-xs"
                         />
                       </div>
                     )}
-                    <div className="space-y-2">
-                      <Label htmlFor="dateTimeIn">Date/Time IN *</Label>
-                      <Input
-                        id="dateTimeIn"
-                        name="dateTimeIn"
-                        type="datetime-local"
-                        value={formData.dateTimeIn}
-                        onChange={handleInputChange}
-                      />
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-1">
+                        <Label htmlFor="dateTimeIn" className="text-xs font-medium text-gray-700">Date/Time IN *</Label>
+                        <Input
+                          id="dateTimeIn"
+                          name="dateTimeIn"
+                          type="datetime-local"
+                          value={formData.dateTimeIn}
+                          onChange={handleInputChange}
+                          className="h-8 text-xs"
+                        />
+                      </div>
+
+                      <div className="space-y-1">
+                        <Label htmlFor="fullName" className="text-xs font-medium text-gray-700">Full Name *</Label>
+                        <Input
+                          id="fullName"
+                          name="fullName"
+                          placeholder="Full Name"
+                          value={formData.fullName}
+                          onChange={handleInputChange}
+                          className="h-8 text-xs"
+                        />
+                      </div>
                     </div>
 
                     {editingId && user?.role === 'admin' && (
-                      <div className="space-y-2">
-                        <Label htmlFor="dateTimeOut">Date/Time OUT</Label>
+                      <div className="space-y-1">
+                        <Label htmlFor="dateTimeOut" className="text-xs font-medium text-gray-700">Date/Time OUT</Label>
                         <Input
                           id="dateTimeOut"
                           name="dateTimeOut"
@@ -513,50 +528,50 @@ export default function AdminToPGOPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {records.length === 0 ? (
+                  {records.filter(r => r.status === 'Pending').length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={9} className="text-center py-4 text-gray-500 text-xs">
-                        No records yet. Click "Add Record" to create one.
+                        No pending records. Click "Add Record" to create one.
                       </TableCell>
                     </TableRow>
                   ) : (
-                    records.map((item) => (
-                      <TableRow key={item.id} className="hover:bg-gray-50">
-                        <TableCell className="text-xs py-1 px-1 text-center font-bold italic text-indigo-600 wrap-break-word whitespace-normal">{item.trackingId}</TableCell>
-                        <TableCell className="text-xs py-1 px-1 text-center wrap-break-word whitespace-normal">{new Date(item.dateTimeIn).toLocaleString()}</TableCell>
-                        <TableCell className="text-xs py-1 px-1 text-center wrap-break-word whitespace-normal text-red-600">{item.dateTimeOut ? new Date(item.dateTimeOut).toLocaleString() : '-'}</TableCell>
-                        <TableCell className="text-xs py-1 px-1 text-center wrap-break-word whitespace-normal">{item.fullName}</TableCell>
-                        <TableCell className="text-xs py-1 px-1 text-center wrap-break-word whitespace-normal">{item.officeAddress}</TableCell>
-                        <TableCell className="text-xs py-1 px-1 text-center wrap-break-word whitespace-normal">{item.particulars}</TableCell>
+                    records.filter(r => r.status === 'Pending').map((record) => (
+                      <TableRow key={record.id} className="hover:bg-gray-50">
+                        <TableCell className="text-xs py-1 px-1 text-center font-bold italic text-indigo-600 wrap-break-word whitespace-normal">{record.trackingId}</TableCell>
+                        <TableCell className="text-xs py-1 px-1 text-center wrap-break-word whitespace-normal">{new Date(record.dateTimeIn).toLocaleString()}</TableCell>
+                        <TableCell className="text-xs py-1 px-1 text-center wrap-break-word whitespace-normal text-red-600">{record.dateTimeOut ? new Date(record.dateTimeOut).toLocaleString() : '-'}</TableCell>
+                        <TableCell className="text-xs py-1 px-1 text-center wrap-break-word whitespace-normal">{record.fullName}</TableCell>
+                        <TableCell className="text-xs py-1 px-1 text-center wrap-break-word whitespace-normal">{record.officeAddress}</TableCell>
+                        <TableCell className="text-xs py-1 px-1 text-center wrap-break-word whitespace-normal">{record.particulars}</TableCell>
                         <TableCell className="text-xs py-1 px-1 text-center wrap-break-word whitespace-normal">
                           <span
                             className={`px-1 py-0.5 rounded text-xs font-medium ${
-                              item.status === 'Completed'
+                              record.status === 'Completed'
                                 ? 'bg-green-100 text-green-800'
-                                : item.status === 'Approved'
+                                : record.status === 'Approved'
                                 ? 'bg-green-100 text-green-800'
-                                : item.status === 'Rejected'
+                                : record.status === 'Rejected'
                                 ? 'bg-red-100 text-red-800'
-                                : item.status === 'Pending'
+                                : record.status === 'Pending'
                                 ? 'bg-yellow-100 text-yellow-800'
                                 : 'bg-gray-100 text-gray-800'
                             }`}
                           >
-                            {item.status || 'Pending'}
+                            {record.status || 'Pending'}
                           </span>
                         </TableCell>
-                        <TableCell className="text-xs py-1 px-1 text-center wrap-break-word whitespace-normal">{item.timeOutRemarks || item.remarks}</TableCell>
+                        <TableCell className="text-xs py-1 px-1 text-center wrap-break-word whitespace-normal">{record.remarks}</TableCell>
                         <TableCell className="py-1 px-1 text-center wrap-break-word whitespace-normal">
                           <ActionButtons
-                            onView={() => handleViewRecord(item.id)}
-                            onEdit={() => handleEditRecord(item.id)}
-                            onTimeOut={() => handleTimeOut(item.id)}
-                            onDelete={() => handleDeleteRecord(item.id)}
-                            canEdit={user?.role === 'admin' || (!!item.dateTimeOut === false && item.status === 'Pending')}
-                            canDelete={user?.role === 'admin' || (!!item.dateTimeOut === false && item.status === 'Pending')}
-                            showTimeOut={!item.dateTimeOut}
-                            editDisabledReason={user?.role !== 'admin' && (!!item.dateTimeOut || item.status !== 'Pending') ? 'Users can only edit pending records' : undefined}
-                            deleteDisabledReason={user?.role !== 'admin' && (!!item.dateTimeOut || item.status !== 'Pending') ? 'Users can only delete pending records' : undefined}
+                            onView={() => handleViewRecord(record.id)}
+                            onEdit={() => handleEditRecord(record.id)}
+                            onTimeOut={() => handleTimeOut(record.id)}
+                            onDelete={() => handleDeleteRecord(record.id)}
+                            canEdit={user?.role === 'admin' || (!!record.dateTimeOut === false && record.status === 'Pending')}
+                            canDelete={user?.role === 'admin' || (!!record.dateTimeOut === false && record.status === 'Pending')}
+                            showTimeOut={!record.dateTimeOut}
+                            editDisabledReason={user?.role !== 'admin' && (!!record.dateTimeOut || record.status !== 'Pending') ? 'Users can only edit pending records' : undefined}
+                            deleteDisabledReason={user?.role !== 'admin' && (!!record.dateTimeOut || record.status !== 'Pending') ? 'Users can only delete pending records' : undefined}
                           />
                         </TableCell>
                       </TableRow>

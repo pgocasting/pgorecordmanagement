@@ -445,35 +445,50 @@ export default function OthersPage() {
                       {editingId ? 'Update the record details' : 'Fill in the form to add a new record'}
                     </DialogDescription>
                   </DialogHeader>
-                  <div className="space-y-4">
+                  <div className="space-y-3">
                     {/* Tracking ID - Display Only */}
                     {!editingId && (
-                      <div className="space-y-2">
-                        <Label className="text-sm font-medium text-gray-700">Tracking ID</Label>
+                      <div className="space-y-1">
+                        <Label className="text-xs font-medium text-gray-700">Tracking ID</Label>
                         <Input
                           type="text"
                           value={nextTrackingId}
                           disabled
-                          className="bg-gray-100"
+                          className="bg-gray-100 h-8 text-xs"
                         />
                       </div>
                     )}
 
-                    {/* Date/Time In */}
-                    <div className="space-y-2">
-                      <Label htmlFor="dateTimeIn" className="text-sm font-medium text-gray-700">Date/Time IN *</Label>
-                      <Input
-                        id="dateTimeIn"
-                        name="dateTimeIn"
-                        type="datetime-local"
-                        value={formData.dateTimeIn}
-                        onChange={handleInputChange}
-                      />
+                    <div className="grid grid-cols-2 gap-3">
+                      {/* Date/Time In */}
+                      <div className="space-y-1">
+                        <Label htmlFor="dateTimeIn" className="text-xs font-medium text-gray-700">Date/Time IN *</Label>
+                        <Input
+                          id="dateTimeIn"
+                          name="dateTimeIn"
+                          type="datetime-local"
+                          value={formData.dateTimeIn}
+                          onChange={handleInputChange}
+                          className="h-8 text-xs"
+                        />
+                      </div>
+
+                      <div className="space-y-1">
+                        <Label htmlFor="fullName" className="text-xs font-medium text-gray-700">Full Name *</Label>
+                        <Input
+                          id="fullName"
+                          name="fullName"
+                          placeholder="Full Name"
+                          value={formData.fullName}
+                          onChange={handleInputChange}
+                          className="h-8 text-xs"
+                        />
+                      </div>
                     </div>
 
                     {editingId && user?.role === 'admin' && (
-                      <div className="space-y-2">
-                        <Label htmlFor="dateTimeOut" className="text-sm font-medium text-gray-700">Date/Time OUT</Label>
+                      <div className="space-y-1">
+                        <Label htmlFor="dateTimeOut" className="text-xs font-medium text-gray-700">Date/Time OUT</Label>
                         <Input
                           id="dateTimeOut"
                           name="dateTimeOut"
@@ -626,76 +641,62 @@ export default function OthersPage() {
             {/* Table */}
             <div className="bg-white rounded-lg border border-gray-200 shadow-md overflow-hidden">
               <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow className="bg-gray-50">
-                      <TableHead className="text-center">Tracking ID</TableHead>
-                      <TableHead className="text-center">Date/Time IN</TableHead>
-                      <TableHead className="text-center">Date/Time OUT</TableHead>
-                      <TableHead className="text-center">Full Name</TableHead>
-                      <TableHead className="text-center">Office</TableHead>
-                      <TableHead className="text-center">Inclusive Dates</TableHead>
-                      <TableHead className="text-center">Purpose</TableHead>
-                      <TableHead className="text-center">Amount</TableHead>
-                      <TableHead className="text-center">Status</TableHead>
-                      <TableHead className="text-center">Remarks</TableHead>
-                      <TableHead className="text-center">Attachments</TableHead>
-                      <TableHead className="text-center">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {records.length > 0 ? (
-                      records.map((record) => (
-                        <TableRow key={record.id} className="hover:bg-gray-50">
-                          <TableCell className="font-bold italic wrap-break-word whitespace-normal text-center text-xs text-indigo-600">{record.trackingId}</TableCell>
-                          <TableCell className="wrap-break-word whitespace-normal text-center text-xs">{new Date(record.dateTimeIn).toLocaleString()}</TableCell>
-                          <TableCell className="wrap-break-word whitespace-normal text-center text-xs text-red-600">{record.dateTimeOut ? new Date(record.dateTimeOut).toLocaleString() : '-'}</TableCell>
-                          <TableCell className="wrap-break-word whitespace-normal text-center text-xs uppercase">{record.fullName}</TableCell>
-                          <TableCell className="wrap-break-word whitespace-normal text-center text-xs">{record.designationOffice}</TableCell>
-                          <TableCell className="wrap-break-word whitespace-normal text-center text-xs">{record.inclusiveDateStart} - {record.inclusiveDateEnd}</TableCell>
-                          <TableCell className="wrap-break-word whitespace-normal text-center text-xs">{record.purpose}</TableCell>
-                          <TableCell className="wrap-break-word whitespace-normal text-center text-xs">{formatCurrency(record.amount)}</TableCell>
-                          <TableCell className="wrap-break-word whitespace-normal text-center text-xs">
-                            <span className={`px-2 py-1 rounded text-xs font-medium ${
-                              record.status === 'Completed' ? 'bg-green-100 text-green-800' :
-                              record.status === 'Pending' ? 'bg-yellow-100 text-yellow-800' :
-                              'bg-blue-100 text-blue-800'
-                            }`}>
-                              {record.status}
-                            </span>
-                          </TableCell>
-                          <TableCell className="wrap-break-word whitespace-normal text-center text-xs">{record.remarks || '-'}</TableCell>
-                          <TableCell className="wrap-break-word whitespace-normal text-center text-xs">
-                            {record.linkAttachments ? (
-                              <a href={record.linkAttachments} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
-                                Link
-                              </a>
-                            ) : (
-                              '-'
-                            )}
-                          </TableCell>
-                          <TableCell className="text-center">
-                            <ActionButtons
-                              onView={() => handleViewRecord(record.id)}
-                              onEdit={() => handleEditRecord(record.id)}
-                              onTimeOut={() => handleTimeOut(record.id)}
-                              onDelete={() => handleDeleteRecord(record.id)}
-                              canEdit={user?.role === 'admin' || (!!record.dateTimeOut === false && record.status === 'Pending')}
-                              canDelete={user?.role === 'admin' || (!!record.dateTimeOut === false && record.status === 'Pending')}
-                              showTimeOut={!record.dateTimeOut}
-                              editDisabledReason={user?.role !== 'admin' && (!!record.dateTimeOut || record.status !== 'Pending') ? 'Users can only edit pending records' : undefined}
-                              deleteDisabledReason={user?.role !== 'admin' && (!!record.dateTimeOut || record.status !== 'Pending') ? 'Users can only delete pending records' : undefined}
-                            />
-                          </TableCell>
-                        </TableRow>
-                      ))
-                    ) : (
-                      <TableRow>
-                        <TableCell colSpan={12} className="text-center py-8 text-gray-500 wrap-break-word whitespace-normal">
-                          No records found. Add one to get started.
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-gray-50">
+                    <TableHead className="text-center">Tracking ID</TableHead>
+                    <TableHead className="text-center">Date/Time IN</TableHead>
+                    <TableHead className="text-center">Date/Time OUT</TableHead>
+                    <TableHead className="text-center">Full Name</TableHead>
+                    <TableHead className="text-center">Office</TableHead>
+                    <TableHead className="text-center">Purpose</TableHead>
+                    <TableHead className="text-center">Status</TableHead>
+                    <TableHead className="text-center">Remarks</TableHead>
+                    <TableHead className="text-center">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {records.filter(r => r.status === 'Pending').length > 0 ? (
+                    records.filter(r => r.status === 'Pending').map((record) => (
+                      <TableRow key={record.id} className="hover:bg-gray-50">
+                        <TableCell className="font-bold italic wrap-break-word whitespace-normal text-center text-xs text-indigo-600">{record.trackingId}</TableCell>
+                        <TableCell className="wrap-break-word whitespace-normal text-center text-xs">{new Date(record.dateTimeIn).toLocaleString()}</TableCell>
+                        <TableCell className="wrap-break-word whitespace-normal text-center text-xs text-red-600">{record.dateTimeOut ? new Date(record.dateTimeOut).toLocaleString() : '-'}</TableCell>
+                        <TableCell className="wrap-break-word whitespace-normal text-center text-xs uppercase">{record.fullName}</TableCell>
+                        <TableCell className="wrap-break-word whitespace-normal text-center text-xs">{record.designationOffice}</TableCell>
+                        <TableCell className="wrap-break-word whitespace-normal text-center text-xs">{record.purpose}</TableCell>
+                        <TableCell className="wrap-break-word whitespace-normal text-center text-xs">
+                          <span className={`px-2 py-1 rounded text-xs font-medium ${
+                            record.status === 'Completed' ? 'bg-green-100 text-green-800' :
+                            record.status === 'Pending' ? 'bg-yellow-100 text-yellow-800' :
+                            'bg-blue-100 text-blue-800'
+                          }`}>
+                            {record.status}
+                          </span>
+                        </TableCell>
+                        <TableCell className="wrap-break-word whitespace-normal text-center text-xs">{record.remarks || '-'}</TableCell>
+                        <TableCell className="text-center">
+                          <ActionButtons
+                            onView={() => handleViewRecord(record.id)}
+                            onEdit={() => handleEditRecord(record.id)}
+                            onTimeOut={() => handleTimeOut(record.id)}
+                            onDelete={() => handleDeleteRecord(record.id)}
+                            canEdit={user?.role === 'admin' || (!!record.dateTimeOut === false && record.status === 'Pending')}
+                            canDelete={user?.role === 'admin' || (!!record.dateTimeOut === false && record.status === 'Pending')}
+                            showTimeOut={!record.dateTimeOut}
+                            editDisabledReason={user?.role !== 'admin' && (!!record.dateTimeOut || record.status !== 'Pending') ? 'Users can only edit pending records' : undefined}
+                            deleteDisabledReason={user?.role !== 'admin' && (!!record.dateTimeOut || record.status !== 'Pending') ? 'Users can only delete pending records' : undefined}
+                          />
                         </TableCell>
                       </TableRow>
-                    )}
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell colSpan={9} className="text-center py-8 text-gray-500 wrap-break-word whitespace-normal">
+                        No records found. Add one to get started.
+                      </TableCell>
+                    </TableRow>
+                  )}
                   </TableBody>
                 </Table>
               </div>

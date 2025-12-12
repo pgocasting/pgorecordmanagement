@@ -439,123 +439,132 @@ export default function LeavePage() {
                       {editingId ? 'Update the leave record details' : 'Fill in the form to add a new leave record'}
                     </DialogDescription>
                   </DialogHeader>
-                  <div className="space-y-4">
+                  <div className="space-y-3">
                     {!editingId && (
-                      <div className="space-y-2">
-                        <Label htmlFor="trackingId">Tracking ID</Label>
+                      <div className="space-y-1">
+                        <Label htmlFor="trackingId" className="text-xs font-medium text-gray-700">Tracking ID</Label>
                         <Input
                           id="trackingId"
                           type="text"
                           value={generateTrackingId()}
                           disabled
-                          className="bg-gray-100"
+                          className="bg-gray-100 h-8 text-xs"
                         />
                       </div>
                     )}
-                    <div className="space-y-2">
-                      <Label htmlFor="dateTimeIn">Date/Time IN *</Label>
-                      <Input
-                        id="dateTimeIn"
-                        name="dateTimeIn"
-                        type="datetime-local"
-                        value={formData.dateTimeIn}
-                        onChange={handleInputChange}
-                      />
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-1">
+                        <Label htmlFor="dateTimeIn" className="text-xs font-medium text-gray-700">Date/Time IN *</Label>
+                        <Input
+                          id="dateTimeIn"
+                          name="dateTimeIn"
+                          type="datetime-local"
+                          value={formData.dateTimeIn}
+                          onChange={handleInputChange}
+                          className="h-8 text-xs"
+                        />
+                      </div>
+
+                      <div className="space-y-1">
+                        <Label htmlFor="fullName" className="text-xs font-medium text-gray-700">Full Name *</Label>
+                        <Input
+                          id="fullName"
+                          name="fullName"
+                          placeholder="Full Name"
+                          value={formData.fullName}
+                          onChange={handleInputChange}
+                          className="h-8 text-xs"
+                        />
+                      </div>
                     </div>
 
                     {editingId && user?.role === 'admin' && (
-                      <div className="space-y-2">
-                        <Label htmlFor="dateTimeOut" className="text-sm font-medium text-gray-700">Date/Time OUT</Label>
+                      <div className="space-y-1">
+                        <Label htmlFor="dateTimeOut" className="text-xs font-medium text-gray-700">Date/Time OUT</Label>
                         <Input
                           id="dateTimeOut"
                           name="dateTimeOut"
                           type="datetime-local"
                           value={formData.dateTimeOut || ''}
                           onChange={handleInputChange}
+                          className="h-8 text-xs"
                         />
                       </div>
                     )}
 
-                    <div className="space-y-2">
-                      <Label htmlFor="fullName">Full Name *</Label>
-                      <Input
-                        id="fullName"
-                        name="fullName"
-                        placeholder="Enter full name"
-                        value={formData.fullName}
-                        onChange={handleInputChange}
-                      />
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-1">
+                        <Label htmlFor="designation" className="text-xs font-medium text-gray-700">Designation/Office *</Label>
+                        <Select value={formData.designation} onValueChange={(value) => handleSelectChange('designation', value)}>
+                          <SelectTrigger 
+                            id="designation" 
+                            className="w-full h-8 text-xs"
+                            title={formData.designation || "Select designation"}
+                          >
+                            <SelectValue placeholder="Select">
+                              {formData.designation ? getAcronym(formData.designation) : 'Select'}
+                            </SelectValue>
+                          </SelectTrigger>
+                          <SelectContent>
+                            {designationOptions.map((option) => (
+                              <SelectItem key={option} value={option}>
+                                {option}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div className="space-y-1">
+                        <Label htmlFor="leaveType" className="text-xs font-medium text-gray-700">Leave Type *</Label>
+                        <Select value={formData.leaveType} onValueChange={(value) => handleSelectChange('leaveType', value)}>
+                          <SelectTrigger 
+                            id="leaveType" 
+                            className="w-full h-8 text-xs"
+                            title={formData.leaveType || "Select leave type"}
+                          >
+                            <SelectValue placeholder="Select">
+                              {formData.leaveType ? getAcronym(formData.leaveType) : 'Select'}
+                            </SelectValue>
+                          </SelectTrigger>
+                          <SelectContent>
+                            {leaveTypeOptions.map((option) => (
+                              <SelectItem key={option} value={option}>
+                                {option}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
                     </div>
 
-                    <div className="space-y-2">
-                      <Label htmlFor="designation">Designation/Office *</Label>
-                      <Select value={formData.designation} onValueChange={(value) => handleSelectChange('designation', value)}>
-                        <SelectTrigger 
-                          id="designation" 
-                          className="w-full"
-                          title={formData.designation || "Select designation"}
-                        >
-                          <SelectValue placeholder="Select designation">
-                            {formData.designation ? getAcronym(formData.designation) : 'Select designation'}
-                          </SelectValue>
-                        </SelectTrigger>
-                        <SelectContent>
-                          {designationOptions.map((option) => (
-                            <SelectItem key={option} value={option}>
-                              {option}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="leaveType">Leave Type *</Label>
-                      <Select value={formData.leaveType} onValueChange={(value) => handleSelectChange('leaveType', value)}>
-                        <SelectTrigger 
-                          id="leaveType" 
-                          className="w-full"
-                          title={formData.leaveType || "Select leave type"}
-                        >
-                          <SelectValue placeholder="Select leave type">
-                            {formData.leaveType ? getAcronym(formData.leaveType) : 'Select leave type'}
-                          </SelectValue>
-                        </SelectTrigger>
-                        <SelectContent>
-                          {leaveTypeOptions.map((option) => (
-                            <SelectItem key={option} value={option}>
-                              {option}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="inclusiveDateStart">Inclusive Date Start *</Label>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-1">
+                        <Label htmlFor="inclusiveDateStart" className="text-xs font-medium text-gray-700">Date Start *</Label>
                         <Input
                           id="inclusiveDateStart"
                           name="inclusiveDateStart"
                           type="date"
                           value={formData.inclusiveDateStart}
                           onChange={handleInputChange}
+                          className="h-8 text-xs"
                         />
                       </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="inclusiveDateEnd">Inclusive Date End *</Label>
+                      <div className="space-y-1">
+                        <Label htmlFor="inclusiveDateEnd" className="text-xs font-medium text-gray-700">Date End *</Label>
                         <Input
                           id="inclusiveDateEnd"
                           name="inclusiveDateEnd"
                           type="date"
                           value={formData.inclusiveDateEnd}
                           onChange={handleInputChange}
+                          className="h-8 text-xs"
                         />
                       </div>
                     </div>
 
-                    <div className="space-y-2">
-                      <Label htmlFor="purpose">Purpose *</Label>
+                    <div className="space-y-1">
+                      <Label htmlFor="purpose" className="text-xs font-medium text-gray-700">Purpose *</Label>
                       <Input
                         id="purpose"
                         name="purpose"
@@ -597,14 +606,14 @@ export default function LeavePage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {leaves.length === 0 ? (
+                  {leaves.filter(l => l.status === 'Pending').length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={11} className="text-center py-4 text-gray-500 text-xs">
-                        No leaves yet. Click "Add Leave" to create one.
+                        No pending leaves. Click "Add Leave" to create one.
                       </TableCell>
                     </TableRow>
                   ) : (
-                    leaves.map((item) => (
+                    leaves.filter(l => l.status === 'Pending').map((item) => (
                       <TableRow key={item.id} className="hover:bg-gray-50">
                         <TableCell className="text-xs py-1 px-1 text-center font-bold italic text-indigo-600 wrap-break-word whitespace-normal">{item.trackingId}</TableCell>
                         <TableCell className="text-xs py-1 px-1 text-center wrap-break-word whitespace-normal">{new Date(item.dateTimeIn).toLocaleString()}</TableCell>
