@@ -58,22 +58,16 @@ const DEFAULT_RECORDS: Record[] = [
   { id: '3', title: 'Record 003', date: '2024-01-13', status: 'archived', category: 'Personnel' },
 ];
 
-// Helper functions to manage users in localStorage
+// In-memory storage for users and records
+let inMemoryUsers = DEFAULT_USERS;
+let inMemoryRecords = DEFAULT_RECORDS;
+
 const getStoredUsers = (): User[] => {
-  try {
-    const stored = localStorage.getItem('users');
-    return stored ? JSON.parse(stored) : DEFAULT_USERS;
-  } catch {
-    return DEFAULT_USERS;
-  }
+  return inMemoryUsers;
 };
 
 const saveStoredUsers = (users: User[]): void => {
-  try {
-    localStorage.setItem('users', JSON.stringify(users));
-  } catch (error) {
-    console.error('Error saving users:', error);
-  }
+  inMemoryUsers = users;
 };
 
 const getStoredCurrentUser = (): User | null => {
@@ -88,27 +82,17 @@ const getStoredCurrentUser = (): User | null => {
 const saveStoredCurrentUser = (user: User): void => {
   try {
     localStorage.setItem('currentUser', JSON.stringify(user));
-  } catch (error) {
-    console.error('Error saving current user:', error);
+  } catch {
+    console.error('Failed to save current user to localStorage');
   }
 };
 
-// Helper functions to manage records in localStorage
 const getStoredRecords = (): Record[] => {
-  try {
-    const stored = localStorage.getItem('records');
-    return stored ? JSON.parse(stored) : DEFAULT_RECORDS;
-  } catch {
-    return DEFAULT_RECORDS;
-  }
+  return inMemoryRecords;
 };
 
 const saveStoredRecords = (records: Record[]): void => {
-  try {
-    localStorage.setItem('records', JSON.stringify(records));
-  } catch (error) {
-    console.error('Error saving records:', error);
-  }
+  inMemoryRecords = records;
 };
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -125,7 +109,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     // Reset to default users on initialization
     saveStoredUsers(DEFAULT_USERS);
-    localStorage.removeItem('currentUser');
 
     // Load current user from localStorage
     const currentUser = getStoredCurrentUser();
@@ -158,11 +141,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       console.error('Firebase logout error:', error);
     }
     setUser(null);
-    try {
-      localStorage.removeItem('currentUser');
-    } catch (error) {
-      console.error('Error removing from localStorage:', error);
-    }
+    localStorage.removeItem('currentUser');
   };
 
   const addUser = async (username: string, password: string, name: string, role: 'admin' | 'user', email?: string): Promise<void> => {

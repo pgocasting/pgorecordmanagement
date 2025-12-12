@@ -7,6 +7,9 @@ import LocatorPage from './pages/LocatorPage';
 import AdminToPGOPage from './pages/AdminToPGOPage';
 import LeavePage from './pages/LeavePage';
 import LetterPage from './pages/LetterPage';
+import OvertimePage from './pages/OvertimePage';
+import TravelOrderPage from './pages/TravelOrderPage';
+import VoucherPage from './pages/VoucherPage';
 import OthersPage from './pages/OthersPage';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -70,6 +73,30 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <LetterPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/overtime"
+        element={
+          <ProtectedRoute>
+            <OvertimePage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/travel-order"
+        element={
+          <ProtectedRoute>
+            <TravelOrderPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/voucher"
+        element={
+          <ProtectedRoute>
+            <VoucherPage />
           </ProtectedRoute>
         }
       />

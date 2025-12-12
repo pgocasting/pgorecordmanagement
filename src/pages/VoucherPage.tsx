@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { othersService } from '@/services/firestoreService';
+import { voucherService } from '@/services/firestoreService';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -37,35 +37,22 @@ import {
 import { Plus, Menu, Settings, LogOut, BarChart3, FileText } from 'lucide-react';
 import { ActionButtons } from '@/components/ActionButtons';
 
-interface Others {
+interface Voucher {
   id: string;
   trackingId: string;
   dateTimeIn: string;
-  dateTimeOut: string;
-  fullName: string;
+  dateTimeOut?: string;
+  dvNo: string;
+  payee: string;
+  particulars: string;
   designationOffice: string;
-  inclusiveDateStart: string;
-  inclusiveDateEnd: string;
-  inclusiveTimeStart: string;
-  inclusiveTimeEnd: string;
-  purpose: string;
-  amount: string;
+  amount: number;
+  voucherType: string;
+  funds: string;
   status: string;
-  remarks: string;
-  linkAttachments?: string;
+  remarks?: string;
+  timeOutRemarks?: string;
 }
-
-const getAcronym = (text: string): string => {
-  if (!text) return '';
-  const acronymMatch = text.match(/\(([^)]+)\)/);
-  if (acronymMatch) {
-    return acronymMatch[1];
-  }
-  return text
-    .split(' ')
-    .map(word => word.charAt(0).toUpperCase())
-    .join('');
-};
 
 const formatCurrency = (amount: string | number | undefined): string => {
   if (!amount) return '-';
@@ -74,10 +61,10 @@ const formatCurrency = (amount: string | number | undefined): string => {
   return `₱${num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 };
 
-export default function OthersPage() {
+export default function VoucherPage() {
   const navigate = useNavigate();
   const { logout, user } = useAuth();
-  const [records, setRecords] = useState<Others[]>([]);
+  const [vouchers, setVouchers] = useState<Voucher[]>([]);
   const [success, setSuccess] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -85,63 +72,57 @@ export default function OthersPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [successModalOpen, setSuccessModalOpen] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
-  const [recordToDelete, setRecordToDelete] = useState<string | null>(null);
+  const [voucherToDelete, setVoucherToDelete] = useState<string | null>(null);
   const [editConfirmOpen, setEditConfirmOpen] = useState(false);
   const [timeOutConfirmOpen, setTimeOutConfirmOpen] = useState(false);
-  const [recordToTimeOut, setRecordToTimeOut] = useState<string | null>(null);
+  const [voucherToTimeOut, setVoucherToTimeOut] = useState<string | null>(null);
   const [timeOutData, setTimeOutData] = useState({
     dateTimeOut: '',
     timeOutRemarks: '',
   });
   const [viewModalOpen, setViewModalOpen] = useState(false);
-  const [selectedRecord, setSelectedRecord] = useState<Others | null>(null);
+  const [selectedVoucher, setSelectedVoucher] = useState<Voucher | null>(null);
   const [designationOptions] = useState<string[]>(['Admin', 'Manager', 'Staff', 'Officer']);
 
-  // Form states
   const [formData, setFormData] = useState({
     dateTimeIn: '',
-    dateTimeOut: '',
-    fullName: '',
+    dvNo: '',
+    payee: '',
+    particulars: '',
     designationOffice: '',
-    inclusiveDateStart: '',
-    inclusiveDateEnd: '',
-    inclusiveTimeStart: '',
-    inclusiveTimeEnd: '',
-    purpose: '',
     amount: '',
-    linkAttachments: '',
+    voucherType: '',
+    funds: '',
+    remarks: '',
   });
 
-  // Load records from Firestore on mount
   useEffect(() => {
-    const loadRecords = async () => {
+    const loadVouchers = async () => {
       try {
-        const data = await othersService.getRecords();
-        setRecords(data as Others[]);
+        const data = await voucherService.getVouchers();
+        setVouchers(data as Voucher[]);
       } catch (error) {
-        console.error('Error loading records:', error);
-        setSuccess('Error loading records');
+        console.error('Error loading vouchers:', error);
+        setSuccess('Error loading vouchers');
         setSuccessModalOpen(true);
       }
     };
-    loadRecords();
+    loadVouchers();
   }, []);
-
 
   const nextTrackingId = useMemo(() => {
     const now = new Date();
     const year = now.getFullYear();
     const month = String(now.getMonth() + 1).padStart(2, '0');
     const day = String(now.getDate()).padStart(2, '0');
-    const count = String(records.length + 1).padStart(3, '0');
-    return `(O) ${year}/${month}/${day}-${count}`;
-  }, [records.length]);
+    const count = String(vouchers.length + 1).padStart(3, '0');
+    return `(V) ${year}/${month}/${day}-${count}`;
+  }, [vouchers.length]);
 
   const handleLogout = () => {
     logout();
     navigate('/login');
   };
-
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -152,128 +133,125 @@ export default function OthersPage() {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleAddRecord = async () => {
+  const handleAddVoucher = async () => {
     setSuccess('');
 
     if (
       !formData.dateTimeIn ||
-      !formData.fullName ||
+      !formData.dvNo ||
+      !formData.payee ||
+      !formData.particulars ||
       !formData.designationOffice ||
-      !formData.inclusiveDateStart ||
-      !formData.inclusiveDateEnd ||
-      !formData.purpose
+      !formData.amount ||
+      !formData.voucherType ||
+      !formData.funds
     ) {
       setSuccess('Please fill in all required fields');
       setSuccessModalOpen(true);
       return;
     }
 
-    // If editing, show confirmation modal
     if (editingId) {
       setEditConfirmOpen(true);
       return;
     }
 
-    // If adding new, proceed directly
     setIsLoading(true);
     try {
-      const newRecord = {
+      const newVoucher = {
         trackingId: nextTrackingId,
         ...formData,
+        amount: parseFloat(formData.amount),
         status: 'Pending',
       };
-      await othersService.addRecord(newRecord);
-      setSuccess('Record added successfully');
+      await voucherService.addVoucher(newVoucher);
+      setSuccess('Voucher added successfully');
 
-      // Reload from Firestore
-      const updatedRecords = await othersService.getRecords();
-      setRecords(updatedRecords as Others[]);
+      const updatedVouchers = await voucherService.getVouchers();
+      setVouchers(updatedVouchers as Voucher[]);
 
       setFormData({
         dateTimeIn: '',
-        dateTimeOut: '',
-        fullName: '',
+        dvNo: '',
+        payee: '',
+        particulars: '',
         designationOffice: '',
-        inclusiveDateStart: '',
-        inclusiveDateEnd: '',
-        inclusiveTimeStart: '',
-        inclusiveTimeEnd: '',
-        purpose: '',
         amount: '',
-        linkAttachments: '',
+        voucherType: '',
+        funds: '',
+        remarks: '',
       });
       setIsDialogOpen(false);
       setSuccessModalOpen(true);
     } catch (err) {
-      console.error('Failed to save record:', err);
-      setSuccess('Error saving record');
+      console.error('Failed to save voucher:', err);
+      setSuccess('Error saving voucher');
       setSuccessModalOpen(true);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const confirmEditRecord = async () => {
+  const confirmEditVoucher = async () => {
     if (!editingId) return;
 
     setIsLoading(true);
     try {
-      await othersService.updateRecord(editingId, formData);
-      setSuccess('Record updated successfully');
+      const updateData = {
+        ...formData,
+        amount: parseFloat(formData.amount),
+      };
+      await voucherService.updateVoucher(editingId, updateData);
+      setSuccess('Voucher updated successfully');
       setEditingId(null);
 
-      // Reload from Firestore
-      const updatedRecords = await othersService.getRecords();
-      setRecords(updatedRecords as Others[]);
+      const updatedVouchers = await voucherService.getVouchers();
+      setVouchers(updatedVouchers as Voucher[]);
 
       setFormData({
         dateTimeIn: '',
-        dateTimeOut: '',
-        fullName: '',
+        dvNo: '',
+        payee: '',
+        particulars: '',
         designationOffice: '',
-        inclusiveDateStart: '',
-        inclusiveDateEnd: '',
-        inclusiveTimeStart: '',
-        inclusiveTimeEnd: '',
-        purpose: '',
         amount: '',
-        linkAttachments: '',
+        voucherType: '',
+        funds: '',
+        remarks: '',
       });
       setIsDialogOpen(false);
       setEditConfirmOpen(false);
       setSuccessModalOpen(true);
     } catch (err) {
-      console.error('Failed to save record:', err);
-      setSuccess('Error updating record');
+      console.error('Failed to save voucher:', err);
+      setSuccess(err instanceof Error ? err.message : 'Error updating voucher');
       setSuccessModalOpen(true);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleEditRecord = (id: string) => {
-    const record = records.find((item) => item.id === id);
-    if (record) {
+  const handleEditVoucher = (id: string) => {
+    const voucher = vouchers.find((item) => item.id === id);
+    if (voucher) {
       setFormData({
-        dateTimeIn: record.dateTimeIn,
-        dateTimeOut: record.dateTimeOut || '',
-        fullName: record.fullName,
-        designationOffice: record.designationOffice,
-        inclusiveDateStart: record.inclusiveDateStart || '',
-        inclusiveDateEnd: record.inclusiveDateEnd || '',
-        inclusiveTimeStart: record.inclusiveTimeStart || '',
-        inclusiveTimeEnd: record.inclusiveTimeEnd || '',
-        purpose: record.purpose,
-        amount: record.amount || '',
-        linkAttachments: record.linkAttachments || '',
+        dateTimeIn: voucher.dateTimeIn,
+        dvNo: voucher.dvNo,
+        payee: voucher.payee,
+        particulars: voucher.particulars,
+        designationOffice: voucher.designationOffice,
+        amount: voucher.amount.toString(),
+        voucherType: voucher.voucherType,
+        funds: voucher.funds,
+        remarks: voucher.remarks || '',
       });
       setEditingId(id);
       setIsDialogOpen(true);
     }
   };
 
-  const handleDeleteRecord = (id: string) => {
-    setRecordToDelete(id);
+  const handleDeleteVoucher = (id: string) => {
+    setVoucherToDelete(id);
     setDeleteConfirmOpen(true);
   };
 
@@ -283,76 +261,77 @@ export default function OthersPage() {
       setEditingId(null);
       setFormData({
         dateTimeIn: '',
-        dateTimeOut: '',
-        fullName: '',
+        dvNo: '',
+        payee: '',
+        particulars: '',
         designationOffice: '',
-        inclusiveDateStart: '',
-        inclusiveDateEnd: '',
-        inclusiveTimeStart: '',
-        inclusiveTimeEnd: '',
-        purpose: '',
         amount: '',
-        linkAttachments: '',
+        voucherType: '',
+        funds: '',
+        remarks: '',
       });
     }
   };
 
-  const confirmDeleteRecord = async () => {
-    if (!recordToDelete) return;
-    
+  const confirmDeleteVoucher = async () => {
+    if (!voucherToDelete) return;
+
+    setIsLoading(true);
     try {
-      await othersService.deleteRecord(recordToDelete);
-      // Reload from Firestore
-      const updatedRecords = await othersService.getRecords();
-      setRecords(updatedRecords as Others[]);
-      setSuccess('Record deleted successfully');
-      setRecordToDelete(null);
+      await voucherService.deleteVoucher(voucherToDelete);
+      const updatedVouchers = await voucherService.getVouchers();
+      setVouchers(updatedVouchers as Voucher[]);
+      setSuccess('Voucher deleted successfully');
+      setVoucherToDelete(null);
       setDeleteConfirmOpen(false);
       setSuccessModalOpen(true);
     } catch (err) {
-      console.error('Failed to delete record:', err);
-      setSuccess('Error deleting record');
+      console.error('Failed to delete voucher:', err);
+      setSuccess(err instanceof Error ? err.message : 'Error deleting voucher');
       setSuccessModalOpen(true);
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const handleViewRecord = (id: string) => {
-    const record = records.find((item) => item.id === id);
-    if (record) {
-      setSelectedRecord(record);
+  const handleViewVoucher = (id: string) => {
+    const voucher = vouchers.find((item) => item.id === id);
+    if (voucher) {
+      setSelectedVoucher(voucher);
       setViewModalOpen(true);
     }
   };
 
   const handleTimeOut = (id: string) => {
-    setRecordToTimeOut(id);
+    setVoucherToTimeOut(id);
     setTimeOutData({ dateTimeOut: '', timeOutRemarks: '' });
     setTimeOutConfirmOpen(true);
   };
 
+  const handleTimeOutModalOpenChange = (open: boolean) => {
+    if (!open) {
+      setVoucherToTimeOut(null);
+      setTimeOutData({ dateTimeOut: '', timeOutRemarks: '' });
+    }
+    setTimeOutConfirmOpen(open);
+  };
+
   const confirmTimeOut = async () => {
-    if (!recordToTimeOut || !timeOutData.dateTimeOut) return;
+    if (!voucherToTimeOut || !timeOutData.dateTimeOut) return;
 
     setIsLoading(true);
     try {
-      // Verify the document exists before attempting to update
-      const currentRecords = await othersService.getRecords();
-      const recordExists = currentRecords.some((r: any) => r.id === recordToTimeOut);
-      
-      if (!recordExists) {
-        throw new Error('Other record not found. It may have been deleted or the data is out of sync.');
-      }
-
-      await othersService.updateRecord(recordToTimeOut, {
+      await voucherService.updateVoucher(voucherToTimeOut, {
         dateTimeOut: timeOutData.dateTimeOut,
-        status: 'Completed',
-        timeOutRemarks: timeOutData.timeOutRemarks
+        timeOutRemarks: timeOutData.timeOutRemarks,
+        status: 'Completed'
       });
-      // Reload from Firestore
-      const updatedRecords = await othersService.getRecords();
-      setRecords(updatedRecords as Others[]);
+
+      const updatedVouchers = await voucherService.getVouchers();
+      setVouchers(updatedVouchers as Voucher[]);
+
       setSuccess('Time out recorded successfully');
-      setRecordToTimeOut(null);
+      setVoucherToTimeOut(null);
       setTimeOutData({ dateTimeOut: '', timeOutRemarks: '' });
       setTimeOutConfirmOpen(false);
       setSuccessModalOpen(true);
@@ -360,6 +339,9 @@ export default function OthersPage() {
       console.error('Failed to record time out:', err);
       setSuccess(err instanceof Error ? err.message : 'Error recording time out');
       setSuccessModalOpen(true);
+      
+      const updatedVouchers = await voucherService.getVouchers();
+      setVouchers(updatedVouchers as Voucher[]);
     } finally {
       setIsLoading(false);
     }
@@ -375,13 +357,13 @@ export default function OthersPage() {
           </Button>
         </SheetTrigger>
         <SheetContent side="left" className="w-64 p-0">
-          <OthersSidebar recordTypes={['Leave', 'Letter', 'Locator', 'Obligation Request', 'Purchase Request', 'Request for Overtime', 'Travel Order', 'Voucher', 'Admin to PGO', 'Others']} onNavigate={() => setSidebarOpen(false)} />
+          <VoucherSidebar onNavigate={() => setSidebarOpen(false)} />
         </SheetContent>
       </Sheet>
 
       {/* Desktop Sidebar */}
       <div className="hidden md:block w-64 bg-white border-r border-gray-200 shadow-sm">
-        <OthersSidebar recordTypes={['Leave', 'Letter', 'Locator', 'Obligation Request', 'Purchase Request', 'Request for Overtime', 'Travel Order', 'Voucher', 'Admin to PGO', 'Others']} onNavigate={undefined} />
+        <VoucherSidebar onNavigate={undefined} />
       </div>
 
       {/* Main Content */}
@@ -389,7 +371,7 @@ export default function OthersPage() {
         {/* Top Bar */}
         <div className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Other Records</h1>
+            <h1 className="text-2xl font-bold text-gray-900">Voucher Records</h1>
             <p className="text-sm text-gray-600">Welcome back, {user?.name}</p>
           </div>
           <Button
@@ -408,8 +390,8 @@ export default function OthersPage() {
             {/* Header */}
             <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
               <div>
-                <h2 className="text-xl font-bold text-gray-900">Others</h2>
-                <p className="text-sm text-gray-600">Manage and view all other records</p>
+                <h2 className="text-xl font-bold text-gray-900">Vouchers</h2>
+                <p className="text-sm text-gray-600">Manage and view all voucher records</p>
               </div>
               <Dialog open={isDialogOpen} onOpenChange={handleDialogOpenChange}>
                 <DialogTrigger asChild>
@@ -419,34 +401,31 @@ export default function OthersPage() {
                       setEditingId(null);
                       setFormData({
                         dateTimeIn: '',
-                        dateTimeOut: '',
-                        fullName: '',
+                        dvNo: '',
+                        payee: '',
+                        particulars: '',
                         designationOffice: '',
-                        inclusiveDateStart: '',
-                        inclusiveDateEnd: '',
-                        inclusiveTimeStart: '',
-                        inclusiveTimeEnd: '',
-                        purpose: '',
                         amount: '',
-                        linkAttachments: '',
+                        voucherType: '',
+                        funds: '',
+                        remarks: '',
                       });
                     }}
                   >
                     <Plus className="h-4 w-4" />
-                    Add Record
+                    Add Voucher
                   </Button>
                 </DialogTrigger>
                 <DialogContent className="sm:max-w-lg z-50 max-h-[90vh] overflow-y-auto overflow-x-hidden">
                   <DialogHeader>
                     <DialogTitle className="text-lg font-semibold">
-                      {editingId ? 'Edit Record' : 'Add New Record'}
+                      {editingId ? 'Edit Voucher' : 'Add New Voucher'}
                     </DialogTitle>
                     <DialogDescription>
-                      {editingId ? 'Update the record details' : 'Fill in the form to add a new record'}
+                      {editingId ? 'Update the voucher details' : 'Fill in the form to add a new voucher'}
                     </DialogDescription>
                   </DialogHeader>
                   <div className="space-y-4">
-                    {/* Tracking ID - Display Only */}
                     {!editingId && (
                       <div className="space-y-2">
                         <Label className="text-sm font-medium text-gray-700">Tracking ID</Label>
@@ -459,7 +438,6 @@ export default function OthersPage() {
                       </div>
                     )}
 
-                    {/* Date/Time In */}
                     <div className="space-y-2">
                       <Label htmlFor="dateTimeIn" className="text-sm font-medium text-gray-700">Date/Time IN *</Label>
                       <Input
@@ -471,43 +449,45 @@ export default function OthersPage() {
                       />
                     </div>
 
-                    {editingId && user?.role === 'admin' && (
-                      <div className="space-y-2">
-                        <Label htmlFor="dateTimeOut" className="text-sm font-medium text-gray-700">Date/Time OUT</Label>
-                        <Input
-                          id="dateTimeOut"
-                          name="dateTimeOut"
-                          type="datetime-local"
-                          value={formData.dateTimeOut || ''}
-                          onChange={handleInputChange}
-                        />
-                      </div>
-                    )}
-
-                    {/* Full Name */}
                     <div className="space-y-2">
-                      <Label htmlFor="fullName" className="text-sm font-medium text-gray-700">Full Name *</Label>
+                      <Label htmlFor="dvNo" className="text-sm font-medium text-gray-700">DV No. *</Label>
                       <Input
-                        id="fullName"
-                        name="fullName"
-                        value={formData.fullName}
+                        id="dvNo"
+                        name="dvNo"
+                        value={formData.dvNo}
                         onChange={handleInputChange}
-                        placeholder="Enter full name"
+                        placeholder="Enter DV No."
                       />
                     </div>
 
-                    {/* Designation / Office */}
+                    <div className="space-y-2">
+                      <Label htmlFor="payee" className="text-sm font-medium text-gray-700">Payee *</Label>
+                      <Input
+                        id="payee"
+                        name="payee"
+                        value={formData.payee}
+                        onChange={handleInputChange}
+                        placeholder="Enter payee"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="particulars" className="text-sm font-medium text-gray-700">Particulars *</Label>
+                      <Textarea
+                        id="particulars"
+                        name="particulars"
+                        value={formData.particulars}
+                        onChange={handleInputChange}
+                        placeholder="Enter particulars"
+                        rows={3}
+                      />
+                    </div>
+
                     <div className="space-y-2">
                       <Label htmlFor="designationOffice" className="text-sm font-medium text-gray-700">Designation / Office *</Label>
                       <Select value={formData.designationOffice} onValueChange={(value) => handleSelectChange('designationOffice', value)}>
-                        <SelectTrigger 
-                          id="designationOffice" 
-                          className="w-full"
-                          title={formData.designationOffice || "Select designation"}
-                        >
-                          <SelectValue placeholder="Select designation">
-                            {formData.designationOffice ? getAcronym(formData.designationOffice) : 'Select designation'}
-                          </SelectValue>
+                        <SelectTrigger id="designationOffice" className="w-full">
+                          <SelectValue placeholder="Select designation" />
                         </SelectTrigger>
                         <SelectContent>
                           {designationOptions.map((option) => (
@@ -519,104 +499,60 @@ export default function OthersPage() {
                       </Select>
                     </div>
 
-                    {/* Inclusive Dates */}
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="inclusiveDateStart" className="text-sm font-medium text-gray-700">Inclusive Date Start *</Label>
-                        <Input
-                          id="inclusiveDateStart"
-                          name="inclusiveDateStart"
-                          type="date"
-                          value={formData.inclusiveDateStart}
-                          onChange={handleInputChange}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="inclusiveDateEnd" className="text-sm font-medium text-gray-700">Inclusive Date End *</Label>
-                        <Input
-                          id="inclusiveDateEnd"
-                          name="inclusiveDateEnd"
-                          type="date"
-                          value={formData.inclusiveDateEnd}
-                          onChange={handleInputChange}
-                        />
-                      </div>
-                    </div>
-
-                    {/* Inclusive Time */}
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="inclusiveTimeStart" className="text-sm font-medium text-gray-700">Inclusive Time Start</Label>
-                        <Input
-                          id="inclusiveTimeStart"
-                          name="inclusiveTimeStart"
-                          type="time"
-                          value={formData.inclusiveTimeStart}
-                          onChange={handleInputChange}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="inclusiveTimeEnd" className="text-sm font-medium text-gray-700">Inclusive Time End</Label>
-                        <Input
-                          id="inclusiveTimeEnd"
-                          name="inclusiveTimeEnd"
-                          type="time"
-                          value={formData.inclusiveTimeEnd}
-                          onChange={handleInputChange}
-                        />
-                      </div>
-                    </div>
-
-                    {/* Purpose */}
                     <div className="space-y-2">
-                      <Label htmlFor="purpose" className="text-sm font-medium text-gray-700">Purpose *</Label>
-                      <Textarea
-                        id="purpose"
-                        name="purpose"
-                        value={formData.purpose}
+                      <Label htmlFor="amount" className="text-sm font-medium text-gray-700">Amount *</Label>
+                      <Input
+                        id="amount"
+                        name="amount"
+                        type="number"
+                        value={formData.amount}
                         onChange={handleInputChange}
-                        placeholder="Enter purpose"
-                        rows={3}
+                        placeholder="Enter amount"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="voucherType" className="text-sm font-medium text-gray-700">Voucher Type *</Label>
+                      <Input
+                        id="voucherType"
+                        name="voucherType"
+                        value={formData.voucherType}
+                        onChange={handleInputChange}
+                        placeholder="Enter voucher type"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="funds" className="text-sm font-medium text-gray-700">Funds *</Label>
+                      <Input
+                        id="funds"
+                        name="funds"
+                        value={formData.funds}
+                        onChange={handleInputChange}
+                        placeholder="Enter funds"
                       />
                     </div>
 
                     {editingId && (
-                      <>
-                        {/* Amount - Editable in Edit Mode */}
-                        <div className="space-y-2">
-                          <Label htmlFor="amount" className="text-sm font-medium text-gray-700">Amount</Label>
-                          <Input
-                            id="amount"
-                            name="amount"
-                            type="number"
-                            value={formData.amount}
-                            onChange={handleInputChange}
-                            placeholder="Enter amount"
-                          />
-                        </div>
-
-                        {/* Link/Attachments - Editable in Edit Mode */}
-                        <div className="space-y-2">
-                          <Label htmlFor="linkAttachments" className="text-sm font-medium text-gray-700">Link / Attachments</Label>
-                          <Input
-                            id="linkAttachments"
-                            name="linkAttachments"
-                            type="text"
-                            value={formData.linkAttachments}
-                            onChange={handleInputChange}
-                            placeholder="Enter link or attachment URL"
-                          />
-                        </div>
-                      </>
+                      <div className="space-y-2">
+                        <Label htmlFor="remarks" className="text-sm font-medium text-gray-700">Remarks</Label>
+                        <Textarea
+                          id="remarks"
+                          name="remarks"
+                          value={formData.remarks}
+                          onChange={handleInputChange}
+                          placeholder="Enter remarks"
+                          rows={3}
+                        />
+                      </div>
                     )}
 
-                    {/* Add/Update Button - Full Width */}
                     <Button
                       className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 mt-6"
-                      onClick={handleAddRecord}
+                      onClick={handleAddVoucher}
                       disabled={isLoading}
                     >
-                      {isLoading ? 'Saving...' : editingId ? 'Update Record' : 'Add Record'}
+                      {isLoading ? 'Saving...' : editingId ? 'Update Voucher' : 'Add Voucher'}
                     </Button>
                   </div>
                 </DialogContent>
@@ -632,67 +568,55 @@ export default function OthersPage() {
                       <TableHead className="text-center">Tracking ID</TableHead>
                       <TableHead className="text-center">Date/Time IN</TableHead>
                       <TableHead className="text-center">Date/Time OUT</TableHead>
-                      <TableHead className="text-center">Full Name</TableHead>
-                      <TableHead className="text-center">Office</TableHead>
-                      <TableHead className="text-center">Inclusive Dates</TableHead>
-                      <TableHead className="text-center">Purpose</TableHead>
+                      <TableHead className="text-center">DV No.</TableHead>
+                      <TableHead className="text-center">Payee</TableHead>
                       <TableHead className="text-center">Amount</TableHead>
+                      <TableHead className="text-center">Type</TableHead>
                       <TableHead className="text-center">Status</TableHead>
                       <TableHead className="text-center">Remarks</TableHead>
-                      <TableHead className="text-center">Attachments</TableHead>
                       <TableHead className="text-center">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {records.length > 0 ? (
-                      records.map((record) => (
-                        <TableRow key={record.id} className="hover:bg-gray-50">
-                          <TableCell className="font-bold italic wrap-break-word whitespace-normal text-center text-xs text-indigo-600">{record.trackingId}</TableCell>
-                          <TableCell className="wrap-break-word whitespace-normal text-center text-xs">{new Date(record.dateTimeIn).toLocaleString()}</TableCell>
-                          <TableCell className="wrap-break-word whitespace-normal text-center text-xs text-red-600">{record.dateTimeOut ? new Date(record.dateTimeOut).toLocaleString() : '-'}</TableCell>
-                          <TableCell className="wrap-break-word whitespace-normal text-center text-xs uppercase">{record.fullName}</TableCell>
-                          <TableCell className="wrap-break-word whitespace-normal text-center text-xs">{record.designationOffice}</TableCell>
-                          <TableCell className="wrap-break-word whitespace-normal text-center text-xs">{record.inclusiveDateStart} - {record.inclusiveDateEnd}</TableCell>
-                          <TableCell className="wrap-break-word whitespace-normal text-center text-xs">{record.purpose}</TableCell>
-                          <TableCell className="wrap-break-word whitespace-normal text-center text-xs">{formatCurrency(record.amount)}</TableCell>
+                    {vouchers.length > 0 ? (
+                      vouchers.map((voucher) => (
+                        <TableRow key={voucher.id} className="hover:bg-gray-50">
+                          <TableCell className="font-bold italic wrap-break-word whitespace-normal text-center text-xs text-indigo-600">{voucher.trackingId}</TableCell>
+                          <TableCell className="wrap-break-word whitespace-normal text-center text-xs">{new Date(voucher.dateTimeIn).toLocaleString()}</TableCell>
+                          <TableCell className="wrap-break-word whitespace-normal text-center text-xs text-red-600">{voucher.dateTimeOut ? new Date(voucher.dateTimeOut).toLocaleString() : '-'}</TableCell>
+                          <TableCell className="wrap-break-word whitespace-normal text-center text-xs">{voucher.dvNo}</TableCell>
+                          <TableCell className="wrap-break-word whitespace-normal text-center text-xs">{voucher.payee}</TableCell>
+                          <TableCell className="wrap-break-word whitespace-normal text-center text-xs">{formatCurrency(voucher.amount)}</TableCell>
+                          <TableCell className="wrap-break-word whitespace-normal text-center text-xs">{voucher.voucherType}</TableCell>
                           <TableCell className="wrap-break-word whitespace-normal text-center text-xs">
                             <span className={`px-2 py-1 rounded text-xs font-medium ${
-                              record.status === 'Completed' ? 'bg-green-100 text-green-800' :
-                              record.status === 'Pending' ? 'bg-yellow-100 text-yellow-800' :
+                              voucher.status === 'Completed' ? 'bg-green-100 text-green-800' :
+                              voucher.status === 'Pending' ? 'bg-yellow-100 text-yellow-800' :
                               'bg-blue-100 text-blue-800'
                             }`}>
-                              {record.status}
+                              {voucher.status}
                             </span>
                           </TableCell>
-                          <TableCell className="wrap-break-word whitespace-normal text-center text-xs">{record.remarks || '-'}</TableCell>
-                          <TableCell className="wrap-break-word whitespace-normal text-center text-xs">
-                            {record.linkAttachments ? (
-                              <a href={record.linkAttachments} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
-                                Link
-                              </a>
-                            ) : (
-                              '-'
-                            )}
-                          </TableCell>
+                          <TableCell className="wrap-break-word whitespace-normal text-center text-xs">{voucher.status === 'Completed' ? (voucher.timeOutRemarks || voucher.remarks || '-') : (voucher.remarks || '-')}</TableCell>
                           <TableCell className="text-center">
                             <ActionButtons
-                              onView={() => handleViewRecord(record.id)}
-                              onEdit={() => handleEditRecord(record.id)}
-                              onTimeOut={() => handleTimeOut(record.id)}
-                              onDelete={() => handleDeleteRecord(record.id)}
-                              canEdit={user?.role === 'admin' || (!!record.dateTimeOut === false && record.status === 'Pending')}
-                              canDelete={user?.role === 'admin' || (!!record.dateTimeOut === false && record.status === 'Pending')}
-                              showTimeOut={!record.dateTimeOut}
-                              editDisabledReason={user?.role !== 'admin' && (!!record.dateTimeOut || record.status !== 'Pending') ? 'Users can only edit pending records' : undefined}
-                              deleteDisabledReason={user?.role !== 'admin' && (!!record.dateTimeOut || record.status !== 'Pending') ? 'Users can only delete pending records' : undefined}
+                              onView={() => handleViewVoucher(voucher.id)}
+                              onEdit={() => handleEditVoucher(voucher.id)}
+                              onTimeOut={() => handleTimeOut(voucher.id)}
+                              onDelete={() => handleDeleteVoucher(voucher.id)}
+                              canEdit={user?.role === 'admin' || (!!voucher.dateTimeOut === false && voucher.status === 'Pending')}
+                              canDelete={user?.role === 'admin' || (!!voucher.dateTimeOut === false && voucher.status === 'Pending')}
+                              showTimeOut={!voucher.dateTimeOut}
+                              editDisabledReason={user?.role !== 'admin' && (!!voucher.dateTimeOut || voucher.status !== 'Pending') ? 'Users can only edit pending records' : undefined}
+                              deleteDisabledReason={user?.role !== 'admin' && (!!voucher.dateTimeOut || voucher.status !== 'Pending') ? 'Users can only delete pending records' : undefined}
                             />
                           </TableCell>
                         </TableRow>
                       ))
                     ) : (
                       <TableRow>
-                        <TableCell colSpan={12} className="text-center py-8 text-gray-500 wrap-break-word whitespace-normal">
-                          No records found. Add one to get started.
+                        <TableCell colSpan={10} className="text-center py-8 text-gray-500 wrap-break-word whitespace-normal">
+                          No vouchers found. Add one to get started.
                         </TableCell>
                       </TableRow>
                     )}
@@ -708,111 +632,68 @@ export default function OthersPage() {
       <Dialog open={viewModalOpen} onOpenChange={setViewModalOpen}>
         <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="text-2xl">Other Records Details</DialogTitle>
+            <DialogTitle className="text-2xl">Voucher Details</DialogTitle>
+            <DialogDescription>
+              View the complete details of this voucher record.
+            </DialogDescription>
           </DialogHeader>
-          {selectedRecord && (
+          {selectedVoucher && (
             <div className="space-y-6">
-              {/* Header Row - Tracking ID, Status, Date/Time IN */}
               <div className="grid grid-cols-3 gap-6 pb-4 border-b border-gray-200">
                 <div>
                   <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Tracking ID</p>
-                  <p className="text-lg font-bold text-indigo-600 mt-1">{selectedRecord.trackingId}</p>
+                  <p className="text-lg font-bold text-indigo-600 mt-1">{selectedVoucher.trackingId}</p>
                 </div>
                 <div>
                   <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Status</p>
                   <p className="mt-2">
                     <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                      selectedRecord.status === 'Completed' ? 'bg-green-100 text-green-800' :
-                      selectedRecord.status === 'Pending' ? 'bg-yellow-100 text-yellow-800' :
+                      selectedVoucher.status === 'Completed' ? 'bg-green-100 text-green-800' :
+                      selectedVoucher.status === 'Pending' ? 'bg-yellow-100 text-yellow-800' :
                       'bg-blue-100 text-blue-800'
                     }`}>
-                      {selectedRecord.status}
+                      {selectedVoucher.status}
                     </span>
                   </p>
                 </div>
                 <div>
                   <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Date/Time In</p>
-                  <p className="text-sm font-medium text-gray-900 mt-1">{new Date(selectedRecord.dateTimeIn).toLocaleString()}</p>
+                  <p className="text-sm font-medium text-gray-900 mt-1">{new Date(selectedVoucher.dateTimeIn).toLocaleString()}</p>
                 </div>
               </div>
 
-              {/* Personal Information */}
               <div>
-                <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wide mb-4">Personal Information</h3>
+                <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wide mb-4">Voucher Information</h3>
                 <div className="grid grid-cols-2 gap-6">
                   <div>
-                    <p className="text-xs font-medium text-gray-600 uppercase">Full Name</p>
-                    <p className="text-sm font-semibold text-gray-900 mt-1">{selectedRecord.fullName}</p>
+                    <p className="text-xs font-medium text-gray-600 uppercase">DV No.</p>
+                    <p className="text-sm font-semibold text-gray-900 mt-1">{selectedVoucher.dvNo}</p>
                   </div>
                   <div>
-                    <p className="text-xs font-medium text-gray-600 uppercase">Designation/Office</p>
-                    <p className="text-sm font-semibold text-gray-900 mt-1">{selectedRecord.designationOffice}</p>
+                    <p className="text-xs font-medium text-gray-600 uppercase">Payee</p>
+                    <p className="text-sm font-semibold text-gray-900 mt-1">{selectedVoucher.payee}</p>
                   </div>
-                </div>
-              </div>
-
-              {/* Duration */}
-              <div>
-                <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wide mb-4">Duration</h3>
-                <div className="grid grid-cols-2 gap-6">
-                  <div>
-                    <p className="text-xs font-medium text-gray-600 uppercase">Inclusive Date Start</p>
-                    <p className="text-sm font-semibold text-gray-900 mt-1">{selectedRecord.inclusiveDateStart}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs font-medium text-gray-600 uppercase">Inclusive Date End</p>
-                    <p className="text-sm font-semibold text-gray-900 mt-1">{selectedRecord.inclusiveDateEnd}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs font-medium text-gray-600 uppercase">Inclusive Time Start</p>
-                    <p className="text-sm font-semibold text-gray-900 mt-1">{selectedRecord.inclusiveTimeStart || '-'}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs font-medium text-gray-600 uppercase">Inclusive Time End</p>
-                    <p className="text-sm font-semibold text-gray-900 mt-1">{selectedRecord.inclusiveTimeEnd || '-'}</p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Date/Time Out */}
-              <div>
-                <p className="text-xs font-medium text-gray-600 uppercase">Date/Time Out</p>
-                <p className="text-sm font-semibold text-gray-900 mt-1">{selectedRecord.dateTimeOut ? new Date(selectedRecord.dateTimeOut).toLocaleString() : '-'}</p>
-              </div>
-
-              {/* Purpose */}
-              <div>
-                <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wide mb-4">Details</h3>
-                <div>
-                  <p className="text-xs font-medium text-gray-600 uppercase">Purpose</p>
-                  <p className="text-sm font-semibold text-gray-900 mt-1 whitespace-pre-wrap">{selectedRecord.purpose}</p>
-                </div>
-              </div>
-
-              {/* Additional Information */}
-              <div>
-                <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wide mb-4">Additional Information</h3>
-                <div className="grid grid-cols-2 gap-6">
                   <div>
                     <p className="text-xs font-medium text-gray-600 uppercase">Amount</p>
-                    <p className="text-sm font-semibold text-gray-900 mt-1">{formatCurrency(selectedRecord.amount)}</p>
+                    <p className="text-sm font-semibold text-gray-900 mt-1">{formatCurrency(selectedVoucher.amount)}</p>
                   </div>
                   <div>
-                    <p className="text-xs font-medium text-gray-600 uppercase">Link / Attachments</p>
-                    <p className="text-sm font-semibold text-gray-900 mt-1">
-                      {selectedRecord.linkAttachments ? (
-                        <a href={selectedRecord.linkAttachments} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-800 hover:underline break-all">
-                          {selectedRecord.linkAttachments}
-                        </a>
-                      ) : (
-                        '-'
-                      )}
-                    </p>
+                    <p className="text-xs font-medium text-gray-600 uppercase">Type</p>
+                    <p className="text-sm font-semibold text-gray-900 mt-1">{selectedVoucher.voucherType}</p>
                   </div>
                 </div>
               </div>
 
-              {/* Close Button */}
+              <div>
+                <p className="text-xs font-medium text-gray-600 uppercase">Particulars</p>
+                <p className="text-sm font-semibold text-gray-900 mt-1 whitespace-pre-wrap">{selectedVoucher.particulars}</p>
+              </div>
+
+              <div>
+                <p className="text-xs font-medium text-gray-600 uppercase">Date/Time Out</p>
+                <p className="text-sm font-semibold text-gray-900 mt-1">{selectedVoucher.dateTimeOut ? new Date(selectedVoucher.dateTimeOut).toLocaleString() : '-'}</p>
+              </div>
+
               <div className="flex justify-end gap-2 pt-4 border-t border-gray-200">
                 <Button
                   variant="outline"
@@ -832,20 +713,24 @@ export default function OthersPage() {
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Confirm Delete</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete this voucher? This action cannot be undone.
+            </DialogDescription>
           </DialogHeader>
-          <p className="text-sm text-gray-600">Are you sure you want to delete this record? This action cannot be undone.</p>
           <div className="flex gap-2 justify-end pt-4">
             <Button
               variant="outline"
               onClick={() => setDeleteConfirmOpen(false)}
+              disabled={isLoading}
             >
               Cancel
             </Button>
             <Button
-              className="bg-red-600 hover:bg-red-700"
-              onClick={confirmDeleteRecord}
+              className="bg-red-600 hover:bg-red-700 text-white"
+              onClick={confirmDeleteVoucher}
+              disabled={isLoading}
             >
-              Delete
+              {isLoading ? 'Deleting...' : 'Delete'}
             </Button>
           </div>
         </DialogContent>
@@ -856,8 +741,10 @@ export default function OthersPage() {
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Confirm Update</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to update this voucher?
+            </DialogDescription>
           </DialogHeader>
-          <p className="text-sm text-gray-600">Are you sure you want to update this record?</p>
           <div className="flex gap-2 justify-end pt-4">
             <Button
               variant="outline"
@@ -867,7 +754,7 @@ export default function OthersPage() {
             </Button>
             <Button
               className="bg-indigo-600 hover:bg-indigo-700"
-              onClick={confirmEditRecord}
+              onClick={confirmEditVoucher}
               disabled={isLoading}
             >
               {isLoading ? 'Updating...' : 'Update'}
@@ -877,12 +764,12 @@ export default function OthersPage() {
       </Dialog>
 
       {/* Time Out Modal */}
-      <Dialog open={timeOutConfirmOpen} onOpenChange={setTimeOutConfirmOpen}>
+      <Dialog open={timeOutConfirmOpen} onOpenChange={handleTimeOutModalOpenChange}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="text-lg font-semibold">Record Time Out</DialogTitle>
             <DialogDescription>
-              Enter the date/time out and any remarks for this other record.
+              Enter the date/time out and any remarks for this voucher record.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
@@ -912,7 +799,7 @@ export default function OthersPage() {
                 variant="outline"
                 onClick={() => {
                   setTimeOutConfirmOpen(false);
-                  setRecordToTimeOut(null);
+                  setVoucherToTimeOut(null);
                   setTimeOutData({ dateTimeOut: '', timeOutRemarks: '' });
                 }}
               >
@@ -935,6 +822,9 @@ export default function OthersPage() {
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Success</DialogTitle>
+            <DialogDescription>
+              {success}
+            </DialogDescription>
           </DialogHeader>
           <div className="flex items-center gap-3">
             <div className="shrink-0">
@@ -942,7 +832,6 @@ export default function OthersPage() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
               </svg>
             </div>
-            <p className="text-sm text-gray-700">{success}</p>
           </div>
           <div className="flex justify-end pt-4">
             <Button
@@ -958,12 +847,11 @@ export default function OthersPage() {
   );
 }
 
-interface OthersSidebarProps {
-  recordTypes: string[];
+interface VoucherSidebarProps {
   onNavigate?: () => void;
 }
 
-function OthersSidebar({ recordTypes, onNavigate }: OthersSidebarProps) {
+function VoucherSidebar({ onNavigate }: VoucherSidebarProps) {
   const { user } = useAuth();
   const navigate = useNavigate();
 
@@ -971,15 +859,15 @@ function OthersSidebar({ recordTypes, onNavigate }: OthersSidebarProps) {
     { icon: BarChart3, label: 'Dashboard', href: '/dashboard' },
   ];
 
+  const recordTypes = ['Leave', 'Letter', 'Locator', 'Obligation Request', 'Purchase Request', 'Request for Overtime', 'Travel Order', 'Voucher', 'Admin to PGO', 'Others'];
+
   return (
     <div className="h-full flex flex-col bg-white">
-      {/* Logo */}
       <div className="p-6 border-b border-gray-200">
         <h2 className="text-xl font-bold text-indigo-600">PGO</h2>
         <p className="text-xs text-gray-500">Record Management</p>
       </div>
 
-      {/* Menu Items */}
       <nav className="flex-1 p-4 space-y-2">
         {menuItems.map((item) => (
           <button
@@ -995,7 +883,6 @@ function OthersSidebar({ recordTypes, onNavigate }: OthersSidebarProps) {
           </button>
         ))}
 
-        {/* Records Menu */}
         <div className="space-y-1">
           <div className="flex items-center gap-3 px-4 py-2 text-gray-700">
             <FileText className="h-5 w-5" />
@@ -1034,7 +921,6 @@ function OthersSidebar({ recordTypes, onNavigate }: OthersSidebarProps) {
         </div>
       </nav>
 
-      {/* User Info - Bottom */}
       <div className="p-4 border-t border-gray-200">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center">
@@ -1049,7 +935,6 @@ function OthersSidebar({ recordTypes, onNavigate }: OthersSidebarProps) {
         </div>
       </div>
 
-      {/* Bottom Actions */}
       <div className="p-4 border-t border-gray-200 space-y-2">
         {user?.role === 'admin' && (
           <Button
@@ -1063,9 +948,6 @@ function OthersSidebar({ recordTypes, onNavigate }: OthersSidebarProps) {
             <Settings className="h-4 w-4" />
             Settings
           </Button>
-        )}
-        {user?.role !== 'admin' && (
-          <></>
         )}
       </div>
     </div>

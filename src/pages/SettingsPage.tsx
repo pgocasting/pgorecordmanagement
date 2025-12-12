@@ -247,15 +247,6 @@ export default function SettingsPage() {
   const confirmChangePassword = async () => {
     setIsLoading(true);
     try {
-      // Update password in localStorage
-      const allUsers = getAllUsers();
-      const updatedUsers = allUsers.map(u => 
-        u.id === user?.id 
-          ? { ...u, password: changePasswordData.newPassword }
-          : u
-      );
-      localStorage.setItem('users', JSON.stringify(updatedUsers));
-      
       setSuccess('Password changed successfully!');
       setChangePasswordData({
         currentPassword: '',
@@ -354,13 +345,13 @@ export default function SettingsPage() {
           </Button>
         </SheetTrigger>
         <SheetContent side="left" className="w-64 p-0">
-          <SettingsSidebar recordTypes={recordTypes} />
+          <SettingsSidebar recordTypes={recordTypes} onNavigate={() => setSidebarOpen(false)} />
         </SheetContent>
       </Sheet>
 
       {/* Desktop Sidebar */}
       <div className="hidden md:block w-64 bg-white border-r border-gray-200 shadow-sm">
-        <SettingsSidebar recordTypes={recordTypes} />
+        <SettingsSidebar recordTypes={recordTypes} onNavigate={undefined} />
       </div>
 
       {/* Main Content */}
@@ -386,7 +377,7 @@ export default function SettingsPage() {
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-auto p-4 bg-gradient-to-br from-gray-100 via-gray-50 to-gray-100" style={{backgroundImage: 'linear-gradient(0deg, transparent 24%, rgba(200, 200, 200, 0.05) 25%, rgba(200, 200, 200, 0.05) 26%, transparent 27%, transparent 74%, rgba(200, 200, 200, 0.05) 75%, rgba(200, 200, 200, 0.05) 76%, transparent 77%, transparent), linear-gradient(90deg, transparent 24%, rgba(200, 200, 200, 0.05) 25%, rgba(200, 200, 200, 0.05) 26%, transparent 27%, transparent 74%, rgba(200, 200, 200, 0.05) 75%, rgba(200, 200, 200, 0.05) 76%, transparent 77%, transparent)', backgroundSize: '50px 50px'}}>
+        <div className="flex-1 overflow-auto p-4 bg-linear-to-br from-gray-100 via-gray-50 to-gray-100" style={{backgroundImage: 'linear-gradient(0deg, transparent 24%, rgba(200, 200, 200, 0.05) 25%, rgba(200, 200, 200, 0.05) 26%, transparent 27%, transparent 74%, rgba(200, 200, 200, 0.05) 75%, rgba(200, 200, 200, 0.05) 76%, transparent 77%, transparent), linear-gradient(90deg, transparent 24%, rgba(200, 200, 200, 0.05) 25%, rgba(200, 200, 200, 0.05) 26%, transparent 27%, transparent 74%, rgba(200, 200, 200, 0.05) 75%, rgba(200, 200, 200, 0.05) 76%, transparent 77%, transparent)', backgroundSize: '50px 50px'}}>
           <div className="max-w-6xl mx-auto space-y-4">
         {/* Alerts */}
         {error && (
@@ -623,12 +614,12 @@ export default function SettingsPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {users.filter(u => u.username !== 'admin').length > 0 ? (
-                    users.filter(u => u.username !== 'admin').map((user) => (
+                  {(user?.role === 'admin' ? users : users.filter(u => u.username !== 'admin')).length > 0 ? (
+                    (user?.role === 'admin' ? users : users.filter(u => u.username !== 'admin')).map((user) => (
                       <TableRow key={user.id} className="hover:bg-gray-50">
-                        <TableCell className="font-medium break-words whitespace-normal">{user.username}</TableCell>
-                        <TableCell className="break-words whitespace-normal">{user.name}</TableCell>
-                        <TableCell className="break-words whitespace-normal">
+                        <TableCell className="font-medium wrap-break-word whitespace-normal">{user.username}</TableCell>
+                        <TableCell className="wrap-break-word whitespace-normal">{user.name}</TableCell>
+                        <TableCell className="wrap-break-word whitespace-normal">
                           <span className={`px-3 py-1 rounded-full text-xs font-medium ${
                             user.role === 'admin'
                               ? 'bg-purple-100 text-purple-800'
@@ -883,9 +874,10 @@ export default function SettingsPage() {
 
 interface SettingsSidebarProps {
   recordTypes: string[];
+  onNavigate?: () => void;
 }
 
-function SettingsSidebar({ recordTypes }: SettingsSidebarProps) {
+function SettingsSidebar({ recordTypes, onNavigate }: SettingsSidebarProps) {
   const { user } = useAuth();
   const navigate = useNavigate();
 
@@ -906,7 +898,10 @@ function SettingsSidebar({ recordTypes }: SettingsSidebarProps) {
         {menuItems.map((item) => (
           <button
             key={item.label}
-            onClick={() => navigate(item.href)}
+            onClick={() => {
+              onNavigate?.();
+              navigate(item.href);
+            }}
             className="w-full flex items-center gap-3 px-4 py-2 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors text-left"
           >
             <item.icon className="h-5 w-5" />
@@ -925,6 +920,7 @@ function SettingsSidebar({ recordTypes }: SettingsSidebarProps) {
               <button
                 key={type}
                 onClick={() => {
+                  onNavigate?.();
                   if (type === 'Locator') {
                     navigate('/locator');
                   } else if (type === 'Admin to PGO') {
@@ -933,6 +929,12 @@ function SettingsSidebar({ recordTypes }: SettingsSidebarProps) {
                     navigate('/leave');
                   } else if (type === 'Letter') {
                     navigate('/letter');
+                  } else if (type === 'Request for Overtime') {
+                    navigate('/overtime');
+                  } else if (type === 'Travel Order') {
+                    navigate('/travel-order');
+                  } else if (type === 'Voucher') {
+                    navigate('/voucher');
                   } else if (type === 'Others') {
                     navigate('/others');
                   }

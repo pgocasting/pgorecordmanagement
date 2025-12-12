@@ -34,7 +34,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Plus, Trash2, Menu, Settings, LogOut, BarChart3, FileText, Edit2, Eye, Clock } from 'lucide-react';
+import { Plus, Menu, Settings, LogOut, BarChart3, FileText } from 'lucide-react';
+import { ActionButtons } from '@/components/ActionButtons';
 
 interface Letter {
   id: string;
@@ -90,7 +91,7 @@ export default function LetterPage() {
     particulars: '',
   });
 
-  const [designationOptions, setDesignationOptions] = useState<string[]>([]);
+  const [designationOptions] = useState<string[]>(['Admin', 'Manager', 'Staff', 'Officer']);
 
   // Load letters from Firestore on mount
   useEffect(() => {
@@ -105,42 +106,6 @@ export default function LetterPage() {
       }
     };
     loadLetters();
-  }, []);
-
-  // Listen for changes in designations from localStorage and Settings page
-  useEffect(() => {
-    const loadDesignations = () => {
-      try {
-        const stored = localStorage.getItem('designations');
-        if (stored) {
-          const parsed = JSON.parse(stored);
-          if (Array.isArray(parsed) && parsed.length > 0) {
-            setDesignationOptions(parsed);
-          } else {
-            setDesignationOptions(['Admin', 'Manager', 'Staff', 'Officer']);
-          }
-        } else {
-          setDesignationOptions(['Admin', 'Manager', 'Staff', 'Officer']);
-        }
-      } catch (error) {
-        console.error('Error loading designations:', error);
-        setDesignationOptions(['Admin', 'Manager', 'Staff', 'Officer']);
-      }
-    };
-
-    // Load on mount
-    loadDesignations();
-
-    // Listen for storage changes (from other tabs/windows)
-    window.addEventListener('storage', loadDesignations);
-    
-    // Listen for custom event (from same tab)
-    window.addEventListener('designationsUpdated', loadDesignations);
-    
-    return () => {
-      window.removeEventListener('storage', loadDesignations);
-      window.removeEventListener('designationsUpdated', loadDesignations);
-    };
   }, []);
 
   const generateTrackingId = (): string => {
@@ -270,25 +235,38 @@ export default function LetterPage() {
   };
 
   const confirmTimeOut = async () => {
-    if (letterToTimeOut && timeOutDateTime) {
-      try {
-        await letterService.updateLetter(letterToTimeOut, {
-          dateTimeOut: timeOutDateTime,
-        });
-        // Reload letters from Firestore
-        const updatedLetters = await letterService.getLetters();
-        setLetters(updatedLetters as Letter[]);
-        setLetterToTimeOut(null);
-        setTimeOutDateTime('');
-        setTimeOutRemarks('');
-        setTimeOutModalOpen(false);
-        setSuccess('Time out recorded successfully');
-        setSuccessModalOpen(true);
-      } catch (error) {
-        console.error('Error recording time out:', error);
-        setSuccess('Error recording time out');
-        setSuccessModalOpen(true);
+    if (!letterToTimeOut || !timeOutDateTime) return;
+
+    setIsLoading(true);
+    try {
+      // Verify the document exists before attempting to update
+      const currentLetters = await letterService.getLetters();
+      const letterExists = currentLetters.some((l: any) => l.id === letterToTimeOut);
+      
+      if (!letterExists) {
+        throw new Error('Letter record not found. It may have been deleted or the data is out of sync.');
       }
+
+      await letterService.updateLetter(letterToTimeOut, {
+        dateTimeOut: timeOutDateTime,
+        timeOutRemarks: timeOutRemarks,
+        status: 'Completed'
+      });
+      // Reload letters from Firestore
+      const updatedLetters = await letterService.getLetters();
+      setLetters(updatedLetters as Letter[]);
+      setLetterToTimeOut(null);
+      setTimeOutDateTime('');
+      setTimeOutRemarks('');
+      setTimeOutModalOpen(false);
+      setSuccess('Time out recorded successfully');
+      setSuccessModalOpen(true);
+    } catch (error) {
+      console.error('Error recording time out:', error);
+      setSuccess(error instanceof Error ? error.message : 'Error recording time out');
+      setSuccessModalOpen(true);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -297,9 +275,19 @@ export default function LetterPage() {
     navigate('/login');
   };
 
-  const handleSettings = () => {
-    navigate('/settings');
-  };
+
+  const recordTypes = [
+    'Leave',
+    'Letter',
+    'Locator',
+    'Obligation Request',
+    'Purchase Request',
+    'Request for Overtime',
+    'Travel Order',
+    'Voucher',
+    'Admin to PGO',
+    'Others',
+  ];
 
   return (
     <div className="flex h-screen bg-gray-50">
@@ -311,13 +299,13 @@ export default function LetterPage() {
           </Button>
         </SheetTrigger>
         <SheetContent side="left" className="w-64 p-0">
-          <Sidebar />
+          <LetterSidebar recordTypes={recordTypes} onNavigate={() => setSidebarOpen(false)} />
         </SheetContent>
       </Sheet>
 
       {/* Desktop Sidebar */}
       <div className="hidden md:block w-64 bg-white border-r border-gray-200 shadow-sm">
-        <Sidebar />
+        <LetterSidebar recordTypes={recordTypes} onNavigate={undefined} />
       </div>
 
       {/* Main Content */}
@@ -491,13 +479,13 @@ export default function LetterPage() {
                   {letters.length > 0 ? (
                     letters.map((letter) => (
                       <TableRow key={letter.id} className="hover:bg-gray-50">
-                        <TableCell className="font-bold italic break-words whitespace-normal text-center text-xs text-indigo-600">{letter.trackingId}</TableCell>
-                        <TableCell className="break-words whitespace-normal text-center text-xs">{new Date(letter.dateTimeIn).toLocaleString()}</TableCell>
-                        <TableCell className="break-words whitespace-normal text-center text-xs text-red-600">{letter.dateTimeOut ? new Date(letter.dateTimeOut).toLocaleString() : '-'}</TableCell>
-                        <TableCell className="break-words whitespace-normal text-center text-xs uppercase">{letter.fullName}</TableCell>
-                        <TableCell className="break-words whitespace-normal text-center text-xs">{letter.designationOffice}</TableCell>
-                        <TableCell className="break-words whitespace-normal text-center text-xs">{letter.particulars}</TableCell>
-                        <TableCell className="break-words whitespace-normal text-center text-xs">
+                        <TableCell className="font-bold italic wrap-break-word whitespace-normal text-center text-xs text-indigo-600">{letter.trackingId}</TableCell>
+                        <TableCell className="wrap-break-word whitespace-normal text-center text-xs">{new Date(letter.dateTimeIn).toLocaleString()}</TableCell>
+                        <TableCell className="wrap-break-word whitespace-normal text-center text-xs text-red-600">{letter.dateTimeOut ? new Date(letter.dateTimeOut).toLocaleString() : '-'}</TableCell>
+                        <TableCell className="wrap-break-word whitespace-normal text-center text-xs uppercase">{letter.fullName}</TableCell>
+                        <TableCell className="wrap-break-word whitespace-normal text-center text-xs">{letter.designationOffice}</TableCell>
+                        <TableCell className="wrap-break-word whitespace-normal text-center text-xs">{letter.particulars}</TableCell>
+                        <TableCell className="wrap-break-word whitespace-normal text-center text-xs">
                           <span className={`px-2 py-1 rounded text-xs font-medium ${
                             letter.status === 'Completed' ? 'bg-green-100 text-green-800' :
                             letter.status === 'Pending' ? 'bg-yellow-100 text-yellow-800' :
@@ -506,57 +494,28 @@ export default function LetterPage() {
                             {letter.status}
                           </span>
                         </TableCell>
-                        <TableCell className="break-words whitespace-normal text-center text-xs">{letter.remarks || '-'}</TableCell>
+                        <TableCell className="wrap-break-word whitespace-normal text-center text-xs">{letter.remarks || '-'}</TableCell>
                         <TableCell className="text-center">
-                          <div className="flex gap-2 justify-center items-center">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleView(letter)}
-                              className="h-6 w-6 p-0 text-green-600 hover:text-green-700 hover:bg-green-50"
-                              title="View"
-                            >
-                              <Eye className="h-3 w-3" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleEdit(letter)}
-                              className="h-6 w-6 p-0 text-amber-600 hover:text-amber-700 hover:bg-amber-50"
-                              title="Edit"
-                            >
-                              <Edit2 className="h-3 w-3" />
-                            </Button>
-                            {!letter.dateTimeOut && (
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleTimeOut(letter.id)}
-                                className="h-6 w-6 p-0 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
-                                title="Time Out"
-                              >
-                                <Clock className="h-3 w-3" />
-                              </Button>
-                            )}
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => {
-                                setLetterToDelete(letter.id);
-                                setDeleteConfirmOpen(true);
-                              }}
-                              className="h-6 w-6 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
-                              title="Delete"
-                            >
-                              <Trash2 className="h-3 w-3" />
-                            </Button>
-                          </div>
+                          <ActionButtons
+                            onView={() => handleView(letter)}
+                            onEdit={() => handleEdit(letter)}
+                            onTimeOut={() => handleTimeOut(letter.id)}
+                            onDelete={() => {
+                              setLetterToDelete(letter.id);
+                              setDeleteConfirmOpen(true);
+                            }}
+                            canEdit={user?.role === 'admin' || (!!letter.dateTimeOut === false && letter.status === 'Pending')}
+                            canDelete={user?.role === 'admin' || (!!letter.dateTimeOut === false && letter.status === 'Pending')}
+                            showTimeOut={!letter.dateTimeOut}
+                            editDisabledReason={user?.role !== 'admin' && (!!letter.dateTimeOut || letter.status !== 'Pending') ? 'Users can only edit pending records' : undefined}
+                            deleteDisabledReason={user?.role !== 'admin' && (!!letter.dateTimeOut || letter.status !== 'Pending') ? 'Users can only delete pending records' : undefined}
+                          />
                         </TableCell>
                       </TableRow>
                     ))
                   ) : (
                     <TableRow>
-                      <TableCell colSpan={9} className="text-center py-8 text-gray-500 break-words whitespace-normal">
+                      <TableCell colSpan={9} className="text-center py-8 text-gray-500 wrap-break-word whitespace-normal">
                         No letters found. Add one to get started.
                       </TableCell>
                     </TableRow>
@@ -663,6 +622,9 @@ export default function LetterPage() {
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="text-lg font-semibold">Record Time Out</DialogTitle>
+            <DialogDescription>
+              Enter the date/time out and any remarks for this letter record.
+            </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div>
@@ -701,9 +663,9 @@ export default function LetterPage() {
               <Button
                 className="bg-blue-600 hover:bg-blue-700 text-white"
                 onClick={confirmTimeOut}
-                disabled={!timeOutDateTime}
+                disabled={!timeOutDateTime || isLoading}
               >
-                Record Time Out
+                {isLoading ? 'Recording...' : 'Record Time Out'}
               </Button>
             </div>
           </div>
@@ -738,35 +700,18 @@ export default function LetterPage() {
   );
 }
 
-function Sidebar() {
-  const { user, logout } = useAuth();
+interface LetterSidebarProps {
+  recordTypes: string[];
+  onNavigate?: () => void;
+}
+
+function LetterSidebar({ recordTypes, onNavigate }: LetterSidebarProps) {
+  const { user } = useAuth();
   const navigate = useNavigate();
-
-  const handleSettings = () => {
-    navigate('/settings');
-  };
-
-  const recordTypes = [
-    'Leave',
-    'Letter',
-    'Locator',
-    'Obligation Request',
-    'Purchase Request',
-    'Request for Overtime',
-    'Travel Order',
-    'Voucher',
-    'Admin to PGO',
-    'Others',
-  ];
 
   const menuItems = [
     { icon: BarChart3, label: 'Dashboard', href: '/dashboard' },
   ];
-
-  const handleLogout = () => {
-    logout();
-    navigate('/login');
-  };
 
   return (
     <div className="h-full flex flex-col bg-white">
@@ -781,7 +726,10 @@ function Sidebar() {
         {menuItems.map((item) => (
           <button
             key={item.label}
-            onClick={() => navigate(item.href)}
+            onClick={() => {
+              onNavigate?.();
+              navigate(item.href);
+            }}
             className="w-full flex items-center gap-3 px-4 py-2 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors text-left"
           >
             <item.icon className="h-5 w-5" />
@@ -796,10 +744,11 @@ function Sidebar() {
             <span className="text-sm font-medium">Records</span>
           </div>
           <div className="pl-8 space-y-1">
-            {recordTypes.map((type) => (
+            {recordTypes.map((type: string) => (
               <button
                 key={type}
                 onClick={() => {
+                  onNavigate?.();
                   if (type === 'Locator') {
                     navigate('/locator');
                   } else if (type === 'Admin to PGO') {
@@ -808,6 +757,12 @@ function Sidebar() {
                     navigate('/leave');
                   } else if (type === 'Letter') {
                     navigate('/letter');
+                  } else if (type === 'Request for Overtime') {
+                    navigate('/overtime');
+                  } else if (type === 'Travel Order') {
+                    navigate('/travel-order');
+                  } else if (type === 'Voucher') {
+                    navigate('/voucher');
                   } else if (type === 'Others') {
                     navigate('/others');
                   }
@@ -842,20 +797,13 @@ function Sidebar() {
           <Button
             variant="outline"
             className="w-full justify-start gap-2 text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50"
-            onClick={handleSettings}
+            onClick={() => {
+              onNavigate?.();
+              navigate('/settings');
+            }}
           >
             <Settings className="h-4 w-4" />
             Settings
-          </Button>
-        )}
-        {user?.role !== 'admin' && (
-          <Button
-            variant="outline"
-            className="w-full justify-start gap-2 text-red-600 hover:text-red-700 hover:bg-red-50"
-            onClick={handleLogout}
-          >
-            <LogOut className="h-4 w-4" />
-            Logout
           </Button>
         )}
       </div>

@@ -14,14 +14,15 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from '@/components/ui/dialog';
 import {
   Table,
   TableBody,
-  TableCell,
-  TableHead,
   TableHeader,
   TableRow,
+  TableHead,
+  TableCell,
 } from '@/components/ui/table';
 import {
   Menu,
@@ -30,7 +31,6 @@ import {
   FileText,
   BarChart3,
   Search,
-  ChevronDown,
 } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
@@ -55,66 +55,7 @@ export default function DashboardPage() {
 
   // Load records on mount
   useEffect(() => {
-    let allRecords: Record[] = [];
-    
-    // Load locators from localStorage
-    try {
-      const storedLocators = localStorage.getItem('locators');
-      if (storedLocators) {
-        const locators = JSON.parse(storedLocators);
-        const locatorRecords = locators.map((loc: any) => ({
-          id: loc.id,
-          trackingId: loc.trackingId || 'N/A',
-          title: loc.fullName,
-          date: loc.dateTimeIn.split('T')[0],
-          status: loc.status.toLowerCase() === 'pending' ? 'pending' : loc.status.toLowerCase() === 'completed' ? 'completed' : 'pending',
-          category: 'Locator'
-        }));
-        allRecords = [...allRecords, ...locatorRecords];
-      }
-    } catch (error) {
-      console.error('Error loading locators:', error);
-    }
-
-    // Load Admin to PGO records from localStorage
-    try {
-      const storedAdminToPGO = localStorage.getItem('adminToPGO');
-      if (storedAdminToPGO) {
-        const adminRecords = JSON.parse(storedAdminToPGO);
-        const adminRecordsMapped = adminRecords.map((admin: any) => ({
-          id: admin.id,
-          trackingId: admin.trackingId || 'N/A',
-          title: admin.fullName,
-          date: admin.dateTimeIn.split('T')[0],
-          status: admin.status.toLowerCase() === 'pending' ? 'pending' : admin.status.toLowerCase() === 'completed' ? 'completed' : 'pending',
-          category: 'Admin to PGO'
-        }));
-        allRecords = [...allRecords, ...adminRecordsMapped];
-      }
-    } catch (error) {
-      console.error('Error loading admin to PGO records:', error);
-    }
-
-    // Load Letter records from localStorage
-    try {
-      const storedLetters = localStorage.getItem('letters');
-      if (storedLetters) {
-        const letters = JSON.parse(storedLetters);
-        const letterRecords = letters.map((letter: any) => ({
-          id: letter.id,
-          trackingId: letter.trackingId || 'N/A',
-          title: letter.fullName,
-          date: letter.dateTimeIn.split('T')[0],
-          status: letter.status.toLowerCase() === 'pending' ? 'pending' : letter.status.toLowerCase() === 'completed' ? 'completed' : 'pending',
-          category: 'Letter'
-        }));
-        allRecords = [...allRecords, ...letterRecords];
-      }
-    } catch (error) {
-      console.error('Error loading letter records:', error);
-    }
-
-    setRecords(allRecords);
+    setRecords([]);
   }, []);
 
   const handleLogout = () => {
@@ -181,7 +122,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Content Area */}
-        <div className="flex-1 overflow-auto p-6 bg-gradient-to-br from-gray-100 via-gray-50 to-gray-100" style={{backgroundImage: 'linear-gradient(0deg, transparent 24%, rgba(200, 200, 200, 0.05) 25%, rgba(200, 200, 200, 0.05) 26%, transparent 27%, transparent 74%, rgba(200, 200, 200, 0.05) 75%, rgba(200, 200, 200, 0.05) 76%, transparent 77%, transparent), linear-gradient(90deg, transparent 24%, rgba(200, 200, 200, 0.05) 25%, rgba(200, 200, 200, 0.05) 26%, transparent 27%, transparent 74%, rgba(200, 200, 200, 0.05) 75%, rgba(200, 200, 200, 0.05) 76%, transparent 77%, transparent)', backgroundSize: '50px 50px'}}>
+        <div className="flex-1 overflow-auto p-6 bg-linear-to-br from-gray-100 via-gray-50 to-gray-100" style={{backgroundImage: 'linear-gradient(0deg, transparent 24%, rgba(200, 200, 200, 0.05) 25%, rgba(200, 200, 200, 0.05) 26%, transparent 27%, transparent 74%, rgba(200, 200, 200, 0.05) 75%, rgba(200, 200, 200, 0.05) 76%, transparent 77%, transparent), linear-gradient(90deg, transparent 24%, rgba(200, 200, 200, 0.05) 25%, rgba(200, 200, 200, 0.05) 26%, transparent 27%, transparent 74%, rgba(200, 200, 200, 0.05) 75%, rgba(200, 200, 200, 0.05) 76%, transparent 77%, transparent)', backgroundSize: '50px 50px'}}>
           {/* Error Alert */}
           {error && (
             <Alert variant="destructive" className="mb-4">
@@ -295,6 +236,9 @@ export default function DashboardPage() {
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>{error ? 'Error' : 'Success'}</DialogTitle>
+            <DialogDescription>
+              {error ? 'An error occurred' : 'Operation completed successfully'}
+            </DialogDescription>
           </DialogHeader>
           <div className="flex items-center gap-3">
             <div className="shrink-0">
@@ -329,14 +273,8 @@ export default function DashboardPage() {
 }
 
 function Sidebar() {
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
   const navigate = useNavigate();
-  const [recordsOpen, setRecordsOpen] = useState(false);
-
-  const handleLogout = () => {
-    logout();
-    navigate('/login');
-  };
 
   const handleSettings = () => {
     navigate('/settings');
@@ -399,6 +337,12 @@ function Sidebar() {
                     navigate('/leave');
                   } else if (type === 'Letter') {
                     navigate('/letter');
+                  } else if (type === 'Request for Overtime') {
+                    navigate('/overtime');
+                  } else if (type === 'Travel Order') {
+                    navigate('/travel-order');
+                  } else if (type === 'Voucher') {
+                    navigate('/voucher');
                   } else if (type === 'Others') {
                     navigate('/others');
                   }
@@ -440,14 +384,7 @@ function Sidebar() {
           </Button>
         )}
         {user?.role !== 'admin' && (
-          <Button
-            variant="outline"
-            className="w-full justify-start gap-2 text-red-600 hover:text-red-700 hover:bg-red-50"
-            onClick={handleLogout}
-          >
-            <LogOut className="h-4 w-4" />
-            Logout
-          </Button>
+          <></>
         )}
       </div>
 

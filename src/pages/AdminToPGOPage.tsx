@@ -33,7 +33,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Plus, Trash2, Menu, Settings, LogOut, BarChart3, FileText, ChevronDown, Edit2, Eye, Clock } from 'lucide-react';
+import { Plus, Menu, Settings, LogOut, BarChart3, FileText } from 'lucide-react';
+import { ActionButtons } from '@/components/ActionButtons';
 
 interface AdminToPGO {
   id: string;
@@ -68,9 +69,8 @@ export default function AdminToPGOPage() {
   const [records, setRecords] = useState<AdminToPGO[]>([]);
   const [success, setSuccess] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [recordsOpen, setRecordsOpen] = useState(false);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [successModalOpen, setSuccessModalOpen] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
@@ -84,14 +84,7 @@ export default function AdminToPGOPage() {
   });
   const [viewModalOpen, setViewModalOpen] = useState(false);
   const [selectedRecord, setSelectedRecord] = useState<AdminToPGO | null>(null);
-  const [designationOptions, setDesignationOptions] = useState<string[]>(() => {
-    try {
-      const stored = localStorage.getItem('designations');
-      return stored ? JSON.parse(stored) : ['Admin', 'Manager', 'Staff', 'Officer'];
-    } catch {
-      return ['Admin', 'Manager', 'Staff', 'Officer'];
-    }
-  });
+  const [designationOptions] = useState<string[]>(['Admin', 'Manager', 'Staff', 'Officer']);
 
   // Form states
   const [formData, setFormData] = useState({
@@ -100,6 +93,7 @@ export default function AdminToPGOPage() {
     fullName: '',
     officeAddress: '',
     particulars: '',
+    remarks: '',
   });
 
   const recordTypes = [
@@ -130,22 +124,6 @@ export default function AdminToPGOPage() {
     loadRecords();
   }, []);
 
-  // Listen for changes in designations from localStorage
-  useEffect(() => {
-    const handleStorageChange = () => {
-      try {
-        const stored = localStorage.getItem('designations');
-        if (stored) {
-          setDesignationOptions(JSON.parse(stored));
-        }
-      } catch (error) {
-        console.error('Error loading designations:', error);
-      }
-    };
-
-    window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
-  }, []);
 
   const nextTrackingId = useMemo(() => {
     const now = new Date();
@@ -197,6 +175,10 @@ export default function AdminToPGOPage() {
         ...formData,
         status: 'Pending',
       };
+      
+      // Save to Firestore
+      await adminToPGOService.addRecord(newRecord);
+      
       setRecords((prev) => [newRecord, ...prev]);
       setSuccess('Record added successfully');
 
@@ -206,6 +188,7 @@ export default function AdminToPGOPage() {
         fullName: '',
         officeAddress: '',
         particulars: '',
+        remarks: '',
       });
       setIsDialogOpen(false);
       setSuccessModalOpen(true);
@@ -221,6 +204,9 @@ export default function AdminToPGOPage() {
 
     setIsLoading(true);
     try {
+      // Update in Firestore
+      await adminToPGOService.updateRecord(editingId, formData);
+      
       setRecords((prev) =>
         prev.map((item) =>
           item.id === editingId
@@ -237,6 +223,7 @@ export default function AdminToPGOPage() {
         fullName: '',
         officeAddress: '',
         particulars: '',
+        remarks: '',
       });
       setIsDialogOpen(false);
       setEditConfirmOpen(false);
@@ -257,7 +244,6 @@ export default function AdminToPGOPage() {
         fullName: record.fullName,
         officeAddress: record.officeAddress,
         particulars: record.particulars,
-        status: record.status,
         remarks: record.remarks,
       });
       setEditingId(id);
@@ -281,6 +267,7 @@ export default function AdminToPGOPage() {
         fullName: '',
         officeAddress: '',
         particulars: '',
+        remarks: '',
       });
     }
   };
@@ -309,23 +296,24 @@ export default function AdminToPGOPage() {
 
     setIsLoading(true);
     try {
-      setRecords((prevRecords) => {
-        const updatedRecords = prevRecords.map((item) => {
-          if (item.id === recordToTimeOut) {
-            const updated = {
-              ...item,
-              dateTimeOut: timeOutData.dateTimeOut,
-              timeOutRemarks: timeOutData.timeOutRemarks,
-              status: 'Completed'
-            };
-            console.log('Updated item:', updated);
-            return updated;
-          }
-          return item;
-        });
-        console.log('All updated records:', updatedRecords);
-        return updatedRecords;
+      // Verify the document exists before attempting to update
+      const currentRecords = await adminToPGOService.getRecords();
+      const recordExists = currentRecords.some((r: any) => r.id === recordToTimeOut);
+      
+      if (!recordExists) {
+        throw new Error('Admin to PGO record not found. It may have been deleted or the data is out of sync.');
+      }
+
+      // Update in Firestore
+      await adminToPGOService.updateRecord(recordToTimeOut, {
+        dateTimeOut: timeOutData.dateTimeOut,
+        timeOutRemarks: timeOutData.timeOutRemarks,
+        status: 'Completed'
       });
+
+      // Reload from Firestore to ensure consistency
+      const updatedRecords = await adminToPGOService.getRecords();
+      setRecords(updatedRecords as AdminToPGO[]);
       
       setSuccess('Time out recorded successfully');
       setTimeOutConfirmOpen(false);
@@ -337,6 +325,8 @@ export default function AdminToPGOPage() {
       setSuccessModalOpen(true);
     } catch (err) {
       console.error('Failed to record time out:', err);
+      setSuccess(err instanceof Error ? err.message : 'Error recording time out');
+      setSuccessModalOpen(true);
     } finally {
       setIsLoading(false);
     }
@@ -360,13 +350,13 @@ export default function AdminToPGOPage() {
           </Button>
         </SheetTrigger>
         <SheetContent side="left" className="w-64 p-0">
-          <AdminToPGOSidebar recordsOpen={recordsOpen} setRecordsOpen={setRecordsOpen} recordTypes={recordTypes} />
+          <AdminToPGOSidebar recordTypes={recordTypes} onNavigate={() => setSidebarOpen(false)} />
         </SheetContent>
       </Sheet>
 
       {/* Desktop Sidebar */}
       <div className="hidden md:block w-64 bg-white border-r border-gray-200 shadow-sm">
-        <AdminToPGOSidebar recordsOpen={recordsOpen} setRecordsOpen={setRecordsOpen} recordTypes={recordTypes} />
+        <AdminToPGOSidebar recordTypes={recordTypes} onNavigate={undefined} />
       </div>
 
       {/* Main Content */}
@@ -532,13 +522,13 @@ export default function AdminToPGOPage() {
                   ) : (
                     records.map((item) => (
                       <TableRow key={item.id} className="hover:bg-gray-50">
-                        <TableCell className="text-xs py-1 px-1 text-center font-bold italic text-indigo-600 break-words whitespace-normal">{item.trackingId}</TableCell>
-                        <TableCell className="text-xs py-1 px-1 text-center break-words whitespace-normal">{new Date(item.dateTimeIn).toLocaleString()}</TableCell>
-                        <TableCell className="text-xs py-1 px-1 text-center break-words whitespace-normal text-red-600">{item.dateTimeOut ? new Date(item.dateTimeOut).toLocaleString() : '-'}</TableCell>
-                        <TableCell className="text-xs py-1 px-1 text-center break-words whitespace-normal">{item.fullName}</TableCell>
-                        <TableCell className="text-xs py-1 px-1 text-center break-words whitespace-normal">{item.officeAddress}</TableCell>
-                        <TableCell className="text-xs py-1 px-1 text-center break-words whitespace-normal">{item.particulars}</TableCell>
-                        <TableCell className="text-xs py-1 px-1 text-center break-words whitespace-normal">
+                        <TableCell className="text-xs py-1 px-1 text-center font-bold italic text-indigo-600 wrap-break-word whitespace-normal">{item.trackingId}</TableCell>
+                        <TableCell className="text-xs py-1 px-1 text-center wrap-break-word whitespace-normal">{new Date(item.dateTimeIn).toLocaleString()}</TableCell>
+                        <TableCell className="text-xs py-1 px-1 text-center wrap-break-word whitespace-normal text-red-600">{item.dateTimeOut ? new Date(item.dateTimeOut).toLocaleString() : '-'}</TableCell>
+                        <TableCell className="text-xs py-1 px-1 text-center wrap-break-word whitespace-normal">{item.fullName}</TableCell>
+                        <TableCell className="text-xs py-1 px-1 text-center wrap-break-word whitespace-normal">{item.officeAddress}</TableCell>
+                        <TableCell className="text-xs py-1 px-1 text-center wrap-break-word whitespace-normal">{item.particulars}</TableCell>
+                        <TableCell className="text-xs py-1 px-1 text-center wrap-break-word whitespace-normal">
                           <span
                             className={`px-1 py-0.5 rounded text-xs font-medium ${
                               item.status === 'Completed'
@@ -555,73 +545,19 @@ export default function AdminToPGOPage() {
                             {item.status || 'Pending'}
                           </span>
                         </TableCell>
-                        <TableCell className="text-xs py-1 px-1 text-center break-words whitespace-normal">{item.timeOutRemarks || item.remarks}</TableCell>
-                        <TableCell className="py-1 px-1 text-center break-words whitespace-normal">
-                          <div className="flex items-center justify-center gap-1">
-                            {/* View Button */}
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleViewRecord(item.id)}
-                              className="h-6 w-6 p-0 text-green-600 hover:text-green-700 hover:bg-green-50"
-                              title="View"
-                            >
-                              <Eye className="h-3 w-3" />
-                            </Button>
-                            {/* Edit Button - Admin can always edit, User can only edit pending records */}
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleEditRecord(item.id)}
-                              disabled={user?.role !== 'admin' && (!!item.dateTimeOut || item.status !== 'Pending')}
-                              className={`h-6 w-6 p-0 ${
-                                user?.role !== 'admin' && (!!item.dateTimeOut || item.status !== 'Pending')
-                                  ? 'text-gray-400 cursor-not-allowed hover:bg-transparent'
-                                  : 'text-amber-600 hover:text-amber-700 hover:bg-amber-50'
-                              }`}
-                              title={
-                                user?.role === 'admin'
-                                  ? 'Edit'
-                                  : !!item.dateTimeOut || item.status !== 'Pending'
-                                  ? 'Users can only edit pending records'
-                                  : 'Edit'
-                              }
-                            >
-                              <Edit2 className="h-3 w-3" />
-                            </Button>
-                            {!item.dateTimeOut && (
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleTimeOut(item.id)}
-                                className="h-6 w-6 p-0 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
-                                title="Time Out"
-                              >
-                                <Clock className="h-3 w-3" />
-                              </Button>
-                            )}
-                            {/* Delete Button - Admin can always delete, User can only delete pending records */}
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleDeleteRecord(item.id)}
-                              disabled={user?.role !== 'admin' && (!!item.dateTimeOut || item.status !== 'Pending')}
-                              className={`h-6 w-6 p-0 ${
-                                user?.role !== 'admin' && (!!item.dateTimeOut || item.status !== 'Pending')
-                                  ? 'text-gray-400 cursor-not-allowed hover:bg-transparent'
-                                  : 'text-red-600 hover:text-red-700 hover:bg-red-50'
-                              }`}
-                              title={
-                                user?.role === 'admin'
-                                  ? 'Delete'
-                                  : !!item.dateTimeOut || item.status !== 'Pending'
-                                  ? 'Users can only delete pending records'
-                                  : 'Delete'
-                              }
-                            >
-                              <Trash2 className="h-3 w-3" />
-                            </Button>
-                          </div>
+                        <TableCell className="text-xs py-1 px-1 text-center wrap-break-word whitespace-normal">{item.timeOutRemarks || item.remarks}</TableCell>
+                        <TableCell className="py-1 px-1 text-center wrap-break-word whitespace-normal">
+                          <ActionButtons
+                            onView={() => handleViewRecord(item.id)}
+                            onEdit={() => handleEditRecord(item.id)}
+                            onTimeOut={() => handleTimeOut(item.id)}
+                            onDelete={() => handleDeleteRecord(item.id)}
+                            canEdit={user?.role === 'admin' || (!!item.dateTimeOut === false && item.status === 'Pending')}
+                            canDelete={user?.role === 'admin' || (!!item.dateTimeOut === false && item.status === 'Pending')}
+                            showTimeOut={!item.dateTimeOut}
+                            editDisabledReason={user?.role !== 'admin' && (!!item.dateTimeOut || item.status !== 'Pending') ? 'Users can only edit pending records' : undefined}
+                            deleteDisabledReason={user?.role !== 'admin' && (!!item.dateTimeOut || item.status !== 'Pending') ? 'Users can only delete pending records' : undefined}
+                          />
                         </TableCell>
                       </TableRow>
                     ))
@@ -667,6 +603,9 @@ export default function AdminToPGOPage() {
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Record Time Out</DialogTitle>
+            <DialogDescription>
+              Enter the date/time out and any remarks for this Admin to PGO record.
+            </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
@@ -863,13 +802,12 @@ export default function AdminToPGOPage() {
 }
 
 interface AdminToPGOSidebarProps {
-  recordsOpen: boolean;
-  setRecordsOpen: (open: boolean) => void;
   recordTypes: string[];
+  onNavigate?: () => void;
 }
 
-function AdminToPGOSidebar({ recordsOpen, setRecordsOpen, recordTypes }: AdminToPGOSidebarProps) {
-  const { user, logout } = useAuth();
+function AdminToPGOSidebar({ recordTypes, onNavigate }: AdminToPGOSidebarProps) {
+  const { user } = useAuth();
   const navigate = useNavigate();
 
   const menuItems = [
@@ -889,7 +827,10 @@ function AdminToPGOSidebar({ recordsOpen, setRecordsOpen, recordTypes }: AdminTo
         {menuItems.map((item) => (
           <button
             key={item.label}
-            onClick={() => navigate(item.href)}
+            onClick={() => {
+              onNavigate?.();
+              navigate(item.href);
+            }}
             className="w-full flex items-center gap-3 px-4 py-2 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors text-left"
           >
             <item.icon className="h-5 w-5" />
@@ -908,6 +849,7 @@ function AdminToPGOSidebar({ recordsOpen, setRecordsOpen, recordTypes }: AdminTo
               <button
                 key={type}
                 onClick={() => {
+                  onNavigate?.();
                   if (type === 'Admin to PGO') {
                     navigate('/admin-to-pgo');
                   } else if (type === 'Locator') {
@@ -916,6 +858,12 @@ function AdminToPGOSidebar({ recordsOpen, setRecordsOpen, recordTypes }: AdminTo
                     navigate('/leave');
                   } else if (type === 'Letter') {
                     navigate('/letter');
+                  } else if (type === 'Request for Overtime') {
+                    navigate('/overtime');
+                  } else if (type === 'Travel Order') {
+                    navigate('/travel-order');
+                  } else if (type === 'Voucher') {
+                    navigate('/voucher');
                   } else if (type === 'Others') {
                     navigate('/others');
                   }
@@ -954,19 +902,6 @@ function AdminToPGOSidebar({ recordsOpen, setRecordsOpen, recordTypes }: AdminTo
           >
             <Settings className="h-4 w-4" />
             Settings
-          </Button>
-        )}
-        {user?.role !== 'admin' && (
-          <Button
-            variant="outline"
-            className="w-full justify-start gap-2 text-red-600 hover:text-red-700 hover:bg-red-50"
-            onClick={() => {
-              logout();
-              navigate('/login');
-            }}
-          >
-            <LogOut className="h-4 w-4" />
-            Logout
           </Button>
         )}
       </div>
