@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { adminToPGOService } from '@/services/firestoreService';
+import { adminToPGOService } from '@/services/localStorageService';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -33,7 +33,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Plus, Menu, Settings, LogOut, BarChart3, FileText } from 'lucide-react';
+import { Plus, Menu, Settings, LogOut, BarChart3, FileText, Home } from 'lucide-react';
 import { ActionButtons } from '@/components/ActionButtons';
 
 interface AdminToPGO {
@@ -113,15 +113,20 @@ export default function AdminToPGOPage() {
   useEffect(() => {
     const loadRecords = async () => {
       try {
+        console.log('📂 Loading admin to PGO records from Firestore...');
         const data = await adminToPGOService.getRecords();
+        console.log(`✅ Admin to PGO records loaded: ${data.length} records`);
         setRecords(data as AdminToPGO[]);
       } catch (error) {
-        console.error('Error loading records:', error);
-        setSuccess('Error loading records');
+        console.error('❌ Error loading records:', error);
+        setSuccess('Error loading records. Please try again.');
         setSuccessModalOpen(true);
       }
     };
+    
     loadRecords();
+    const interval = setInterval(loadRecords, 30000);
+    return () => clearInterval(interval);
   }, []);
 
 
@@ -179,7 +184,7 @@ export default function AdminToPGOPage() {
       // Save to Firestore
       await adminToPGOService.addRecord(newRecord);
       
-      setRecords((prev) => [newRecord, ...prev]);
+      setRecords((prev) => [{ ...newRecord, id: newRecord.trackingId, remarks: '', timeOutRemarks: '' }, ...prev]);
       setSuccess('Record added successfully');
 
       setFormData({
@@ -528,14 +533,14 @@ export default function AdminToPGOPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {records.filter(r => r.status === 'Pending').length === 0 ? (
+                  {records.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={9} className="text-center py-4 text-gray-500 text-xs">
-                        No pending records. Click "Add Record" to create one.
+                        No records found. Click "Add Record" to create one.
                       </TableCell>
                     </TableRow>
                   ) : (
-                    records.filter(r => r.status === 'Pending').map((record) => (
+                    records.map((record) => (
                       <TableRow key={record.id} className="hover:bg-gray-50">
                         <TableCell className="text-xs py-1 px-1 text-center font-bold italic text-indigo-600 wrap-break-word whitespace-normal">{record.trackingId}</TableCell>
                         <TableCell className="text-xs py-1 px-1 text-center wrap-break-word whitespace-normal">{new Date(record.dateTimeIn).toLocaleString()}</TableCell>
@@ -560,7 +565,7 @@ export default function AdminToPGOPage() {
                             {record.status || 'Pending'}
                           </span>
                         </TableCell>
-                        <TableCell className="text-xs py-1 px-1 text-center wrap-break-word whitespace-normal">{record.remarks}</TableCell>
+                        <TableCell className="text-xs py-1 px-1 text-center wrap-break-word whitespace-normal">{record.status === 'Completed' ? (record.timeOutRemarks || record.remarks || '-') : (record.remarks || '-')}</TableCell>
                         <TableCell className="py-1 px-1 text-center wrap-break-word whitespace-normal">
                           <ActionButtons
                             onView={() => handleViewRecord(record.id)}
@@ -826,7 +831,7 @@ function AdminToPGOSidebar({ recordTypes, onNavigate }: AdminToPGOSidebarProps) 
   const navigate = useNavigate();
 
   const menuItems = [
-    { icon: BarChart3, label: 'Dashboard', href: '/dashboard' },
+    { icon: Home, label: 'Dashboard', href: '/dashboard' },
   ];
 
   return (
@@ -838,7 +843,7 @@ function AdminToPGOSidebar({ recordTypes, onNavigate }: AdminToPGOSidebarProps) 
       </div>
 
       {/* Menu Items */}
-      <nav className="flex-1 p-4 space-y-2">
+      <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
         {menuItems.map((item) => (
           <button
             key={item.label}
@@ -890,6 +895,18 @@ function AdminToPGOSidebar({ recordTypes, onNavigate }: AdminToPGOSidebarProps) 
             ))}
           </div>
         </div>
+
+        {/* Reports */}
+        <button
+          onClick={() => {
+            onNavigate?.();
+            navigate('/reports');
+          }}
+          className="w-full flex items-center gap-3 px-4 py-2 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors text-left mt-2"
+        >
+          <BarChart3 className="h-5 w-5" />
+          <span className="text-sm font-medium">Reports</span>
+        </button>
       </nav>
 
       {/* User Info - Bottom */}

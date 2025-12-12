@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { locatorService } from '@/services/firestoreService';
+import { locatorService } from '@/services/localStorageService';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -33,7 +33,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Plus, Menu, Settings, LogOut, BarChart3, FileText } from 'lucide-react';
+import { Plus, Menu, Settings, LogOut, BarChart3, FileText, Home } from 'lucide-react';
 import { ActionButtons } from '@/components/ActionButtons';
 
 interface Locator {
@@ -123,15 +123,20 @@ export default function LocatorPage() {
   useEffect(() => {
     const loadLocators = async () => {
       try {
+        console.log('📂 Loading locators from Firestore...');
         const data = await locatorService.getLocators();
+        console.log(`✅ Locators loaded: ${data.length} records`);
         setLocators(data as Locator[]);
       } catch (error) {
-        console.error('Error loading locators:', error);
-        setSuccess('Error loading locators');
+        console.error('❌ Error loading locators:', error);
+        setSuccess('Error loading locators. Please try again.');
         setSuccessModalOpen(true);
       }
     };
+    
     loadLocators();
+    const interval = setInterval(loadLocators, 30000);
+    return () => clearInterval(interval);
   }, []);
 
   const generateTrackingId = (): string => {
@@ -166,7 +171,6 @@ export default function LocatorPage() {
       !formData.designation ||
       !formData.inclusiveDateStart ||
       !formData.inclusiveDateEnd ||
-      !formData.purpose ||
       !formData.placeOfAssignment
     ) {
       return;
@@ -185,13 +189,13 @@ export default function LocatorPage() {
         trackingId: generateTrackingId(),
         ...formData,
         status: 'Pending',
+        remarks: '',
+        timeOutRemarks: '',
       };
       await locatorService.addLocator(newLocator);
       setSuccess('Locator added successfully');
 
-      // Reload from Firestore
-      const updatedLocators = await locatorService.getLocators();
-      setLocators(updatedLocators as Locator[]);
+      setLocators([newLocator as Locator, ...locators]);
 
       setFormData({
         dateTimeIn: '',
@@ -225,9 +229,8 @@ export default function LocatorPage() {
       setSuccess('Locator updated successfully');
       setEditingId(null);
 
-      // Reload from Firestore
-      const updatedLocators = await locatorService.getLocators();
-      setLocators(updatedLocators as Locator[]);
+      const updatedLocators = locators.map(l => l.id === editingId ? { ...l, ...formData } : l);
+      setLocators(updatedLocators);
 
       setFormData({
         dateTimeIn: '',
@@ -303,9 +306,7 @@ export default function LocatorPage() {
     
     try {
       await locatorService.deleteLocator(locatorToDelete);
-      // Reload from Firestore
-      const updatedLocators = await locatorService.getLocators();
-      setLocators(updatedLocators as Locator[]);
+      setLocators(locators.filter(l => l.id !== locatorToDelete));
       setSuccess('Locator deleted successfully');
       setDeleteConfirmOpen(false);
       setLocatorToDelete(null);
@@ -556,7 +557,7 @@ export default function LocatorPage() {
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="purpose">Purpose *</Label>
+                      <Label htmlFor="purpose">Purpose</Label>
                       <Input
                         id="purpose"
                         name="purpose"
@@ -604,19 +605,18 @@ export default function LocatorPage() {
                     <TableHead className="font-semibold py-1 px-1 text-center text-xs">Place of Assignment</TableHead>
                     <TableHead className="font-semibold py-1 px-1 text-center text-xs">Status</TableHead>
                     <TableHead className="font-semibold py-1 px-1 text-center text-xs">Remarks</TableHead>
-                    <TableHead className="font-semibold py-1 px-1 text-center text-xs">Time Out Remarks</TableHead>
                     <TableHead className="font-semibold py-1 px-1 text-center text-xs">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {locators.filter(l => l.status === 'Pending').length === 0 ? (
+                  {locators.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={10} className="text-center py-4 text-gray-500 text-xs wrap-break-word whitespace-normal">
-                        No pending locators. Click "Add Locator" to create one.
+                        No locators found. Click "Add Locator" to create one.
                       </TableCell>
                     </TableRow>
                   ) : (
-                    locators.filter(l => l.status === 'Pending').map((item) => (
+                    locators.map((item) => (
                       <TableRow key={item.id} className="hover:bg-gray-50">
                         <TableCell className="text-xs py-1 px-1 text-center font-bold italic text-indigo-600 wrap-break-word whitespace-normal">{item.trackingId}</TableCell>
                         <TableCell className="text-xs py-1 px-1 text-center wrap-break-word whitespace-normal">{new Date(item.dateTimeIn).toLocaleString()}</TableCell>
@@ -642,8 +642,7 @@ export default function LocatorPage() {
                             {item.status || 'Pending'}
                           </span>
                         </TableCell>
-                        <TableCell className="text-xs py-1 px-1 text-center wrap-break-word whitespace-normal">{item.remarks || '-'}</TableCell>
-                        <TableCell className="text-xs py-1 px-1 text-center wrap-break-word whitespace-normal">{item.timeOutRemarks || '-'}</TableCell>
+                        <TableCell className="text-xs py-1 px-1 text-center wrap-break-word whitespace-normal">{item.status === 'Completed' ? (item.timeOutRemarks || item.remarks || '-') : (item.remarks || '-')}</TableCell>
                         <TableCell className="py-1 px-1 text-center wrap-break-word whitespace-normal">
                           <ActionButtons
                             onView={() => handleViewLocator(item.id)}
@@ -940,7 +939,7 @@ function LocatorSidebar({ recordTypes, onNavigate }: LocatorSidebarProps) {
   const navigate = useNavigate();
 
   const menuItems = [
-    { icon: BarChart3, label: 'Dashboard', href: '/dashboard' },
+    { icon: Home, label: 'Dashboard', href: '/dashboard' },
   ];
 
   return (
@@ -952,7 +951,7 @@ function LocatorSidebar({ recordTypes, onNavigate }: LocatorSidebarProps) {
       </div>
 
       {/* Menu Items */}
-      <nav className="flex-1 p-4 space-y-2">
+      <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
         {menuItems.map((item) => (
           <button
             key={item.label}
@@ -1004,6 +1003,18 @@ function LocatorSidebar({ recordTypes, onNavigate }: LocatorSidebarProps) {
             ))}
           </div>
         </div>
+
+        {/* Reports */}
+        <button
+          onClick={() => {
+            onNavigate?.();
+            navigate('/reports');
+          }}
+          className="w-full flex items-center gap-3 px-4 py-2 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors text-left mt-2"
+        >
+          <BarChart3 className="h-5 w-5" />
+          <span className="text-sm font-medium">Reports</span>
+        </button>
       </nav>
 
       {/* User Info - Bottom */}

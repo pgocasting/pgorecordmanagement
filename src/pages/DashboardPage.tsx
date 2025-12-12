@@ -31,9 +31,10 @@ import {
   FileText,
   BarChart3,
   Search,
+  Home,
 } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { voucherService, letterService, leaveService, locatorService, adminToPGOService, othersService, travelOrderService, overtimeService } from '@/services/firestoreService';
+import { voucherService, letterService, leaveService, locatorService, adminToPGOService, othersService, travelOrderService, overtimeService } from '@/services/localStorageService';
 
 interface Record {
   id: string;
@@ -64,6 +65,7 @@ export default function DashboardPage() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [messageModalOpen, setMessageModalOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState<'pending' | 'completed'>('pending');
 
   // Load records on mount
   useEffect(() => {
@@ -85,13 +87,13 @@ export default function DashboardPage() {
 
         // Process vouchers
         vouchers.forEach((v: any) => {
-          if (v.status === 'Pending') {
+          if (v.status === 'Pending' || v.status === 'Completed') {
             allRecords.push({
               id: v.id,
               trackingId: v.trackingId,
               title: v.payee,
               date: new Date(v.dateTimeIn).toLocaleString(),
-              status: 'pending',
+              status: v.status === 'Completed' ? 'completed' : 'pending',
               category: 'Voucher'
             });
           }
@@ -99,13 +101,13 @@ export default function DashboardPage() {
 
         // Process letters
         letters.forEach((l: any) => {
-          if (l.status === 'Pending') {
+          if (l.status === 'Pending' || l.status === 'Completed') {
             allRecords.push({
               id: l.id,
               trackingId: l.trackingId,
               title: extractName(l.fullName),
               date: new Date(l.dateTimeIn).toLocaleString(),
-              status: 'pending',
+              status: l.status === 'Completed' ? 'completed' : 'pending',
               category: 'Letter'
             });
           }
@@ -113,13 +115,13 @@ export default function DashboardPage() {
 
         // Process leaves
         leaves.forEach((lv: any) => {
-          if (lv.status === 'Pending') {
+          if (lv.status === 'Pending' || lv.status === 'Completed') {
             allRecords.push({
               id: lv.id,
               trackingId: lv.trackingId,
               title: extractName(lv.fullName),
               date: new Date(lv.dateTimeIn).toLocaleString(),
-              status: 'pending',
+              status: lv.status === 'Completed' ? 'completed' : 'pending',
               category: 'Leave'
             });
           }
@@ -127,13 +129,13 @@ export default function DashboardPage() {
 
         // Process locators
         locators.forEach((loc: any) => {
-          if (loc.status === 'Pending') {
+          if (loc.status === 'Pending' || loc.status === 'Completed') {
             allRecords.push({
               id: loc.id,
               trackingId: loc.trackingId,
               title: extractName(loc.fullName),
               date: new Date(loc.dateTimeIn).toLocaleString(),
-              status: 'pending',
+              status: loc.status === 'Completed' ? 'completed' : 'pending',
               category: 'Locator'
             });
           }
@@ -141,13 +143,13 @@ export default function DashboardPage() {
 
         // Process admin to PGO
         adminToPGO.forEach((a: any) => {
-          if (a.status === 'Pending') {
+          if (a.status === 'Pending' || a.status === 'Completed') {
             allRecords.push({
               id: a.id,
               trackingId: a.trackingId,
               title: extractName(a.fullName),
               date: new Date(a.dateTimeIn).toLocaleString(),
-              status: 'pending',
+              status: a.status === 'Completed' ? 'completed' : 'pending',
               category: 'Admin to PGO'
             });
           }
@@ -155,13 +157,13 @@ export default function DashboardPage() {
 
         // Process others
         others.forEach((o: any) => {
-          if (o.status === 'Pending') {
+          if (o.status === 'Pending' || o.status === 'Completed') {
             allRecords.push({
               id: o.id,
               trackingId: o.trackingId,
               title: extractName(o.fullName),
               date: new Date(o.dateTimeIn).toLocaleString(),
-              status: 'pending',
+              status: o.status === 'Completed' ? 'completed' : 'pending',
               category: 'Others'
             });
           }
@@ -169,13 +171,13 @@ export default function DashboardPage() {
 
         // Process travel orders
         travelOrders.forEach((t: any) => {
-          if (t.status === 'Pending') {
+          if (t.status === 'Pending' || t.status === 'Completed') {
             allRecords.push({
               id: t.id,
               trackingId: t.trackingId,
               title: extractName(t.fullName),
               date: new Date(t.dateTimeIn).toLocaleString(),
-              status: 'pending',
+              status: t.status === 'Completed' ? 'completed' : 'pending',
               category: 'Travel Order'
             });
           }
@@ -183,13 +185,13 @@ export default function DashboardPage() {
 
         // Process overtimes
         overtimes.forEach((ot: any) => {
-          if (ot.status === 'Pending') {
+          if (ot.status === 'Pending' || ot.status === 'Completed') {
             allRecords.push({
               id: ot.id,
               trackingId: ot.trackingId,
               title: extractName(ot.fullName),
               date: new Date(ot.dateTimeIn).toLocaleString(),
-              status: 'pending',
+              status: ot.status === 'Completed' ? 'completed' : 'pending',
               category: 'Overtime'
             });
           }
@@ -212,7 +214,7 @@ export default function DashboardPage() {
 
 
   const filteredRecords = records.filter(record =>
-    record.status === 'pending' && (
+    record.status === activeTab && (
       record.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
       record.category.toLowerCase().includes(searchTerm.toLowerCase())
     )
@@ -317,9 +319,34 @@ export default function DashboardPage() {
           {/* Records Section */}
           <Card>
             <CardHeader>
-              <div>
-                <CardTitle>Records</CardTitle>
-                <CardDescription>Manage and view all records</CardDescription>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle>Records</CardTitle>
+                  <CardDescription>Manage and view all records</CardDescription>
+                </div>
+              </div>
+              {/* Tabs */}
+              <div className="flex gap-2 mt-4 border-b border-gray-200">
+                <button
+                  onClick={() => setActiveTab('pending')}
+                  className={`px-4 py-2 font-medium text-sm transition-colors ${
+                    activeTab === 'pending'
+                      ? 'text-indigo-600 border-b-2 border-indigo-600'
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                >
+                  Pending ({records.filter(r => r.status === 'pending').length})
+                </button>
+                <button
+                  onClick={() => setActiveTab('completed')}
+                  className={`px-4 py-2 font-medium text-sm transition-colors ${
+                    activeTab === 'completed'
+                      ? 'text-indigo-600 border-b-2 border-indigo-600'
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                >
+                  Completed ({records.filter(r => r.status === 'completed').length})
+                </button>
               </div>
             </CardHeader>
             <CardContent>
@@ -441,7 +468,7 @@ function Sidebar() {
   ];
 
   const menuItems = [
-    { icon: BarChart3, label: 'Dashboard', href: '/dashboard' },
+    { icon: Home, label: 'Dashboard', href: '/dashboard' },
   ];
 
   return (
@@ -453,7 +480,7 @@ function Sidebar() {
       </div>
 
       {/* Menu Items */}
-      <nav className="flex-1 p-4 space-y-2">
+      <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
         {menuItems.map((item) => (
           <button
             key={item.label}
@@ -501,6 +528,15 @@ function Sidebar() {
             ))}
           </div>
         </div>
+
+        {/* Reports */}
+        <button
+          onClick={() => navigate('/reports')}
+          className="w-full flex items-center gap-3 px-4 py-2 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors text-left mt-2"
+        >
+          <BarChart3 className="h-5 w-5" />
+          <span className="text-sm font-medium">Reports</span>
+        </button>
       </nav>
 
       {/* User Info - Bottom */}

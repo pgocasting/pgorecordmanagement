@@ -1,17 +1,4 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { 
-  signOut
-} from 'firebase/auth';
-import { 
-  collection, 
-  getDocs, 
-  deleteDoc, 
-  doc,
-  query,
-  where
-} from 'firebase/firestore';
-import { auth, db } from '@/config/firebase';
-import { initializeFirestore } from '@/services/firestoreInit';
 
 interface User {
   id: string;
@@ -100,13 +87,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // Initialize on mount
   useEffect(() => {
-    // Initialize Firestore with default admin user
-    initializeFirestore().catch(error => {
-      console.error('Failed to initialize Firestore:', error);
-      // Fallback to localStorage
-      saveStoredUsers(DEFAULT_USERS);
-    });
-
     // Reset to default users on initialization
     saveStoredUsers(DEFAULT_USERS);
 
@@ -134,12 +114,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const logout = async () => {
-    try {
-      await signOut(auth);
-    } catch (error) {
-      console.error('Firebase logout error:', error);
-    }
+  const logout = () => {
     setUser(null);
     localStorage.removeItem('currentUser');
   };
@@ -171,17 +146,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const deleteUser = async (userId: string): Promise<void> => {
     try {
-      // Try to delete from Firestore
-      const usersRef = collection(db, 'users');
-      const q = query(usersRef, where('uid', '==', userId));
-      const querySnapshot = await getDocs(q);
-      
-      if (!querySnapshot.empty) {
-        const docRef = doc(db, 'users', querySnapshot.docs[0].id);
-        await deleteDoc(docRef);
-      }
-    } catch (firebaseError) {
-      // Fallback to localStorage
       const allUsers = getStoredUsers();
       const updatedUsers = allUsers.filter(u => u.id !== userId);
       
@@ -190,6 +154,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
       
       saveStoredUsers(updatedUsers);
+    } catch (error) {
+      throw error;
     }
   };
 

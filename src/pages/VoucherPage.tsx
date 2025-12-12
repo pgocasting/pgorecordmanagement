@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { voucherService } from '@/services/firestoreService';
+import { voucherService } from '@/services/localStorageService';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -34,7 +34,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Plus, Menu, Settings, LogOut, BarChart3, FileText } from 'lucide-react';
+import { Plus, Menu, Settings, LogOut, BarChart3, FileText, Home } from 'lucide-react';
 import { ActionButtons } from '@/components/ActionButtons';
 
 interface Voucher {
@@ -99,15 +99,20 @@ export default function VoucherPage() {
   useEffect(() => {
     const loadVouchers = async () => {
       try {
+        console.log('📂 Loading vouchers from Firestore...');
         const data = await voucherService.getVouchers();
+        console.log(`✅ Vouchers loaded: ${data.length} records`);
         setVouchers(data as Voucher[]);
       } catch (error) {
-        console.error('Error loading vouchers:', error);
-        setSuccess('Error loading vouchers');
+        console.error('❌ Error loading vouchers:', error);
+        setSuccess('Error loading vouchers. Please try again.');
         setSuccessModalOpen(true);
       }
     };
+    
     loadVouchers();
+    const interval = setInterval(loadVouchers, 30000);
+    return () => clearInterval(interval);
   }, []);
 
   const nextTrackingId = useMemo(() => {
@@ -163,12 +168,13 @@ export default function VoucherPage() {
         ...formData,
         amount: parseFloat(formData.amount),
         status: 'Pending',
+        remarks: '',
+        timeOutRemarks: '',
       };
       await voucherService.addVoucher(newVoucher);
       setSuccess('Voucher added successfully');
 
-      const updatedVouchers = await voucherService.getVouchers();
-      setVouchers(updatedVouchers as Voucher[]);
+      setVouchers([newVoucher as Voucher, ...vouchers]);
 
       setFormData({
         dateTimeIn: '',
@@ -205,8 +211,8 @@ export default function VoucherPage() {
       setSuccess('Voucher updated successfully');
       setEditingId(null);
 
-      const updatedVouchers = await voucherService.getVouchers();
-      setVouchers(updatedVouchers as Voucher[]);
+      const updatedVouchers = vouchers.map(v => v.id === editingId ? { ...v, ...updateData } : v);
+      setVouchers(updatedVouchers);
 
       setFormData({
         dateTimeIn: '',
@@ -279,8 +285,7 @@ export default function VoucherPage() {
     setIsLoading(true);
     try {
       await voucherService.deleteVoucher(voucherToDelete);
-      const updatedVouchers = await voucherService.getVouchers();
-      setVouchers(updatedVouchers as Voucher[]);
+      setVouchers(vouchers.filter(v => v.id !== voucherToDelete));
       setSuccess('Voucher deleted successfully');
       setVoucherToDelete(null);
       setDeleteConfirmOpen(false);
@@ -592,12 +597,8 @@ export default function VoucherPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {vouchers
-                      .filter(v => v.status === 'Pending')
-                      .length > 0 ? (
-                      vouchers
-                        .filter(v => v.status === 'Pending')
-                        .map((voucher) => (
+                    {vouchers.length > 0 ? (
+                      vouchers.map((voucher) => (
                         <TableRow key={voucher.id} className="hover:bg-gray-50">
                           <TableCell className="font-bold italic wrap-break-word whitespace-normal text-center text-xs text-indigo-600">{voucher.trackingId}</TableCell>
                           <TableCell className="wrap-break-word whitespace-normal text-center text-xs">{new Date(voucher.dateTimeIn).toLocaleString()}</TableCell>
@@ -874,7 +875,7 @@ function VoucherSidebar({ onNavigate }: VoucherSidebarProps) {
   const navigate = useNavigate();
 
   const menuItems = [
-    { icon: BarChart3, label: 'Dashboard', href: '/dashboard' },
+    { icon: Home, label: 'Dashboard', href: '/dashboard' },
   ];
 
   const recordTypes = ['Leave', 'Letter', 'Locator', 'Obligation Request', 'Purchase Request', 'Request for Overtime', 'Travel Order', 'Voucher', 'Admin to PGO', 'Others'];
@@ -886,7 +887,7 @@ function VoucherSidebar({ onNavigate }: VoucherSidebarProps) {
         <p className="text-xs text-gray-500">Record Management</p>
       </div>
 
-      <nav className="flex-1 p-4 space-y-2">
+      <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
         {menuItems.map((item) => (
           <button
             key={item.label}
@@ -937,6 +938,18 @@ function VoucherSidebar({ onNavigate }: VoucherSidebarProps) {
             ))}
           </div>
         </div>
+
+        {/* Reports */}
+        <button
+          onClick={() => {
+            onNavigate?.();
+            navigate('/reports');
+          }}
+          className="w-full flex items-center gap-3 px-4 py-2 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors text-left mt-2"
+        >
+          <BarChart3 className="h-5 w-5" />
+          <span className="text-sm font-medium">Reports</span>
+        </button>
       </nav>
 
       <div className="p-4 border-t border-gray-200">

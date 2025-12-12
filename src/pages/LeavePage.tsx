@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { leaveService } from '@/services/firestoreService';
+import { leaveService } from '@/services/localStorageService';
 import { Button } from '@/components/ui/button';
 import { ActionButtons } from '@/components/ActionButtons';
 import {
@@ -34,7 +34,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Plus, Menu, Settings, LogOut, BarChart3, FileText } from 'lucide-react';
+import { Plus, Menu, Settings, LogOut, BarChart3, FileText, Home } from 'lucide-react';
 
 interface Leave {
   id: string;
@@ -131,15 +131,24 @@ export default function LeavePage() {
   useEffect(() => {
     const loadLeaves = async () => {
       try {
+        console.log('📂 Loading leaves from Firestore...');
         const data = await leaveService.getLeaves();
+        console.log(`✅ Leaves loaded: ${data.length} records`);
         setLeaves(data as Leave[]);
       } catch (error) {
-        console.error('Error loading leaves:', error);
-        setSuccess('Error loading leaves');
+        console.error('❌ Error loading leaves:', error);
+        setSuccess('Error loading leaves. Please try again.');
         setSuccessModalOpen(true);
       }
     };
+    
+    // Load data immediately
     loadLeaves();
+    
+    // Reload data every 30 seconds to ensure sync
+    const interval = setInterval(loadLeaves, 30000);
+    
+    return () => clearInterval(interval);
   }, []);
 
 
@@ -175,8 +184,7 @@ export default function LeavePage() {
       !formData.designation ||
       !formData.leaveType ||
       !formData.inclusiveDateStart ||
-      !formData.inclusiveDateEnd ||
-      !formData.purpose
+      !formData.inclusiveDateEnd
     ) {
       return;
     }
@@ -194,13 +202,15 @@ export default function LeavePage() {
         trackingId: generateTrackingId(),
         ...formData,
         status: 'Pending',
+        remarks: '',
+        timeOutRemarks: '',
       };
-      await leaveService.addLeave(newLeave);
+      console.log('Adding leave:', newLeave);
+      const result = await leaveService.addLeave(newLeave);
+      console.log('Leave added successfully with ID:', result);
       setSuccess('Leave record added successfully');
 
-      // Reload from Firestore
-      const updatedLeaves = await leaveService.getLeaves();
-      setLeaves(updatedLeaves as Leave[]);
+      setLeaves([newLeave as Leave, ...leaves]);
 
       setFormData({
         dateTimeIn: '',
@@ -217,7 +227,8 @@ export default function LeavePage() {
       setSuccessModalOpen(true);
     } catch (err) {
       console.error('Failed to save leave:', err);
-      setSuccess('Error saving leave record');
+      console.error('Error details:', (err as any).code, (err as any).message);
+      setSuccess(`Error saving leave record: ${(err as any).message || 'Unknown error'}`);
       setSuccessModalOpen(true);
     } finally {
       setIsLoading(false);
@@ -233,9 +244,8 @@ export default function LeavePage() {
       setSuccess('Leave record updated successfully');
       setEditingId(null);
 
-      // Reload from Firestore
-      const updatedLeaves = await leaveService.getLeaves();
-      setLeaves(updatedLeaves as Leave[]);
+      const updatedLeaves = leaves.map(l => l.id === editingId ? { ...l, ...formData } : l);
+      setLeaves(updatedLeaves);
 
       setFormData({
         dateTimeIn: '',
@@ -308,9 +318,7 @@ export default function LeavePage() {
     
     try {
       await leaveService.deleteLeave(leaveToDelete);
-      // Reload from Firestore
-      const updatedLeaves = await leaveService.getLeaves();
-      setLeaves(updatedLeaves as Leave[]);
+      setLeaves(leaves.filter(l => l.id !== leaveToDelete));
       setSuccess('Leave record deleted successfully');
       setDeleteConfirmOpen(false);
       setLeaveToDelete(null);
@@ -564,7 +572,7 @@ export default function LeavePage() {
                     </div>
 
                     <div className="space-y-1">
-                      <Label htmlFor="purpose" className="text-xs font-medium text-gray-700">Purpose *</Label>
+                      <Label htmlFor="purpose" className="text-xs font-medium text-gray-700">Purpose</Label>
                       <Input
                         id="purpose"
                         name="purpose"
@@ -606,14 +614,14 @@ export default function LeavePage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {leaves.filter(l => l.status === 'Pending').length === 0 ? (
+                  {leaves.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={11} className="text-center py-4 text-gray-500 text-xs">
-                        No pending leaves. Click "Add Leave" to create one.
+                        No leaves found. Click "Add Leave" to create one.
                       </TableCell>
                     </TableRow>
                   ) : (
-                    leaves.filter(l => l.status === 'Pending').map((item) => (
+                    leaves.map((item) => (
                       <TableRow key={item.id} className="hover:bg-gray-50">
                         <TableCell className="text-xs py-1 px-1 text-center font-bold italic text-indigo-600 wrap-break-word whitespace-normal">{item.trackingId}</TableCell>
                         <TableCell className="text-xs py-1 px-1 text-center wrap-break-word whitespace-normal">{new Date(item.dateTimeIn).toLocaleString()}</TableCell>
@@ -640,8 +648,7 @@ export default function LeavePage() {
                             {item.status || 'Pending'}
                           </span>
                         </TableCell>
-                        <TableCell className="text-xs py-1 px-1 text-center wrap-break-word whitespace-normal">{item.remarks || '-'}</TableCell>
-                        <TableCell className="text-xs py-1 px-1 text-center wrap-break-word whitespace-normal">{item.timeOutRemarks || '-'}</TableCell>
+                        <TableCell className="text-xs py-1 px-1 text-center wrap-break-word whitespace-normal">{item.status === 'Completed' ? (item.timeOutRemarks || item.remarks || '-') : (item.remarks || '-')}</TableCell>
                         <TableCell className="py-1 px-1 text-center wrap-break-word whitespace-normal">
                           <ActionButtons
                             onView={() => handleViewLeave(item.id)}
@@ -931,7 +938,7 @@ function LeaveSidebar({ recordTypes, onNavigate }: LeaveSidebarProps) {
   const navigate = useNavigate();
 
   const menuItems = [
-    { icon: BarChart3, label: 'Dashboard', href: '/dashboard' },
+    { icon: Home, label: 'Dashboard', href: '/dashboard' },
   ];
 
   return (
@@ -943,7 +950,7 @@ function LeaveSidebar({ recordTypes, onNavigate }: LeaveSidebarProps) {
       </div>
 
       {/* Menu Items */}
-      <nav className="flex-1 p-4 space-y-2">
+      <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
         {menuItems.map((item) => (
           <button
             key={item.label}
@@ -995,6 +1002,18 @@ function LeaveSidebar({ recordTypes, onNavigate }: LeaveSidebarProps) {
             ))}
           </div>
         </div>
+
+        {/* Reports */}
+        <button
+          onClick={() => {
+            onNavigate?.();
+            navigate('/reports');
+          }}
+          className="w-full flex items-center gap-3 px-4 py-2 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors text-left mt-2"
+        >
+          <BarChart3 className="h-5 w-5" />
+          <span className="text-sm font-medium">Reports</span>
+        </button>
       </nav>
 
       {/* User Info - Bottom */}

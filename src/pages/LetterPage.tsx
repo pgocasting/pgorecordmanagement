@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { letterService } from '@/services/firestoreService';
+import { letterService } from '@/services/localStorageService';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -34,7 +34,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Plus, Menu, Settings, LogOut, BarChart3, FileText } from 'lucide-react';
+import { Plus, Menu, Settings, LogOut, BarChart3, FileText, Home } from 'lucide-react';
 import { ActionButtons } from '@/components/ActionButtons';
 
 interface Letter {
@@ -47,6 +47,7 @@ interface Letter {
   particulars: string;
   status: string;
   remarks: string;
+  timeOutRemarks?: string;
 }
 
 const getAcronym = (text: string): string => {
@@ -92,21 +93,25 @@ export default function LetterPage() {
   });
 
   const [designationOptions] = useState<string[]>(['Admin', 'Manager', 'Staff', 'Officer']);
-  const [statusFilter, setStatusFilter] = useState('Pending');
 
   // Load letters from Firestore on mount
   useEffect(() => {
     const loadLetters = async () => {
       try {
+        console.log('📂 Loading letters from Firestore...');
         const data = await letterService.getLetters();
+        console.log(`✅ Letters loaded: ${data.length} records`);
         setLetters(data as Letter[]);
       } catch (error) {
-        console.error('Error loading letters:', error);
-        setSuccess('Error loading letters');
+        console.error('❌ Error loading letters:', error);
+        setSuccess('Error loading letters. Please try again.');
         setSuccessModalOpen(true);
       }
     };
+    
     loadLetters();
+    const interval = setInterval(loadLetters, 30000);
+    return () => clearInterval(interval);
   }, []);
 
   const generateTrackingId = (): string => {
@@ -130,14 +135,16 @@ export default function LetterPage() {
     try {
       if (editingId) {
         // Update existing letter in Firestore
-        await letterService.updateLetter(editingId, {
+        const updateData = {
           dateTimeIn: formData.dateTimeIn,
           dateTimeOut: formData.dateTimeOut,
           fullName: formData.fullName,
           designationOffice: formData.designationOffice,
           particulars: formData.particulars,
-        });
+        };
+        await letterService.updateLetter(editingId, updateData);
         setSuccess('Letter updated successfully');
+        setLetters(letters.map(l => l.id === editingId ? { ...l, ...updateData } : l));
       } else {
         // Add new letter to Firestore
         const newLetter = {
@@ -148,14 +155,13 @@ export default function LetterPage() {
           designationOffice: formData.designationOffice,
           particulars: formData.particulars,
           status: 'Pending',
+          remarks: '',
+          timeOutRemarks: '',
         };
         await letterService.addLetter(newLetter);
         setSuccess('Letter added successfully');
+        setLetters([newLetter as Letter, ...letters]);
       }
-
-      // Reload letters from Firestore
-      const updatedLetters = await letterService.getLetters();
-      setLetters(updatedLetters as Letter[]);
 
       // Reset form
       setFormData({
@@ -193,9 +199,7 @@ export default function LetterPage() {
     if (letterToDelete) {
       try {
         await letterService.deleteLetter(letterToDelete);
-        // Reload letters from Firestore
-        const updatedLetters = await letterService.getLetters();
-        setLetters(updatedLetters as Letter[]);
+        setLetters(letters.filter(l => l.id !== letterToDelete));
         setLetterToDelete(null);
         setDeleteConfirmOpen(false);
         setSuccess('Letter deleted successfully');
@@ -485,8 +489,8 @@ export default function LetterPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {letters.filter(l => l.status === 'Pending').length > 0 ? (
-                    letters.filter(l => l.status === 'Pending').map((letter) => (
+                  {letters.length > 0 ? (
+                    letters.map((letter) => (
                       <TableRow key={letter.id} className="hover:bg-gray-50">
                         <TableCell className="font-bold italic wrap-break-word whitespace-normal text-center text-xs text-indigo-600">{letter.trackingId}</TableCell>
                         <TableCell className="wrap-break-word whitespace-normal text-center text-xs">{new Date(letter.dateTimeIn).toLocaleString()}</TableCell>
@@ -503,7 +507,7 @@ export default function LetterPage() {
                             {letter.status}
                           </span>
                         </TableCell>
-                        <TableCell className="wrap-break-word whitespace-normal text-center text-xs">{letter.remarks || '-'}</TableCell>
+                        <TableCell className="wrap-break-word whitespace-normal text-center text-xs">{letter.status === 'Completed' ? (letter.timeOutRemarks || letter.remarks || '-') : (letter.remarks || '-')}</TableCell>
                         <TableCell className="text-center">
                           <ActionButtons
                             onView={() => handleView(letter)}
@@ -719,7 +723,7 @@ function LetterSidebar({ recordTypes, onNavigate }: LetterSidebarProps) {
   const navigate = useNavigate();
 
   const menuItems = [
-    { icon: BarChart3, label: 'Dashboard', href: '/dashboard' },
+    { icon: Home, label: 'Dashboard', href: '/dashboard' },
   ];
 
   return (
@@ -731,7 +735,7 @@ function LetterSidebar({ recordTypes, onNavigate }: LetterSidebarProps) {
       </div>
 
       {/* Menu Items */}
-      <nav className="flex-1 p-4 space-y-2">
+      <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
         {menuItems.map((item) => (
           <button
             key={item.label}
@@ -753,7 +757,7 @@ function LetterSidebar({ recordTypes, onNavigate }: LetterSidebarProps) {
             <span className="text-sm font-medium">Records</span>
           </div>
           <div className="pl-8 space-y-1">
-            {recordTypes.map((type: string) => (
+            {recordTypes.map((type) => (
               <button
                 key={type}
                 onClick={() => {
@@ -783,6 +787,17 @@ function LetterSidebar({ recordTypes, onNavigate }: LetterSidebarProps) {
             ))}
           </div>
         </div>
+        {/* Reports */}
+        <button
+          onClick={() => {
+            onNavigate?.();
+            navigate('/reports');
+          }}
+          className="w-full flex items-center gap-3 px-4 py-2 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors text-left mt-2"
+        >
+          <BarChart3 className="h-5 w-5" />
+          <span className="text-sm font-medium">Reports</span>
+        </button>
       </nav>
 
       {/* User Info - Bottom */}

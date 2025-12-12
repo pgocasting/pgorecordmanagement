@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { overtimeService } from '@/services/firestoreService';
+import { overtimeService } from '@/services/localStorageService';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -33,7 +33,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Plus, Menu, Settings, LogOut, BarChart3, FileText } from 'lucide-react';
+import { Plus, Menu, Settings, LogOut, BarChart3, FileText, Home } from 'lucide-react';
 import { ActionButtons } from '@/components/ActionButtons';
 
 interface Overtime {
@@ -119,15 +119,20 @@ export default function OvertimePage() {
   useEffect(() => {
     const loadOvertimes = async () => {
       try {
+        console.log('📂 Loading overtimes from Firestore...');
         const data = await overtimeService.getOvertimes();
+        console.log(`✅ Overtimes loaded: ${data.length} records`);
         setOvertimes(data as Overtime[]);
       } catch (error) {
-        console.error('Error loading overtimes:', error);
-        setSuccess('Error loading overtimes');
+        console.error('❌ Error loading overtimes:', error);
+        setSuccess('Error loading overtimes. Please try again.');
         setSuccessModalOpen(true);
       }
     };
+    
     loadOvertimes();
+    const interval = setInterval(loadOvertimes, 30000);
+    return () => clearInterval(interval);
   }, []);
 
 
@@ -180,12 +185,13 @@ export default function OvertimePage() {
         trackingId: generateTrackingId(),
         ...formData,
         status: 'Pending',
+        remarks: '',
+        timeOutRemarks: '',
       };
       await overtimeService.addOvertime(newOvertime);
       setSuccess('Overtime request added successfully');
 
-      const updatedOvertimes = await overtimeService.getOvertimes();
-      setOvertimes(updatedOvertimes as Overtime[]);
+      setOvertimes([newOvertime as Overtime, ...overtimes]);
 
       setFormData({
         dateTimeIn: '',
@@ -219,8 +225,8 @@ export default function OvertimePage() {
       setSuccess('Overtime request updated successfully');
       setEditingId(null);
 
-      const updatedOvertimes = await overtimeService.getOvertimes();
-      setOvertimes(updatedOvertimes as Overtime[]);
+      const updatedOvertimes = overtimes.map(o => o.id === editingId ? { ...o, ...formData } : o);
+      setOvertimes(updatedOvertimes);
 
       setFormData({
         dateTimeIn: '',
@@ -314,8 +320,7 @@ export default function OvertimePage() {
     setIsLoading(true);
     try {
       await overtimeService.deleteOvertime(overtimeToDelete);
-      const updatedOvertimes = await overtimeService.getOvertimes();
-      setOvertimes(updatedOvertimes as Overtime[]);
+      setOvertimes(overtimes.filter(o => o.id !== overtimeToDelete));
       setSuccess('Overtime request deleted successfully');
       setOvertimeToDelete(null);
       setDeleteConfirmOpen(false);
@@ -601,19 +606,18 @@ export default function OvertimePage() {
                     <TableHead className="font-semibold py-1 px-1 text-center text-xs">Place of Assignment</TableHead>
                     <TableHead className="font-semibold py-1 px-1 text-center text-xs">Status</TableHead>
                     <TableHead className="font-semibold py-1 px-1 text-center text-xs">Remarks</TableHead>
-                    <TableHead className="font-semibold py-1 px-1 text-center text-xs">Time Out Remarks</TableHead>
                     <TableHead className="font-semibold py-1 px-1 text-center text-xs">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {overtimes.filter(o => o.status === 'Pending').length === 0 ? (
+                  {overtimes.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={10} className="text-center py-4 text-gray-500 text-xs wrap-break-word whitespace-normal">
-                        No pending overtime requests. Click "Add Overtime Request" to create one.
+                        No overtime requests found. Click "Add Overtime Request" to create one.
                       </TableCell>
                     </TableRow>
                   ) : (
-                    overtimes.filter(o => o.status === 'Pending').map((item) => (
+                    overtimes.map((item) => (
                       <TableRow key={item.id} className="hover:bg-gray-50">
                         <TableCell className="text-xs py-1 px-1 text-center font-bold italic text-indigo-600 wrap-break-word whitespace-normal">{item.trackingId}</TableCell>
                         <TableCell className="text-xs py-1 px-1 text-center wrap-break-word whitespace-normal">{new Date(item.dateTimeIn).toLocaleString()}</TableCell>
@@ -639,8 +643,7 @@ export default function OvertimePage() {
                             {item.status || 'Pending'}
                           </span>
                         </TableCell>
-                        <TableCell className="text-xs py-1 px-1 text-center wrap-break-word whitespace-normal">{item.remarks || '-'}</TableCell>
-                        <TableCell className="text-xs py-1 px-1 text-center wrap-break-word whitespace-normal">{item.timeOutRemarks || '-'}</TableCell>
+                        <TableCell className="text-xs py-1 px-1 text-center wrap-break-word whitespace-normal">{item.status === 'Completed' ? (item.timeOutRemarks || item.remarks || '-') : (item.remarks || '-')}</TableCell>
                         <TableCell className="py-1 px-1 text-center wrap-break-word whitespace-normal">
                           <ActionButtons
                             onView={() => handleViewOvertime(item.id)}
@@ -883,7 +886,7 @@ function OvertimeSidebar({ recordTypes, onNavigate }: OvertimeSidebarProps) {
   const navigate = useNavigate();
 
   const menuItems = [
-    { icon: BarChart3, label: 'Dashboard', href: '/dashboard' },
+    { icon: Home, label: 'Dashboard', href: '/dashboard' },
   ];
 
   return (
@@ -893,11 +896,14 @@ function OvertimeSidebar({ recordTypes, onNavigate }: OvertimeSidebarProps) {
         <p className="text-xs text-gray-500">Record Management</p>
       </div>
 
-      <nav className="flex-1 p-4 space-y-2">
+      <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
         {menuItems.map((item) => (
           <button
             key={item.label}
-            onClick={() => navigate(item.href)}
+            onClick={() => {
+              onNavigate?.();
+              navigate(item.href);
+            }}
             className="w-full flex items-center gap-3 px-4 py-2 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors text-left"
           >
             <item.icon className="h-5 w-5" />
@@ -941,6 +947,18 @@ function OvertimeSidebar({ recordTypes, onNavigate }: OvertimeSidebarProps) {
             ))}
           </div>
         </div>
+
+        {/* Reports */}
+        <button
+          onClick={() => {
+            onNavigate?.();
+            navigate('/reports');
+          }}
+          className="w-full flex items-center gap-3 px-4 py-2 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors text-left mt-2"
+        >
+          <BarChart3 className="h-5 w-5" />
+          <span className="text-sm font-medium">Reports</span>
+        </button>
       </nav>
 
       <div className="p-4 border-t border-gray-200">

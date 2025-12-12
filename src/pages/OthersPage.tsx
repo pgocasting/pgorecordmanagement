@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { othersService } from '@/services/firestoreService';
+import { othersService } from '@/services/localStorageService';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -34,7 +34,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Plus, Menu, Settings, LogOut, BarChart3, FileText } from 'lucide-react';
+import { Plus, Menu, Settings, LogOut, BarChart3, FileText, Home } from 'lucide-react';
 import { ActionButtons } from '@/components/ActionButtons';
 
 interface Others {
@@ -52,6 +52,7 @@ interface Others {
   amount: string;
   status: string;
   remarks: string;
+  timeOutRemarks?: string;
   linkAttachments?: string;
 }
 
@@ -116,15 +117,20 @@ export default function OthersPage() {
   useEffect(() => {
     const loadRecords = async () => {
       try {
+        console.log('📂 Loading other records from Firestore...');
         const data = await othersService.getRecords();
+        console.log(`✅ Other records loaded: ${data.length} records`);
         setRecords(data as Others[]);
       } catch (error) {
-        console.error('Error loading records:', error);
-        setSuccess('Error loading records');
+        console.error('❌ Error loading records:', error);
+        setSuccess('Error loading records. Please try again.');
         setSuccessModalOpen(true);
       }
     };
+    
     loadRecords();
+    const interval = setInterval(loadRecords, 30000);
+    return () => clearInterval(interval);
   }, []);
 
 
@@ -160,8 +166,7 @@ export default function OthersPage() {
       !formData.fullName ||
       !formData.designationOffice ||
       !formData.inclusiveDateStart ||
-      !formData.inclusiveDateEnd ||
-      !formData.purpose
+      !formData.inclusiveDateEnd
     ) {
       setSuccess('Please fill in all required fields');
       setSuccessModalOpen(true);
@@ -181,13 +186,13 @@ export default function OthersPage() {
         trackingId: nextTrackingId,
         ...formData,
         status: 'Pending',
+        remarks: '',
+        timeOutRemarks: '',
       };
       await othersService.addRecord(newRecord);
       setSuccess('Record added successfully');
 
-      // Reload from Firestore
-      const updatedRecords = await othersService.getRecords();
-      setRecords(updatedRecords as Others[]);
+      setRecords([newRecord as Others, ...records]);
 
       setFormData({
         dateTimeIn: '',
@@ -222,9 +227,8 @@ export default function OthersPage() {
       setSuccess('Record updated successfully');
       setEditingId(null);
 
-      // Reload from Firestore
-      const updatedRecords = await othersService.getRecords();
-      setRecords(updatedRecords as Others[]);
+      const updatedRecords = records.map(r => r.id === editingId ? { ...r, ...formData } : r);
+      setRecords(updatedRecords);
 
       setFormData({
         dateTimeIn: '',
@@ -302,9 +306,7 @@ export default function OthersPage() {
     
     try {
       await othersService.deleteRecord(recordToDelete);
-      // Reload from Firestore
-      const updatedRecords = await othersService.getRecords();
-      setRecords(updatedRecords as Others[]);
+      setRecords(records.filter(r => r.id !== recordToDelete));
       setSuccess('Record deleted successfully');
       setRecordToDelete(null);
       setDeleteConfirmOpen(false);
@@ -499,18 +501,6 @@ export default function OthersPage() {
                       </div>
                     )}
 
-                    {/* Full Name */}
-                    <div className="space-y-2">
-                      <Label htmlFor="fullName" className="text-sm font-medium text-gray-700">Full Name *</Label>
-                      <Input
-                        id="fullName"
-                        name="fullName"
-                        value={formData.fullName}
-                        onChange={handleInputChange}
-                        placeholder="Enter full name"
-                      />
-                    </div>
-
                     {/* Designation / Office */}
                     <div className="space-y-2">
                       <Label htmlFor="designationOffice" className="text-sm font-medium text-gray-700">Designation / Office *</Label>
@@ -584,7 +574,7 @@ export default function OthersPage() {
 
                     {/* Purpose */}
                     <div className="space-y-2">
-                      <Label htmlFor="purpose" className="text-sm font-medium text-gray-700">Purpose *</Label>
+                      <Label htmlFor="purpose" className="text-sm font-medium text-gray-700">Purpose</Label>
                       <Textarea
                         id="purpose"
                         name="purpose"
@@ -656,8 +646,8 @@ export default function OthersPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {records.filter(r => r.status === 'Pending').length > 0 ? (
-                    records.filter(r => r.status === 'Pending').map((record) => (
+                  {records.length > 0 ? (
+                    records.map((record) => (
                       <TableRow key={record.id} className="hover:bg-gray-50">
                         <TableCell className="font-bold italic wrap-break-word whitespace-normal text-center text-xs text-indigo-600">{record.trackingId}</TableCell>
                         <TableCell className="wrap-break-word whitespace-normal text-center text-xs">{new Date(record.dateTimeIn).toLocaleString()}</TableCell>
@@ -674,7 +664,7 @@ export default function OthersPage() {
                             {record.status}
                           </span>
                         </TableCell>
-                        <TableCell className="wrap-break-word whitespace-normal text-center text-xs">{record.remarks || '-'}</TableCell>
+                        <TableCell className="wrap-break-word whitespace-normal text-center text-xs">{record.status === 'Completed' ? (record.timeOutRemarks || record.remarks || '-') : (record.remarks || '-')}</TableCell>
                         <TableCell className="text-center">
                           <ActionButtons
                             onView={() => handleViewRecord(record.id)}
@@ -969,7 +959,7 @@ function OthersSidebar({ recordTypes, onNavigate }: OthersSidebarProps) {
   const navigate = useNavigate();
 
   const menuItems = [
-    { icon: BarChart3, label: 'Dashboard', href: '/dashboard' },
+    { icon: Home, label: 'Dashboard', href: '/dashboard' },
   ];
 
   return (
@@ -981,7 +971,7 @@ function OthersSidebar({ recordTypes, onNavigate }: OthersSidebarProps) {
       </div>
 
       {/* Menu Items */}
-      <nav className="flex-1 p-4 space-y-2">
+      <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
         {menuItems.map((item) => (
           <button
             key={item.label}
@@ -1033,6 +1023,18 @@ function OthersSidebar({ recordTypes, onNavigate }: OthersSidebarProps) {
             ))}
           </div>
         </div>
+
+        {/* Reports */}
+        <button
+          onClick={() => {
+            onNavigate?.();
+            navigate('/reports');
+          }}
+          className="w-full flex items-center gap-3 px-4 py-2 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors text-left mt-2"
+        >
+          <BarChart3 className="h-5 w-5" />
+          <span className="text-sm font-medium">Reports</span>
+        </button>
       </nav>
 
       {/* User Info - Bottom */}
