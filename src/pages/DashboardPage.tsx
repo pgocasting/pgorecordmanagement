@@ -44,6 +44,17 @@ interface Record {
   category: string;
 }
 
+const extractName = (fullNameField: string): string => {
+  if (!fullNameField) return '';
+  // If the field contains tracking ID format like "(L) 2025/12/12 - 001", extract the actual name
+  // Otherwise return as is
+  const match = fullNameField.match(/^[^-]*-\s*(.+)$/);
+  if (match && match[1]) {
+    return match[1].trim();
+  }
+  return fullNameField;
+};
+
 export default function DashboardPage() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
@@ -60,120 +71,124 @@ export default function DashboardPage() {
       try {
         const allRecords: Record[] = [];
 
-        // Fetch vouchers
-        const vouchers = await voucherService.getVouchers();
+        // Fetch all collections in parallel
+        const [vouchers, letters, leaves, locators, adminToPGO, others, travelOrders, overtimes] = await Promise.all([
+          voucherService.getVouchers(),
+          letterService.getLetters(),
+          leaveService.getLeaves(),
+          locatorService.getLocators(),
+          adminToPGOService.getRecords(),
+          othersService.getRecords(),
+          travelOrderService.getTravelOrders(),
+          overtimeService.getOvertimes()
+        ]);
+
+        // Process vouchers
         vouchers.forEach((v: any) => {
           if (v.status === 'Pending') {
             allRecords.push({
               id: v.id,
               trackingId: v.trackingId,
-              title: `Voucher - ${v.payee}`,
-              date: new Date(v.dateTimeIn).toLocaleDateString(),
+              title: v.payee,
+              date: new Date(v.dateTimeIn).toLocaleString(),
               status: 'pending',
               category: 'Voucher'
             });
           }
         });
 
-        // Fetch letters
-        const letters = await letterService.getLetters();
+        // Process letters
         letters.forEach((l: any) => {
           if (l.status === 'Pending') {
             allRecords.push({
               id: l.id,
               trackingId: l.trackingId,
-              title: `Letter - ${l.fullName}`,
-              date: new Date(l.dateTimeIn).toLocaleDateString(),
+              title: extractName(l.fullName),
+              date: new Date(l.dateTimeIn).toLocaleString(),
               status: 'pending',
               category: 'Letter'
             });
           }
         });
 
-        // Fetch leaves
-        const leaves = await leaveService.getLeaves();
+        // Process leaves
         leaves.forEach((lv: any) => {
           if (lv.status === 'Pending') {
             allRecords.push({
               id: lv.id,
               trackingId: lv.trackingId,
-              title: `Leave - ${lv.fullName}`,
-              date: new Date(lv.dateTimeIn).toLocaleDateString(),
+              title: extractName(lv.fullName),
+              date: new Date(lv.dateTimeIn).toLocaleString(),
               status: 'pending',
               category: 'Leave'
             });
           }
         });
 
-        // Fetch locators
-        const locators = await locatorService.getLocators();
+        // Process locators
         locators.forEach((loc: any) => {
           if (loc.status === 'Pending') {
             allRecords.push({
               id: loc.id,
               trackingId: loc.trackingId,
-              title: `Locator - ${loc.fullName}`,
-              date: new Date(loc.dateTimeIn).toLocaleDateString(),
+              title: extractName(loc.fullName),
+              date: new Date(loc.dateTimeIn).toLocaleString(),
               status: 'pending',
               category: 'Locator'
             });
           }
         });
 
-        // Fetch admin to PGO
-        const adminToPGO = await adminToPGOService.getRecords();
+        // Process admin to PGO
         adminToPGO.forEach((a: any) => {
           if (a.status === 'Pending') {
             allRecords.push({
               id: a.id,
               trackingId: a.trackingId,
-              title: `Admin to PGO - ${a.fullName}`,
-              date: new Date(a.dateTimeIn).toLocaleDateString(),
+              title: extractName(a.fullName),
+              date: new Date(a.dateTimeIn).toLocaleString(),
               status: 'pending',
               category: 'Admin to PGO'
             });
           }
         });
 
-        // Fetch others
-        const others = await othersService.getRecords();
+        // Process others
         others.forEach((o: any) => {
           if (o.status === 'Pending') {
             allRecords.push({
               id: o.id,
               trackingId: o.trackingId,
-              title: `Others - ${o.fullName}`,
-              date: new Date(o.dateTimeIn).toLocaleDateString(),
+              title: extractName(o.fullName),
+              date: new Date(o.dateTimeIn).toLocaleString(),
               status: 'pending',
               category: 'Others'
             });
           }
         });
 
-        // Fetch travel orders
-        const travelOrders = await travelOrderService.getTravelOrders();
+        // Process travel orders
         travelOrders.forEach((t: any) => {
           if (t.status === 'Pending') {
             allRecords.push({
               id: t.id,
               trackingId: t.trackingId,
-              title: `Travel Order - ${t.fullName}`,
-              date: new Date(t.dateTimeIn).toLocaleDateString(),
+              title: extractName(t.fullName),
+              date: new Date(t.dateTimeIn).toLocaleString(),
               status: 'pending',
               category: 'Travel Order'
             });
           }
         });
 
-        // Fetch overtimes
-        const overtimes = await overtimeService.getOvertimes();
+        // Process overtimes
         overtimes.forEach((ot: any) => {
           if (ot.status === 'Pending') {
             allRecords.push({
               id: ot.id,
               trackingId: ot.trackingId,
-              title: `Overtime - ${ot.fullName}`,
-              date: new Date(ot.dateTimeIn).toLocaleDateString(),
+              title: extractName(ot.fullName),
+              date: new Date(ot.dateTimeIn).toLocaleString(),
               status: 'pending',
               category: 'Overtime'
             });
@@ -329,7 +344,7 @@ export default function DashboardPage() {
                       <TableHead className="text-center">Tracking ID</TableHead>
                       <TableHead className="text-center">Title</TableHead>
                       <TableHead className="text-center">Category</TableHead>
-                      <TableHead className="text-center">Date</TableHead>
+                      <TableHead className="text-center">Date / Time IN</TableHead>
                       <TableHead className="text-center">Status</TableHead>
                     </TableRow>
                   </TableHeader>
