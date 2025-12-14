@@ -89,12 +89,15 @@ export default function LocatorPage() {
   const [success, setSuccess] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [successModalOpen, setSuccessModalOpen] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [locatorToDelete, setLocatorToDelete] = useState<string | null>(null);
+  const [rejectData, setRejectData] = useState({
+    remarks: '',
+  });
   const [editConfirmOpen, setEditConfirmOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [timeOutConfirmOpen, setTimeOutConfirmOpen] = useState(false);
   const [locatorToTimeOut, setLocatorToTimeOut] = useState<string | null>(null);
   const [timeOutData, setTimeOutData] = useState({
@@ -292,7 +295,37 @@ export default function LocatorPage() {
 
   const handleRejectLocator = (id: string) => {
     setLocatorToDelete(id);
+    setRejectData({ remarks: '' });
     setDeleteConfirmOpen(true);
+  };
+
+  const confirmRejectLocator = async () => {
+    if (!locatorToDelete) return;
+    
+    if (!rejectData.remarks.trim()) {
+      setSuccess('Error: Rejection remarks are required');
+      setSuccessModalOpen(true);
+      return;
+    }
+    
+    try {
+      const now = new Date();
+      const dateTimeStr = now.toLocaleString();
+      const remarksWithDateTime = `[${dateTimeStr}] ${rejectData.remarks}`;
+      
+      await locatorService.updateLocator(locatorToDelete, { status: 'Rejected', remarks: remarksWithDateTime });
+      const updatedLocators = locators.map(l => l.id === locatorToDelete ? { ...l, status: 'Rejected', remarks: remarksWithDateTime } : l);
+      setLocators(updatedLocators);
+      setSuccess('Locator rejected successfully');
+      setDeleteConfirmOpen(false);
+      setLocatorToDelete(null);
+      setRejectData({ remarks: '' });
+      setSuccessModalOpen(true);
+    } catch (err) {
+      console.error('Failed to reject locator:', err);
+      setSuccess('Error rejecting locator');
+      setSuccessModalOpen(true);
+    }
   };
 
   const handleDialogOpenChange = (open: boolean) => {
@@ -315,24 +348,6 @@ export default function LocatorPage() {
     }
   };
 
-  const confirmRejectLocator = async () => {
-    if (!locatorToDelete) return;
-    
-    try {
-      await locatorService.updateLocator(locatorToDelete, { status: 'Rejected' });
-      const updatedLocators = locators.map(l => l.id === locatorToDelete ? { ...l, status: 'Rejected' } : l);
-      setLocators(updatedLocators);
-      setSuccess('Locator rejected successfully');
-      setDeleteConfirmOpen(false);
-      setLocatorToDelete(null);
-      setSuccessModalOpen(true);
-    } catch (err) {
-      console.error('Failed to reject locator:', err);
-      setSuccess('Error rejecting locator');
-      setSuccessModalOpen(true);
-    }
-  };
-
   const handleTimeOut = (id: string) => {
     setLocatorToTimeOut(id);
     setTimeOutData({
@@ -352,6 +367,12 @@ export default function LocatorPage() {
 
   const confirmTimeOut = async () => {
     if (!locatorToTimeOut || !timeOutData.dateTimeOut) return;
+
+    if (!timeOutData.timeOutRemarks.trim()) {
+      setSuccess('Error: Time out remarks are required');
+      setSuccessModalOpen(true);
+      return;
+    }
 
     setIsLoading(true);
     try {
@@ -674,17 +695,20 @@ export default function LocatorPage() {
                             {item.status || 'Pending'}
                           </span>
                         </TableCell>
-                        <TableCell className="text-xs py-1 px-1 text-center wrap-break-word whitespace-normal">{item.status === 'Completed' ? (item.timeOutRemarks || item.remarks || '-') : (item.remarks || '-')}</TableCell>
+                        <TableCell className={`text-xs py-1 px-1 text-center wrap-break-word whitespace-normal ${item.status === 'Rejected' ? 'text-red-600 font-medium' : ''}`}>{item.status === 'Completed' ? (item.timeOutRemarks || item.remarks || '-') : (item.remarks || '-')}</TableCell>
                         <TableCell className="py-1 px-1 text-center wrap-break-word whitespace-normal">
                           <ActionButtons
                             onView={() => handleViewLocator(item.id)}
                             onEdit={() => handleEditLocator(item.id)}
                             onTimeOut={() => handleTimeOut(item.id)}
                             onReject={() => handleRejectLocator(item.id)}
-                            canEdit={item.status !== 'Rejected' && (user?.role === 'admin' || (!!item.dateTimeOut === false && item.status === 'Pending'))}
-                            canReject={item.status !== 'Rejected' && (user?.role === 'admin' || (!!item.dateTimeOut === false && item.status === 'Pending'))}
-                            showTimeOut={!item.dateTimeOut && item.status !== 'Rejected'}
-                            editDisabledReason={item.status === 'Rejected' ? 'Cannot edit rejected records' : (user?.role !== 'admin' && (!!item.dateTimeOut || item.status !== 'Pending') ? 'Users can only edit pending records' : undefined)}
+                            hidden={item.status === 'Rejected'}
+                            canEdit={item.status !== 'Rejected'}
+                            canReject={item.status !== 'Rejected'}
+                            showTimeOut={item.status !== 'Completed' && item.status !== 'Rejected'}
+                            showEdit={item.status !== 'Completed'}
+                            showReject={item.status !== 'Completed'}
+                            editDisabledReason={item.status === 'Rejected' ? 'Cannot edit rejected records' : undefined}
                             rejectDisabledReason={item.status === 'Rejected' ? 'Record already rejected' : (user?.role !== 'admin' && (!!item.dateTimeOut || item.status !== 'Pending') ? 'Users can only reject pending records' : undefined)}
                           />
                         </TableCell>
@@ -734,7 +758,7 @@ export default function LocatorPage() {
         onConfirm={confirmTimeOut}
         onCancel={() => {
           setTimeOutConfirmOpen(false);
-          setRecordToTimeOut(null);
+          setLocatorToTimeOut(null);
         }}
         dateTimeOut={timeOutData.dateTimeOut}
         onDateTimeOutChange={(value) => setTimeOutData({ ...timeOutData, dateTimeOut: value })}
@@ -746,16 +770,30 @@ export default function LocatorPage() {
       {/* Delete Confirmation Modal */}
       <Dialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
         <DialogContent className="sm:max-w-md">
-          <DialogTitle className="text-lg font-semibold">Confirm Delete</DialogTitle>
+          <DialogTitle className="text-lg font-semibold">Confirm Reject</DialogTitle>
           <DialogDescription>
-            You are about to permanently remove this record. All associated data will be lost. Please confirm this action.
+            Are you sure you want to reject this locator? The status will be changed to "Rejected".
           </DialogDescription>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="rejectRemarks" className="text-sm font-medium text-gray-700">Rejection Remarks *</Label>
+              <textarea
+                id="rejectRemarks"
+                placeholder="Enter rejection remarks (required)"
+                value={rejectData.remarks}
+                onChange={(e) => setRejectData({ remarks: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 text-sm"
+                rows={3}
+              />
+            </div>
+          </div>
           <div className="flex gap-3 justify-end pt-6">
             <Button
               variant="outline"
               onClick={() => {
                 setDeleteConfirmOpen(false);
                 setLocatorToDelete(null);
+                setRejectData({ remarks: '' });
               }}
               className="px-6"
             >
@@ -799,7 +837,8 @@ export default function LocatorPage() {
                     <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
                       selectedLocator.status === 'Completed' ? 'bg-green-100 text-green-800' :
                       selectedLocator.status === 'Pending' ? 'bg-yellow-100 text-yellow-800' :
-                      'bg-blue-100 text-blue-800'
+                      selectedLocator.status === 'Rejected' ? 'bg-red-100 text-red-800' :
+                      'bg-gray-100 text-gray-800'
                     }`}>
                       {selectedLocator.status}
                     </span>

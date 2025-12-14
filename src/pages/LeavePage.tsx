@@ -100,6 +100,9 @@ export default function LeavePage() {
   });
   const [viewModalOpen, setViewModalOpen] = useState(false);
   const [selectedLeave, setSelectedLeave] = useState<Leave | null>(null);
+  const [rejectData, setRejectData] = useState({
+    remarks: '',
+  });
 
   // Form states
   const [formData, setFormData] = useState({
@@ -304,7 +307,37 @@ export default function LeavePage() {
 
   const handleRejectLeave = (id: string) => {
     setLeaveToDelete(id);
+    setRejectData({ remarks: '' });
     setDeleteConfirmOpen(true);
+  };
+
+  const confirmRejectLeave = async () => {
+    if (!leaveToDelete) return;
+
+    if (!rejectData.remarks.trim()) {
+      setSuccess('Error: Rejection remarks are required');
+      setSuccessModalOpen(true);
+      return;
+    }
+
+    try {
+      const now = new Date();
+      const dateTimeStr = now.toLocaleString();
+      const remarksWithDateTime = `[${dateTimeStr}] ${rejectData.remarks}`;
+      
+      await leaveService.updateLeave(leaveToDelete, { status: 'Rejected', remarks: remarksWithDateTime });
+      const updatedLeaves = leaves.map(l => l.id === leaveToDelete ? { ...l, status: 'Rejected', remarks: remarksWithDateTime } : l);
+      setLeaves(updatedLeaves);
+      setLeaveToDelete(null);
+      setRejectData({ remarks: '' });
+      setDeleteConfirmOpen(false);
+      setSuccess('Leave rejected successfully');
+      setSuccessModalOpen(true);
+    } catch (err) {
+      console.error('Failed to reject leave:', err);
+      setSuccess('Error rejecting leave record');
+      setSuccessModalOpen(true);
+    }
   };
 
   const handleDialogOpenChange = (open: boolean) => {
@@ -321,26 +354,8 @@ export default function LeavePage() {
         inclusiveDateStart: '',
         inclusiveDateEnd: '',
         purpose: '',
-        status: 'Pending',
+        status: '',
       });
-    }
-  };
-
-  const confirmRejectLeave = async () => {
-    if (!leaveToDelete) return;
-    
-    try {
-      await leaveService.updateLeave(leaveToDelete, { status: 'Rejected' });
-      const updatedLeaves = leaves.map(l => l.id === leaveToDelete ? { ...l, status: 'Rejected' } : l);
-      setLeaves(updatedLeaves);
-      setSuccess('Leave record rejected successfully');
-      setDeleteConfirmOpen(false);
-      setLeaveToDelete(null);
-      setSuccessModalOpen(true);
-    } catch (err) {
-      console.error('Failed to reject leave:', err);
-      setSuccess('Error rejecting leave record');
-      setSuccessModalOpen(true);
     }
   };
 
@@ -363,6 +378,12 @@ export default function LeavePage() {
 
   const confirmTimeOut = async () => {
     if (!leaveToTimeOut || !timeOutData.dateTimeOut) return;
+
+    if (!timeOutData.timeOutRemarks.trim()) {
+      setSuccess('Error: Time out remarks are required');
+      setSuccessModalOpen(true);
+      return;
+    }
 
     setIsLoading(true);
     try {
@@ -674,16 +695,19 @@ export default function LeavePage() {
                             {item.status || 'Pending'}
                           </span>
                         </TableCell>
-                        <TableCell className="text-xs py-1 px-1 text-center wrap-break-word whitespace-normal">{item.status === 'Completed' ? (item.timeOutRemarks || item.remarks || '-') : (item.remarks || '-')}</TableCell>
+                        <TableCell className={`text-xs py-1 px-1 text-center wrap-break-word whitespace-normal ${item.status === 'Rejected' ? 'text-red-600 font-medium' : ''}`}>{item.status === 'Completed' ? (item.timeOutRemarks || item.remarks || '-') : (item.remarks || '-')}</TableCell>
                         <TableCell className="py-1 px-1 text-center wrap-break-word whitespace-normal">
                           <ActionButtons
                             onView={() => handleViewLeave(item.id)}
                             onEdit={() => handleEditLeave(item.id)}
                             onTimeOut={() => handleTimeOut(item.id)}
                             onReject={() => handleRejectLeave(item.id)}
+                            hidden={item.status === 'Rejected'}
                             canEdit={item.status !== 'Rejected' && item.status !== 'Completed'}
                             canReject={item.status !== 'Rejected' && item.status !== 'Completed'}
                             showTimeOut={item.status !== 'Completed' && item.status !== 'Rejected'}
+                            showEdit={item.status !== 'Completed'}
+                            showReject={item.status !== 'Completed'}
                             editDisabledReason={item.status === 'Rejected' ? 'Cannot edit rejected records' : (item.status === 'Completed' ? 'Cannot edit completed records' : undefined)}
                             rejectDisabledReason={item.status === 'Rejected' ? 'Record already rejected' : (item.status === 'Completed' ? 'Cannot reject completed records' : undefined)}
                           />
@@ -787,12 +811,26 @@ export default function LeavePage() {
           <p className="text-sm text-gray-600 mt-4">
             Are you sure you want to reject this leave record? The status will be changed to "Rejected".
           </p>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="rejectRemarks" className="text-sm font-medium text-gray-700">Rejection Remarks *</Label>
+              <textarea
+                id="rejectRemarks"
+                placeholder="Enter rejection remarks (required)"
+                value={rejectData.remarks}
+                onChange={(e) => setRejectData({ remarks: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 text-sm"
+                rows={3}
+              />
+            </div>
+          </div>
           <div className="flex gap-3 justify-end pt-6">
             <Button
               variant="outline"
               onClick={() => {
                 setDeleteConfirmOpen(false);
                 setLeaveToDelete(null);
+                setRejectData({ remarks: '' });
               }}
               className="px-6"
             >
@@ -853,7 +891,8 @@ export default function LeavePage() {
                     <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
                       selectedLeave.status === 'Completed' ? 'bg-green-100 text-green-800' :
                       selectedLeave.status === 'Pending' ? 'bg-yellow-100 text-yellow-800' :
-                      'bg-blue-100 text-blue-800'
+                      selectedLeave.status === 'Rejected' ? 'bg-red-100 text-red-800' :
+                      'bg-gray-100 text-gray-800'
                     }`}>
                       {selectedLeave.status}
                     </span>

@@ -9,8 +9,11 @@ interface ActionButtonsProps {
   canEdit?: boolean;
   canReject?: boolean;
   showTimeOut?: boolean;
+  showEdit?: boolean;
+  showReject?: boolean;
   editDisabledReason?: string;
   rejectDisabledReason?: string;
+  hidden?: boolean;
 }
 
 export function ActionButtons({
@@ -21,9 +24,16 @@ export function ActionButtons({
   canEdit = true,
   canReject = true,
   showTimeOut = true,
+  showEdit = true,
+  showReject = true,
   editDisabledReason,
   rejectDisabledReason,
+  hidden = false,
 }: ActionButtonsProps) {
+  if (hidden) {
+    return null;
+  }
+  
   return (
     <div className="flex items-center justify-center gap-2">
       {/* View Button */}
@@ -38,20 +48,22 @@ export function ActionButtons({
       </Button>
 
       {/* Edit Button */}
-      <Button
-        variant="ghost"
-        size="sm"
-        onClick={onEdit}
-        disabled={!canEdit}
-        className={`h-6 w-6 p-0 ${
-          canEdit
-            ? 'text-amber-600 hover:text-amber-700 hover:bg-amber-50'
-            : 'text-gray-400 cursor-not-allowed hover:bg-transparent'
-        }`}
-        title={editDisabledReason || 'Edit'}
-      >
-        <Edit2 className="h-3 w-3" />
-      </Button>
+      {showEdit && (
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={onEdit}
+          disabled={!canEdit}
+          className={`h-6 w-6 p-0 ${
+            canEdit
+              ? 'text-amber-600 hover:text-amber-700 hover:bg-amber-50'
+              : 'text-gray-400 cursor-not-allowed hover:bg-transparent'
+          }`}
+          title={editDisabledReason || 'Edit'}
+        >
+          <Edit2 className="h-3 w-3" />
+        </Button>
+      )}
 
       {/* Time Out Button */}
       {showTimeOut && (
@@ -67,20 +79,22 @@ export function ActionButtons({
       )}
 
       {/* Reject Button */}
-      <Button
-        variant="ghost"
-        size="sm"
-        onClick={onReject}
-        disabled={!canReject}
-        className={`h-6 w-6 p-0 ${
-          canReject
-            ? 'text-red-600 hover:text-red-700 hover:bg-red-50'
-            : 'text-gray-400 cursor-not-allowed hover:bg-transparent'
-        }`}
-        title={rejectDisabledReason || 'Reject'}
-      >
-        <X className="h-3 w-3" />
-      </Button>
+      {showReject && (
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={onReject}
+          disabled={!canReject}
+          className={`h-6 w-6 p-0 ${
+            canReject
+              ? 'text-red-600 hover:text-red-700 hover:bg-red-50'
+              : 'text-gray-400 cursor-not-allowed hover:bg-transparent'
+          }`}
+          title={rejectDisabledReason || 'Reject'}
+        >
+          <X className="h-3 w-3" />
+        </Button>
+      )}
     </div>
   );
 }

@@ -95,6 +95,9 @@ export default function LetterPage() {
   const [letterToTimeOut, setLetterToTimeOut] = useState<string | null>(null);
   const [timeOutDateTime, setTimeOutDateTime] = useState('');
   const [timeOutRemarks, setTimeOutRemarks] = useState('');
+  const [rejectData, setRejectData] = useState({
+    remarks: '',
+  });
 
   // Form states
   const [formData, setFormData] = useState({
@@ -210,11 +213,22 @@ export default function LetterPage() {
 
   const handleReject = async () => {
     if (letterToDelete) {
+      if (!rejectData.remarks.trim()) {
+        setSuccess('Error: Rejection remarks are required');
+        setSuccessModalOpen(true);
+        return;
+      }
+
       try {
-        await letterService.updateLetter(letterToDelete, { status: 'Rejected' });
-        const updatedLetters = letters.map(l => l.id === letterToDelete ? { ...l, status: 'Rejected' } : l);
+        const now = new Date();
+        const dateTimeStr = now.toLocaleString();
+        const remarksWithDateTime = `[${dateTimeStr}] ${rejectData.remarks}`;
+        
+        await letterService.updateLetter(letterToDelete, { status: 'Rejected', remarks: remarksWithDateTime });
+        const updatedLetters = letters.map(l => l.id === letterToDelete ? { ...l, status: 'Rejected', remarks: remarksWithDateTime } : l);
         setLetters(updatedLetters);
         setLetterToDelete(null);
+        setRejectData({ remarks: '' });
         setDeleteConfirmOpen(false);
         setSuccess('Letter rejected successfully');
         setSuccessModalOpen(true);
@@ -255,6 +269,12 @@ export default function LetterPage() {
 
   const confirmTimeOut = async () => {
     if (!letterToTimeOut || !timeOutDateTime) return;
+
+    if (!timeOutRemarks.trim()) {
+      setSuccess('Error: Time out remarks are required');
+      setSuccessModalOpen(true);
+      return;
+    }
 
     setIsLoading(true);
     try {
@@ -516,12 +536,13 @@ export default function LetterPage() {
                           <span className={`px-2 py-1 rounded text-xs font-medium ${
                             letter.status === 'Completed' ? 'bg-green-100 text-green-800' :
                             letter.status === 'Pending' ? 'bg-yellow-100 text-yellow-800' :
+                            letter.status === 'Rejected' ? 'bg-red-100 text-red-800' :
                             'bg-gray-100 text-gray-800'
                           }`}>
                             {letter.status}
                           </span>
                         </TableCell>
-                        <TableCell className="wrap-break-word whitespace-normal text-center text-xs">{letter.status === 'Completed' ? (letter.timeOutRemarks || letter.remarks || '-') : (letter.remarks || '-')}</TableCell>
+                        <TableCell className={`wrap-break-word whitespace-normal text-center text-xs ${letter.status === 'Rejected' ? 'text-red-600 font-medium' : ''}`}>{letter.status === 'Completed' ? (letter.timeOutRemarks || letter.remarks || '-') : (letter.remarks || '-')}</TableCell>
                         <TableCell className="text-center">
                           <ActionButtons
                             onView={() => handleView(letter)}
@@ -529,9 +550,13 @@ export default function LetterPage() {
                             onTimeOut={() => handleTimeOut(letter.id)}
                             onReject={() => {
                               setLetterToDelete(letter.id);
+                              setRejectData({ remarks: '' });
                               setDeleteConfirmOpen(true);
                             }}
+                            hidden={letter.status === 'Rejected'}
                             showTimeOut={letter.status !== 'Completed'}
+                            showEdit={letter.status !== 'Completed'}
+                            showReject={letter.status !== 'Completed'}
                           />
                         </TableCell>
                       </TableRow>
@@ -616,23 +641,41 @@ export default function LetterPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Reject Confirmation Modal */}
+      {/* Delete Confirmation Modal */}
       <Dialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
         <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Confirm Reject</DialogTitle>
-          </DialogHeader>
-          <p className="text-sm text-gray-600">Are you sure you want to reject this letter? The status will be changed to "Rejected".</p>
-          <div className="flex gap-2 justify-end pt-4">
+          <DialogTitle className="text-lg font-semibold">Confirm Reject</DialogTitle>
+          <DialogDescription>
+            Are you sure you want to reject this letter? The status will be changed to "Rejected".
+          </DialogDescription>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="rejectRemarks" className="text-sm font-medium text-gray-700">Rejection Remarks *</Label>
+              <textarea
+                id="rejectRemarks"
+                placeholder="Enter rejection remarks (required)"
+                value={rejectData.remarks}
+                onChange={(e) => setRejectData({ remarks: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 text-sm"
+                rows={3}
+              />
+            </div>
+          </div>
+          <div className="flex gap-3 justify-end pt-6">
             <Button
               variant="outline"
-              onClick={() => setDeleteConfirmOpen(false)}
+              onClick={() => {
+                setDeleteConfirmOpen(false);
+                setLetterToDelete(null);
+                setRejectData({ remarks: '' });
+              }}
+              className="px-6"
             >
               Cancel
             </Button>
             <Button
-              className="bg-red-600 hover:bg-red-700"
               onClick={handleReject}
+              className="px-6 bg-red-600 hover:bg-red-700 text-white"
             >
               Reject
             </Button>

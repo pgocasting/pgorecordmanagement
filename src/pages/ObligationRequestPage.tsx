@@ -90,6 +90,9 @@ export default function ObligationRequestPage() {
   const [successModalOpen, setSuccessModalOpen] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [requestToDelete, setRequestToDelete] = useState<string | null>(null);
+  const [rejectData, setRejectData] = useState({
+    remarks: '',
+  });
   const [editConfirmOpen, setEditConfirmOpen] = useState(false);
   const [timeOutConfirmOpen, setTimeOutConfirmOpen] = useState(false);
   const [requestToTimeOut, setRequestToTimeOut] = useState<string | null>(null);
@@ -262,7 +265,40 @@ export default function ObligationRequestPage() {
 
   const handleRejectRequest = (id: string) => {
     setRequestToDelete(id);
+    setRejectData({ remarks: '' });
     setDeleteConfirmOpen(true);
+  };
+
+  const confirmRejectRequest = async () => {
+    if (!requestToDelete) return;
+
+    if (!rejectData.remarks.trim()) {
+      setSuccess('Error: Rejection remarks are required');
+      setSuccessModalOpen(true);
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const now = new Date();
+      const dateTimeStr = now.toLocaleString();
+      const remarksWithDateTime = `[${dateTimeStr}] ${rejectData.remarks}`;
+      
+      await obligationRequestService.updateObligationRequest(requestToDelete, { status: 'Rejected', remarks: remarksWithDateTime });
+      const updatedRequests = obligationRequests.map(r => r.id === requestToDelete ? { ...r, status: 'Rejected', remarks: remarksWithDateTime } : r);
+      setObligationRequests(updatedRequests);
+      setSuccess('Obligation request rejected successfully');
+      setRequestToDelete(null);
+      setRejectData({ remarks: '' });
+      setDeleteConfirmOpen(false);
+      setSuccessModalOpen(true);
+    } catch (err) {
+      console.error('Failed to reject obligation request:', err);
+      setSuccess('Error rejecting obligation request');
+      setSuccessModalOpen(true);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleDialogOpenChange = (open: boolean) => {
@@ -282,24 +318,6 @@ export default function ObligationRequestPage() {
     }
   };
 
-  const confirmRejectRequest = async () => {
-    if (!requestToDelete) return;
-
-    try {
-      await obligationRequestService.updateObligationRequest(requestToDelete, { status: 'Rejected' });
-      const updatedRequests = obligationRequests.map(r => r.id === requestToDelete ? { ...r, status: 'Rejected' } : r);
-      setObligationRequests(updatedRequests);
-      setSuccess('Obligation request rejected successfully');
-      setRequestToDelete(null);
-      setDeleteConfirmOpen(false);
-      setSuccessModalOpen(true);
-    } catch (err) {
-      console.error('Failed to reject obligation request:', err);
-      setSuccess('Error rejecting obligation request');
-      setSuccessModalOpen(true);
-    }
-  };
-
   const handleViewRequest = (id: string) => {
     const request = obligationRequests.find((item) => item.id === id);
     if (request) {
@@ -316,6 +334,12 @@ export default function ObligationRequestPage() {
 
   const confirmTimeOut = async () => {
     if (!requestToTimeOut || !timeOutData.dateTimeOut) return;
+
+    if (!timeOutData.timeOutRemarks.trim()) {
+      setSuccess('Error: Time out remarks are required');
+      setSuccessModalOpen(true);
+      return;
+    }
 
     setIsLoading(true);
     try {
@@ -571,17 +595,19 @@ export default function ObligationRequestPage() {
                   <TableRow className="bg-gray-50">
                     <TableHead className="text-center">Tracking ID</TableHead>
                     <TableHead className="text-center">Date/Time IN</TableHead>
+                    <TableHead className="text-center">Date/Time OUT</TableHead>
                     <TableHead className="text-center">Full Name</TableHead>
                     <TableHead className="text-center">Type</TableHead>
                     <TableHead className="text-center">Amount</TableHead>
                     <TableHead className="text-center">Status</TableHead>
+                    <TableHead className="text-center">Remarks</TableHead>
                     <TableHead className="text-center">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {obligationRequests.length === 0 ? (
                     <TableRow key="empty-state">
-                      <TableCell colSpan={7} className="text-center py-4 text-gray-500 text-xs">
+                      <TableCell colSpan={9} className="text-center py-4 text-gray-500 text-xs">
                         No obligation requests found. Click "Add Obligation Request" to create one.
                       </TableCell>
                     </TableRow>
@@ -594,6 +620,9 @@ export default function ObligationRequestPage() {
                         <TableCell className="text-center text-xs">
                           {new Date(request.dateTimeIn).toLocaleString()}
                         </TableCell>
+                        <TableCell className="text-center text-xs">
+                          {request.dateTimeOut ? new Date(request.dateTimeOut).toLocaleString() : '-'}
+                        </TableCell>
                         <TableCell className="text-center text-xs">{request.fullName}</TableCell>
                         <TableCell className="text-center text-xs">{request.obligationType}</TableCell>
                         <TableCell className="text-center text-xs">₱{request.amount.toLocaleString()}</TableCell>
@@ -604,11 +633,20 @@ export default function ObligationRequestPage() {
                                 ? 'bg-green-100 text-green-800'
                                 : request.status === 'Pending'
                                 ? 'bg-yellow-100 text-yellow-800'
-                                : 'bg-blue-100 text-blue-800'
+                                : request.status === 'Rejected'
+                                ? 'bg-red-100 text-red-800'
+                                : 'bg-gray-100 text-gray-800'
                             }`}
                           >
                             {request.status}
                           </span>
+                        </TableCell>
+                        <TableCell
+                          className={`text-center text-xs ${
+                            request.status === 'Rejected' ? 'text-red-600 font-medium' : ''
+                          }`}
+                        >
+                          {request.remarks || '-'}
                         </TableCell>
                         <TableCell className="text-center">
                           <ActionButtons
@@ -616,11 +654,14 @@ export default function ObligationRequestPage() {
                             onEdit={() => handleEditRequest(request.id)}
                             onTimeOut={() => handleTimeOut(request.id)}
                             onReject={() => handleRejectRequest(request.id)}
-                            canEdit={request.status !== 'Rejected' && request.status !== 'Completed'}
-                            canReject={request.status !== 'Rejected' && request.status !== 'Completed'}
+                            hidden={request.status === 'Rejected'}
+                            canEdit={request.status !== 'Rejected'}
+                            canReject={request.status !== 'Rejected'}
                             showTimeOut={request.status !== 'Completed' && request.status !== 'Rejected'}
-                            editDisabledReason={request.status === 'Rejected' ? 'Cannot edit rejected records' : (request.status === 'Completed' ? 'Cannot edit completed records' : undefined)}
-                            rejectDisabledReason={request.status === 'Rejected' ? 'Record already rejected' : (request.status === 'Completed' ? 'Cannot reject completed records' : undefined)}
+                            showEdit={request.status !== 'Completed'}
+                            showReject={request.status !== 'Completed'}
+                            editDisabledReason={request.status === 'Rejected' ? 'Cannot edit rejected records' : undefined}
+                            rejectDisabledReason={request.status === 'Rejected' ? 'Record already rejected' : (request.status === 'Completed' ? 'Cannot reject completed records' : (user?.role !== 'admin' && (!!request.dateTimeOut || request.status !== 'Pending') ? 'Users can only reject pending records' : undefined))}
                           />
                         </TableCell>
                       </TableRow>
@@ -640,12 +681,26 @@ export default function ObligationRequestPage() {
           <DialogDescription>
             Are you sure you want to reject this obligation request? The status will be changed to "Rejected".
           </DialogDescription>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="rejectRemarks" className="text-sm font-medium text-gray-700">Rejection Remarks *</Label>
+              <textarea
+                id="rejectRemarks"
+                placeholder="Enter rejection remarks (required)"
+                value={rejectData.remarks}
+                onChange={(e) => setRejectData({ remarks: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 text-sm"
+                rows={3}
+              />
+            </div>
+          </div>
           <div className="flex gap-3 justify-end pt-6">
             <Button
               variant="outline"
               onClick={() => {
                 setDeleteConfirmOpen(false);
                 setRequestToDelete(null);
+                setRejectData({ remarks: '' });
               }}
               className="px-6"
             >
@@ -757,7 +812,8 @@ export default function ObligationRequestPage() {
                     <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
                       selectedRequest.status === 'Completed' ? 'bg-green-100 text-green-800' :
                       selectedRequest.status === 'Pending' ? 'bg-yellow-100 text-yellow-800' :
-                      'bg-blue-100 text-blue-800'
+                      selectedRequest.status === 'Rejected' ? 'bg-red-100 text-red-800' :
+                      'bg-gray-100 text-gray-800'
                     }`}>
                       {selectedRequest.status}
                     </span>

@@ -48,13 +48,13 @@ export default function TimeOutModal({
             />
           </div>
           <div>
-            <Label htmlFor="timeOutRemarks" className="text-sm font-medium text-gray-700">Remarks</Label>
+            <Label htmlFor="timeOutRemarks" className="text-sm font-medium text-gray-700">Remarks *</Label>
             <Textarea
               id="timeOutRemarks"
               value={remarks}
               onChange={(e) => onRemarksChange(e.target.value)}
               className="mt-2"
-              placeholder="Enter time out remarks (optional)"
+              placeholder="Enter time out remarks (required)"
               rows={4}
             />
           </div>
@@ -69,7 +69,7 @@ export default function TimeOutModal({
             <Button
               className="bg-blue-600 hover:bg-blue-700 text-white"
               onClick={onConfirm}
-              disabled={!dateTimeOut || isLoading}
+              disabled={!dateTimeOut || !remarks.trim() || isLoading}
             >
               {isLoading ? 'Recording...' : 'Record Time Out'}
             </Button>

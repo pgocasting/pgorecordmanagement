@@ -108,6 +108,9 @@ export default function VoucherPage() {
   });
   const [viewModalOpen, setViewModalOpen] = useState(false);
   const [selectedVoucher, setSelectedVoucher] = useState<Voucher | null>(null);
+  const [rejectData, setRejectData] = useState({
+    remarks: '',
+  });
   const [designationOptions] = useState<string[]>(['Admin', 'Manager', 'Staff', 'Officer']);
 
   const [formData, setFormData] = useState({
@@ -284,6 +287,7 @@ export default function VoucherPage() {
 
   const handleRejectVoucher = (id: string) => {
     setVoucherToDelete(id);
+    setRejectData({ remarks: '' });
     setDeleteConfirmOpen(true);
   };
 
@@ -308,13 +312,24 @@ export default function VoucherPage() {
   const confirmRejectVoucher = async () => {
     if (!voucherToDelete) return;
 
+    if (!rejectData.remarks.trim()) {
+      setSuccess('Error: Rejection remarks are required');
+      setSuccessModalOpen(true);
+      return;
+    }
+
     setIsLoading(true);
     try {
-      await voucherService.updateVoucher(voucherToDelete, { status: 'Rejected' });
-      const updatedVouchers = vouchers.map(v => v.id === voucherToDelete ? { ...v, status: 'Rejected' } : v);
+      const now = new Date();
+      const dateTimeStr = now.toLocaleString();
+      const remarksWithDateTime = `[${dateTimeStr}] ${rejectData.remarks}`;
+      
+      await voucherService.updateVoucher(voucherToDelete, { status: 'Rejected', remarks: remarksWithDateTime });
+      const updatedVouchers = vouchers.map(v => v.id === voucherToDelete ? { ...v, status: 'Rejected', remarks: remarksWithDateTime } : v);
       setVouchers(updatedVouchers);
       setSuccess('Voucher rejected successfully');
       setVoucherToDelete(null);
+      setRejectData({ remarks: '' });
       setDeleteConfirmOpen(false);
       setSuccessModalOpen(true);
     } catch (err) {
@@ -350,6 +365,12 @@ export default function VoucherPage() {
 
   const confirmTimeOut = async () => {
     if (!voucherToTimeOut || !timeOutData.dateTimeOut) return;
+
+    if (!timeOutData.timeOutRemarks.trim()) {
+      setSuccess('Error: Time out remarks are required');
+      setSuccessModalOpen(true);
+      return;
+    }
 
     setIsLoading(true);
     try {
@@ -638,22 +659,26 @@ export default function VoucherPage() {
                             <span className={`px-2 py-1 rounded text-xs font-medium ${
                               voucher.status === 'Completed' ? 'bg-green-100 text-green-800' :
                               voucher.status === 'Pending' ? 'bg-yellow-100 text-yellow-800' :
-                              'bg-blue-100 text-blue-800'
+                              voucher.status === 'Rejected' ? 'bg-red-100 text-red-800' :
+                              'bg-gray-100 text-gray-800'
                             }`}>
                               {voucher.status}
                             </span>
                           </TableCell>
-                          <TableCell className="wrap-break-word whitespace-normal text-center text-xs">{voucher.status === 'Completed' ? (voucher.timeOutRemarks || voucher.remarks || '-') : (voucher.remarks || '-')}</TableCell>
+                          <TableCell className={`wrap-break-word whitespace-normal text-center text-xs ${voucher.status === 'Rejected' ? 'text-red-600 font-medium' : ''}`}>{voucher.status === 'Completed' ? (voucher.timeOutRemarks || voucher.remarks || '-') : (voucher.remarks || '-')}</TableCell>
                           <TableCell className="text-center">
                             <ActionButtons
                               onView={() => handleViewVoucher(voucher.id)}
                               onEdit={() => handleEditVoucher(voucher.id)}
                               onTimeOut={() => handleTimeOut(voucher.id)}
                               onReject={() => handleRejectVoucher(voucher.id)}
-                              canEdit={user?.role === 'admin' || (!!voucher.dateTimeOut === false && voucher.status === 'Pending')}
-                              canReject={user?.role === 'admin' || (!!voucher.dateTimeOut === false && voucher.status === 'Pending')}
-                              showTimeOut={!voucher.dateTimeOut}
-                              editDisabledReason={user?.role !== 'admin' && (!!voucher.dateTimeOut || voucher.status !== 'Pending') ? 'Users can only edit pending records' : undefined}
+                              hidden={voucher.status === 'Rejected'}
+                              canEdit={voucher.status !== 'Rejected'}
+                              canReject={voucher.status !== 'Rejected'}
+                              showTimeOut={voucher.status !== 'Completed' && voucher.status !== 'Rejected'}
+                              showEdit={voucher.status !== 'Completed'}
+                              showReject={voucher.status !== 'Completed'}
+                              editDisabledReason={voucher.status === 'Rejected' ? 'Cannot edit rejected records' : undefined}
                               rejectDisabledReason={user?.role !== 'admin' && (!!voucher.dateTimeOut || voucher.status !== 'Pending') ? 'Users can only reject pending records' : undefined}
                             />
                           </TableCell>
@@ -696,7 +721,8 @@ export default function VoucherPage() {
                     <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
                       selectedVoucher.status === 'Completed' ? 'bg-green-100 text-green-800' :
                       selectedVoucher.status === 'Pending' ? 'bg-yellow-100 text-yellow-800' :
-                      'bg-blue-100 text-blue-800'
+                      selectedVoucher.status === 'Rejected' ? 'bg-red-100 text-red-800' :
+                      'bg-gray-100 text-gray-800'
                     }`}>
                       {selectedVoucher.status}
                     </span>
@@ -757,26 +783,40 @@ export default function VoucherPage() {
       {/* Reject Confirmation Modal */}
       <Dialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
         <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Confirm Reject</DialogTitle>
-            <DialogDescription>
-              Are you sure you want to reject this voucher? The status will be changed to "Rejected".
-            </DialogDescription>
-          </DialogHeader>
-          <div className="flex gap-2 justify-end pt-4">
+          <DialogTitle className="text-lg font-semibold">Confirm Reject</DialogTitle>
+          <DialogDescription>
+            Are you sure you want to reject this voucher? The status will be changed to "Rejected".
+          </DialogDescription>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="rejectRemarks" className="text-sm font-medium text-gray-700">Rejection Remarks *</Label>
+              <textarea
+                id="rejectRemarks"
+                placeholder="Enter rejection remarks (required)"
+                value={rejectData.remarks}
+                onChange={(e) => setRejectData({ remarks: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 text-sm"
+                rows={3}
+              />
+            </div>
+          </div>
+          <div className="flex gap-3 justify-end pt-6">
             <Button
               variant="outline"
-              onClick={() => setDeleteConfirmOpen(false)}
-              disabled={isLoading}
+              onClick={() => {
+                setDeleteConfirmOpen(false);
+                setVoucherToDelete(null);
+                setRejectData({ remarks: '' });
+              }}
+              className="px-6"
             >
               Cancel
             </Button>
             <Button
-              className="bg-red-600 hover:bg-red-700 text-white"
               onClick={confirmRejectVoucher}
-              disabled={isLoading}
+              className="px-6 bg-red-600 hover:bg-red-700 text-white"
             >
-              {isLoading ? 'Rejecting...' : 'Reject'}
+              Reject
             </Button>
           </div>
         </DialogContent>

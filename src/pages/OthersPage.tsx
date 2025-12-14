@@ -113,6 +113,9 @@ export default function OthersPage() {
   const [successModalOpen, setSuccessModalOpen] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [recordToDelete, setRecordToDelete] = useState<string | null>(null);
+  const [rejectData, setRejectData] = useState({
+    remarks: '',
+  });
   const [editConfirmOpen, setEditConfirmOpen] = useState(false);
   const [timeOutConfirmOpen, setTimeOutConfirmOpen] = useState(false);
   const [recordToTimeOut, setRecordToTimeOut] = useState<string | null>(null);
@@ -330,13 +333,24 @@ export default function OthersPage() {
   const confirmRejectRecord = async () => {
     if (!recordToDelete) return;
 
+    if (!rejectData.remarks.trim()) {
+      setSuccess('Error: Rejection remarks are required');
+      setSuccessModalOpen(true);
+      return;
+    }
+
     setIsLoading(true);
     try {
-      await othersService.updateRecord(recordToDelete, { status: 'Rejected' });
-      const updatedRecords = records.map(r => r.id === recordToDelete ? { ...r, status: 'Rejected' } : r);
+      const now = new Date();
+      const dateTimeStr = now.toLocaleString();
+      const remarksWithDateTime = `[${dateTimeStr}] ${rejectData.remarks}`;
+      
+      await othersService.updateRecord(recordToDelete, { status: 'Rejected', remarks: remarksWithDateTime });
+      const updatedRecords = records.map(r => r.id === recordToDelete ? { ...r, status: 'Rejected', remarks: remarksWithDateTime } : r);
       setRecords(updatedRecords);
       setSuccess('Record rejected successfully');
       setRecordToDelete(null);
+      setRejectData({ remarks: '' });
       setDeleteConfirmOpen(false);
       setSuccessModalOpen(true);
     } catch (err) {
@@ -364,6 +378,12 @@ export default function OthersPage() {
 
   const confirmTimeOut = async () => {
     if (!recordToTimeOut || !timeOutData.dateTimeOut) return;
+
+    if (!timeOutData.timeOutRemarks.trim()) {
+      setSuccess('Error: Time out remarks are required');
+      setSuccessModalOpen(true);
+      return;
+    }
 
     setIsLoading(true);
     try {
@@ -689,30 +709,38 @@ export default function OthersPage() {
                           <span className={`px-2 py-1 rounded text-xs font-medium ${
                             record.status === 'Completed' ? 'bg-green-100 text-green-800' :
                             record.status === 'Pending' ? 'bg-yellow-100 text-yellow-800' :
-                            'bg-blue-100 text-blue-800'
+                            record.status === 'Rejected' ? 'bg-red-100 text-red-800' :
+                            'bg-gray-100 text-gray-800'
                           }`}>
                             {record.status}
                           </span>
                         </TableCell>
-                        <TableCell className="wrap-break-word whitespace-normal text-center text-xs">{record.status === 'Completed' ? (record.timeOutRemarks || record.remarks || '-') : (record.remarks || '-')}</TableCell>
-                        <TableCell className="text-center">
+                        <TableCell className={`wrap-break-word whitespace-normal text-center text-xs ${record.status === 'Rejected' ? 'text-red-600 font-medium' : ''}`}>{record.status === 'Completed' ? (record.timeOutRemarks || record.remarks || '-') : (record.remarks || '-')}</TableCell>
+                        <TableCell className="py-1 px-1 text-center wrap-break-word whitespace-normal">
                           <ActionButtons
                             onView={() => handleViewRecord(record.id)}
                             onEdit={() => handleEditRecord(record.id)}
                             onTimeOut={() => handleTimeOut(record.id)}
-                            onReject={() => handleRejectRecord(record.id)}
-                            canEdit={record.status !== 'Rejected' && record.status !== 'Completed' && (user?.role === 'admin' || (!!record.dateTimeOut === false && record.status === 'Pending'))}
-                            canReject={record.status !== 'Rejected' && record.status !== 'Completed' && (user?.role === 'admin' || (!!record.dateTimeOut === false && record.status === 'Pending'))}
-                            showTimeOut={!record.dateTimeOut && record.status !== 'Rejected' && record.status !== 'Completed'}
-                            editDisabledReason={record.status === 'Rejected' ? 'Cannot edit rejected records' : (record.status === 'Completed' ? 'Cannot edit completed records' : (user?.role !== 'admin' && (!!record.dateTimeOut || record.status !== 'Pending') ? 'Users can only edit pending records' : undefined))}
-                            rejectDisabledReason={record.status === 'Rejected' ? 'Record already rejected' : (record.status === 'Completed' ? 'Cannot reject completed records' : (user?.role !== 'admin' && (!!record.dateTimeOut || record.status !== 'Pending') ? 'Users can only reject pending records' : undefined))}
+                            onReject={() => {
+                              setRecordToDelete(record.id);
+                              setRejectData({ remarks: '' });
+                              setDeleteConfirmOpen(true);
+                            }}
+                            hidden={record.status === 'Rejected'}
+                            canEdit={record.status !== 'Rejected'}
+                            canReject={record.status !== 'Rejected'}
+                            showTimeOut={record.status !== 'Completed' && record.status !== 'Rejected'}
+                            showEdit={record.status !== 'Completed'}
+                            showReject={record.status !== 'Completed'}
+                            editDisabledReason={record.status === 'Rejected' ? 'Cannot edit rejected records' : undefined}
+                            rejectDisabledReason={user?.role !== 'admin' && (!!record.dateTimeOut || record.status !== 'Pending') ? 'Users can only reject pending records' : undefined}
                           />
                         </TableCell>
                       </TableRow>
                     ))
                   ) : (
                     <TableRow>
-                      <TableCell colSpan={9} className="text-center py-8 text-gray-500 wrap-break-word whitespace-normal">
+                      <TableCell colSpan={10} className="text-center py-8 text-gray-500 wrap-break-word whitespace-normal">
                         No records found. Add one to get started.
                       </TableCell>
                     </TableRow>
@@ -745,7 +773,8 @@ export default function OthersPage() {
                     <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
                       selectedRecord.status === 'Completed' ? 'bg-green-100 text-green-800' :
                       selectedRecord.status === 'Pending' ? 'bg-yellow-100 text-yellow-800' :
-                      'bg-blue-100 text-blue-800'
+                      selectedRecord.status === 'Rejected' ? 'bg-red-100 text-red-800' :
+                      'bg-gray-100 text-gray-800'
                     }`}>
                       {selectedRecord.status}
                     </span>
@@ -855,10 +884,27 @@ export default function OthersPage() {
             <DialogTitle>Confirm Reject</DialogTitle>
           </DialogHeader>
           <p className="text-sm text-gray-600">Are you sure you want to reject this record? The status will be changed to "Rejected".</p>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="rejectRemarks" className="text-sm font-medium text-gray-700">Rejection Remarks *</Label>
+              <textarea
+                id="rejectRemarks"
+                placeholder="Enter rejection remarks (required)"
+                value={rejectData.remarks}
+                onChange={(e) => setRejectData({ remarks: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 text-sm"
+                rows={3}
+              />
+            </div>
+          </div>
           <div className="flex gap-2 justify-end pt-4">
             <Button
               variant="outline"
-              onClick={() => setDeleteConfirmOpen(false)}
+              onClick={() => {
+                setDeleteConfirmOpen(false);
+                setRecordToDelete(null);
+                setRejectData({ remarks: '' });
+              }}
             >
               Cancel
             </Button>

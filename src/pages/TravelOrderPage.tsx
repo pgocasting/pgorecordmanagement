@@ -101,6 +101,9 @@ export default function TravelOrderPage() {
   const [selectedTravelOrder, setSelectedTravelOrder] = useState<TravelOrder | null>(null);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [travelOrderToDelete, setTravelOrderToDelete] = useState<string | null>(null);
+  const [rejectData, setRejectData] = useState({
+    remarks: '',
+  });
 
   const [formData, setFormData] = useState({
     dateTimeIn: '',
@@ -323,19 +326,31 @@ export default function TravelOrderPage() {
 
   const handleRejectTravelOrder = (id: string) => {
     setTravelOrderToDelete(id);
+    setRejectData({ remarks: '' });
     setDeleteConfirmOpen(true);
   };
 
   const confirmRejectTravelOrder = async () => {
     if (!travelOrderToDelete) return;
 
+    if (!rejectData.remarks.trim()) {
+      setSuccess('Error: Rejection remarks are required');
+      setSuccessModalOpen(true);
+      return;
+    }
+
     setIsLoading(true);
     try {
-      await travelOrderService.updateTravelOrder(travelOrderToDelete, { status: 'Rejected' });
-      const updatedTravelOrders = travelOrders.map(t => t.id === travelOrderToDelete ? { ...t, status: 'Rejected' } : t);
+      const now = new Date();
+      const dateTimeStr = now.toLocaleString();
+      const remarksWithDateTime = `[${dateTimeStr}] ${rejectData.remarks}`;
+      
+      await travelOrderService.updateTravelOrder(travelOrderToDelete, { status: 'Rejected', remarks: remarksWithDateTime });
+      const updatedTravelOrders = travelOrders.map(t => t.id === travelOrderToDelete ? { ...t, status: 'Rejected', remarks: remarksWithDateTime } : t);
       setTravelOrders(updatedTravelOrders);
       setSuccess('Travel order rejected successfully');
       setTravelOrderToDelete(null);
+      setRejectData({ remarks: '' });
       setDeleteConfirmOpen(false);
       setSuccessModalOpen(true);
     } catch (err) {
@@ -349,6 +364,12 @@ export default function TravelOrderPage() {
 
   const confirmTimeOut = async () => {
     if (!travelOrderToTimeOut || !timeOutData.dateTimeOut) return;
+
+    if (!timeOutData.timeOutRemarks.trim()) {
+      setSuccess('Error: Time out remarks are required');
+      setSuccessModalOpen(true);
+      return;
+    }
 
     setIsLoading(true);
     try {
@@ -674,16 +695,19 @@ export default function TravelOrderPage() {
                             {item.status || 'Pending'}
                           </span>
                         </TableCell>
-                        <TableCell className="text-xs py-1 px-1 text-center wrap-break-word whitespace-normal">{item.status === 'Completed' ? (item.timeOutRemarks || item.remarks || '-') : (item.remarks || '-')}</TableCell>
+                        <TableCell className={`text-xs py-1 px-1 text-center wrap-break-word whitespace-normal ${item.status === 'Rejected' ? 'text-red-600 font-medium' : ''}`}>{item.status === 'Completed' ? (item.timeOutRemarks || item.remarks || '-') : (item.remarks || '-')}</TableCell>
                         <TableCell className="py-1 px-1 text-center wrap-break-word whitespace-normal">
                           <ActionButtons
                             onView={() => handleViewTravelOrder(item.id)}
                             onEdit={() => handleEditTravelOrder(item.id)}
                             onTimeOut={() => handleTimeOut(item.id)}
                             onReject={() => handleRejectTravelOrder(item.id)}
+                            hidden={item.status === 'Rejected'}
                             canEdit={user?.role === 'admin' || (!!item.dateTimeOut === false && item.status === 'Pending')}
                             canReject={user?.role === 'admin' || (!!item.dateTimeOut === false && item.status === 'Pending')}
                             showTimeOut={!item.dateTimeOut}
+                            showEdit={item.status !== 'Completed'}
+                            showReject={item.status !== 'Completed'}
                             editDisabledReason={user?.role !== 'admin' && (!!item.dateTimeOut || item.status !== 'Pending') ? 'Users can only edit pending records' : undefined}
                             rejectDisabledReason={user?.role !== 'admin' && (!!item.dateTimeOut || item.status !== 'Pending') ? 'Users can only reject pending records' : undefined}
                           />
@@ -699,57 +723,43 @@ export default function TravelOrderPage() {
         </div>
       </div>
 
-      {/* Edit Confirmation Modal */}
-      <Dialog open={editConfirmOpen} onOpenChange={setEditConfirmOpen}>
+      {/* Delete Confirmation Modal */}
+      <Dialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
         <DialogContent className="sm:max-w-md">
-          <DialogTitle className="text-lg font-semibold">Confirm Update</DialogTitle>
+          <DialogTitle className="text-lg font-semibold">Confirm Reject</DialogTitle>
           <DialogDescription>
-            Are you sure you want to update this travel order? This action cannot be undone.
+            Are you sure you want to reject this travel order? The status will be changed to "Rejected".
           </DialogDescription>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="rejectRemarks" className="text-sm font-medium text-gray-700">Rejection Remarks *</Label>
+              <textarea
+                id="rejectRemarks"
+                placeholder="Enter rejection remarks (required)"
+                value={rejectData.remarks}
+                onChange={(e) => setRejectData({ remarks: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 text-sm"
+                rows={3}
+              />
+            </div>
+          </div>
           <div className="flex gap-3 justify-end pt-6">
             <Button
               variant="outline"
               onClick={() => {
-                setEditConfirmOpen(false);
+                setDeleteConfirmOpen(false);
+                setTravelOrderToDelete(null);
+                setRejectData({ remarks: '' });
               }}
               className="px-6"
             >
               Cancel
             </Button>
             <Button
-              onClick={confirmEditTravelOrder}
-              disabled={isLoading}
-              className="px-6 bg-amber-600 hover:bg-amber-700 text-white"
-            >
-              {isLoading ? 'Updating...' : 'Update'}
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Delete Confirmation Modal */}
-      <Dialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Confirm Delete</DialogTitle>
-            <DialogDescription>
-              Are you sure you want to delete this travel order? This action cannot be undone.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="flex gap-2 justify-end pt-4">
-            <Button
-              variant="outline"
-              onClick={() => setDeleteConfirmOpen(false)}
-              disabled={isLoading}
-            >
-              Cancel
-            </Button>
-            <Button
-              className="bg-red-600 hover:bg-red-700 text-white"
               onClick={confirmRejectTravelOrder}
-              disabled={isLoading}
+              className="px-6 bg-red-600 hover:bg-red-700 text-white"
             >
-              {isLoading ? 'Rejecting...' : 'Reject'}
+              Reject
             </Button>
           </div>
         </DialogContent>

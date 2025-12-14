@@ -96,6 +96,9 @@ export default function AdminToPGOPage() {
   });
   const [viewModalOpen, setViewModalOpen] = useState(false);
   const [selectedRecord, setSelectedRecord] = useState<AdminToPGO | null>(null);
+  const [rejectData, setRejectData] = useState({
+    remarks: '',
+  });
   const [designationOptions] = useState<string[]>(['Admin', 'Manager', 'Staff', 'Officer']);
 
   // Form states
@@ -271,7 +274,40 @@ export default function AdminToPGOPage() {
 
   const handleRejectRecord = (id: string) => {
     setRecordToDelete(id);
+    setRejectData({ remarks: '' });
     setDeleteConfirmOpen(true);
+  };
+
+  const confirmRejectRecord = async () => {
+    if (!recordToDelete) return;
+
+    if (!rejectData.remarks.trim()) {
+      setSuccess('Error: Rejection remarks are required');
+      setSuccessModalOpen(true);
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const now = new Date();
+      const dateTimeStr = now.toLocaleString();
+      const remarksWithDateTime = `[${dateTimeStr}] ${rejectData.remarks}`;
+      
+      await adminToPGOService.updateRecord(recordToDelete, { status: 'Rejected', remarks: remarksWithDateTime });
+      const updatedRecords = records.map(r => r.id === recordToDelete ? { ...r, status: 'Rejected', remarks: remarksWithDateTime } : r);
+      setRecords(updatedRecords);
+      setSuccess('Admin to PGO record rejected successfully');
+      setRecordToDelete(null);
+      setRejectData({ remarks: '' });
+      setDeleteConfirmOpen(false);
+      setSuccessModalOpen(true);
+    } catch (err) {
+      console.error('Failed to reject record:', err);
+      setSuccess('Error rejecting record');
+      setSuccessModalOpen(true);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleDialogOpenChange = (open: boolean) => {
@@ -289,27 +325,6 @@ export default function AdminToPGOPage() {
     }
   };
 
-  const confirmRejectRecord = async () => {
-    if (!recordToDelete) return;
-
-    setIsLoading(true);
-    try {
-      await adminToPGOService.updateRecord(recordToDelete, { status: 'Rejected' });
-      const updatedRecords = records.map(r => r.id === recordToDelete ? { ...r, status: 'Rejected' } : r);
-      setRecords(updatedRecords);
-      setSuccess('Admin to PGO record rejected successfully');
-      setRecordToDelete(null);
-      setDeleteConfirmOpen(false);
-      setSuccessModalOpen(true);
-    } catch (err) {
-      console.error('Failed to reject record:', err);
-      setSuccess('Error rejecting record');
-      setSuccessModalOpen(true);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   const handleTimeOut = (id: string) => {
     setRecordToTimeOut(id);
     setTimeOutData({
@@ -321,6 +336,12 @@ export default function AdminToPGOPage() {
 
   const confirmTimeOut = async () => {
     if (!recordToTimeOut || !timeOutData.dateTimeOut) return;
+
+    if (!timeOutData.timeOutRemarks.trim()) {
+      setSuccess('Error: Time out remarks are required');
+      setSuccessModalOpen(true);
+      return;
+    }
 
     setIsLoading(true);
     try {
@@ -590,16 +611,19 @@ export default function AdminToPGOPage() {
                             {record.status || 'Pending'}
                           </span>
                         </TableCell>
-                        <TableCell className="text-xs py-1 px-1 text-center wrap-break-word whitespace-normal">{record.status === 'Completed' ? (record.timeOutRemarks || record.remarks || '-') : (record.remarks || '-')}</TableCell>
+                        <TableCell className={`text-xs py-1 px-1 text-center wrap-break-word whitespace-normal ${record.status === 'Rejected' ? 'text-red-600 font-medium' : ''}`}>{record.status === 'Completed' ? (record.timeOutRemarks || record.remarks || '-') : (record.remarks || '-')}</TableCell>
                         <TableCell className="py-1 px-1 text-center wrap-break-word whitespace-normal">
                           <ActionButtons
                             onView={() => handleViewRecord(record.id)}
                             onEdit={() => handleEditRecord(record.id)}
                             onTimeOut={() => handleTimeOut(record.id)}
                             onReject={() => handleRejectRecord(record.id)}
+                            hidden={record.status === 'Rejected'}
                             canEdit={record.status !== 'Rejected'}
                             canReject={record.status !== 'Rejected'}
                             showTimeOut={record.status !== 'Completed' && record.status !== 'Rejected'}
+                            showEdit={record.status !== 'Completed'}
+                            showReject={record.status !== 'Completed'}
                             editDisabledReason={record.status === 'Rejected' ? 'Cannot edit rejected records' : undefined}
                             rejectDisabledReason={record.status === 'Rejected' ? 'Record already rejected' : undefined}
                           />
@@ -615,18 +639,33 @@ export default function AdminToPGOPage() {
         </div>
       </div>
 
-      {/* Reject Confirmation Modal */}
+      {/* Delete Confirmation Modal */}
       <Dialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogTitle className="text-lg font-semibold">Confirm Reject</DialogTitle>
-          <p className="text-sm text-gray-600 mt-4">
-            Are you sure you want to reject this record? The status will be changed to "Rejected".
-          </p>
+          <DialogDescription>
+            Are you sure you want to reject this admin to PGO record? The status will be changed to "Rejected".
+          </DialogDescription>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="rejectRemarks" className="text-sm font-medium text-gray-700">Rejection Remarks *</Label>
+              <textarea
+                id="rejectRemarks"
+                placeholder="Enter rejection remarks (required)"
+                value={rejectData.remarks}
+                onChange={(e) => setRejectData({ remarks: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 text-sm"
+                rows={3}
+              />
+            </div>
+          </div>
           <div className="flex gap-3 justify-end pt-6">
             <Button
               variant="outline"
               onClick={() => {
                 setDeleteConfirmOpen(false);
+                setRecordToDelete(null);
+                setRejectData({ remarks: '' });
               }}
               className="px-6"
             >
@@ -686,7 +725,8 @@ export default function AdminToPGOPage() {
                     <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
                       selectedRecord.status === 'Completed' ? 'bg-green-100 text-green-800' :
                       selectedRecord.status === 'Pending' ? 'bg-yellow-100 text-yellow-800' :
-                      'bg-blue-100 text-blue-800'
+                      selectedRecord.status === 'Rejected' ? 'bg-red-100 text-red-800' :
+                      'bg-gray-100 text-gray-800'
                     }`}>
                       {selectedRecord.status}
                     </span>

@@ -100,6 +100,9 @@ export default function PurchaseRequestPage() {
   });
   const [viewModalOpen, setViewModalOpen] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState<PurchaseRequest | null>(null);
+  const [rejectData, setRejectData] = useState({
+    remarks: '',
+  });
   const [designationOptions] = useState<string[]>(['Admin', 'Manager', 'Staff', 'Officer']);
 
   const [formData, setFormData] = useState({
@@ -269,7 +272,37 @@ export default function PurchaseRequestPage() {
 
   const handleRejectRequest = (id: string) => {
     setRequestToDelete(id);
+    setRejectData({ remarks: '' });
     setDeleteConfirmOpen(true);
+  };
+
+  const confirmRejectRequest = async () => {
+    if (!requestToDelete) return;
+
+    if (!rejectData.remarks.trim()) {
+      setSuccess('Error: Rejection remarks are required');
+      setSuccessModalOpen(true);
+      return;
+    }
+
+    try {
+      const now = new Date();
+      const dateTimeStr = now.toLocaleString();
+      const remarksWithDateTime = `[${dateTimeStr}] ${rejectData.remarks}`;
+      
+      await purchaseRequestService.updatePurchaseRequest(requestToDelete, { status: 'Rejected', remarks: remarksWithDateTime });
+      const updatedRequests = purchaseRequests.map(r => r.id === requestToDelete ? { ...r, status: 'Rejected', remarks: remarksWithDateTime } : r);
+      setPurchaseRequests(updatedRequests);
+      setSuccess('Purchase request rejected successfully');
+      setRequestToDelete(null);
+      setRejectData({ remarks: '' });
+      setDeleteConfirmOpen(false);
+      setSuccessModalOpen(true);
+    } catch (err) {
+      console.error('Failed to reject purchase request:', err);
+      setSuccess('Error rejecting purchase request');
+      setSuccessModalOpen(true);
+    }
   };
 
   const handleDialogOpenChange = (open: boolean) => {
@@ -290,24 +323,6 @@ export default function PurchaseRequestPage() {
     }
   };
 
-  const confirmRejectRequest = async () => {
-    if (!requestToDelete) return;
-
-    try {
-      await purchaseRequestService.updatePurchaseRequest(requestToDelete, { status: 'Rejected' });
-      const updatedRequests = purchaseRequests.map(r => r.id === requestToDelete ? { ...r, status: 'Rejected' } : r);
-      setPurchaseRequests(updatedRequests);
-      setSuccess('Purchase request rejected successfully');
-      setRequestToDelete(null);
-      setDeleteConfirmOpen(false);
-      setSuccessModalOpen(true);
-    } catch (err) {
-      console.error('Failed to reject purchase request:', err);
-      setSuccess('Error rejecting purchase request');
-      setSuccessModalOpen(true);
-    }
-  };
-
   const handleViewRequest = (id: string) => {
     const request = purchaseRequests.find((item) => item.id === id);
     if (request) {
@@ -324,6 +339,12 @@ export default function PurchaseRequestPage() {
 
   const confirmTimeOut = async () => {
     if (!requestToTimeOut || !timeOutData.dateTimeOut) return;
+
+    if (!timeOutData.timeOutRemarks.trim()) {
+      setSuccess('Error: Time out remarks are required');
+      setSuccessModalOpen(true);
+      return;
+    }
 
     setIsLoading(true);
     try {
@@ -590,18 +611,20 @@ export default function PurchaseRequestPage() {
                   <TableRow className="bg-gray-50">
                     <TableHead className="text-center">Tracking ID</TableHead>
                     <TableHead className="text-center">Date/Time IN</TableHead>
+                    <TableHead className="text-center">Date/Time OUT</TableHead>
                     <TableHead className="text-center">Full Name</TableHead>
                     <TableHead className="text-center">Item Description</TableHead>
                     <TableHead className="text-center">Quantity</TableHead>
                     <TableHead className="text-center">Est. Cost</TableHead>
                     <TableHead className="text-center">Status</TableHead>
+                    <TableHead className="text-center">Remarks</TableHead>
                     <TableHead className="text-center">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {purchaseRequests.length === 0 ? (
                     <TableRow key="empty-state">
-                      <TableCell colSpan={8} className="text-center py-4 text-gray-500 text-xs">
+                      <TableCell colSpan={10} className="text-center py-4 text-gray-500 text-xs">
                         No purchase requests found. Click "Add Purchase Request" to create one.
                       </TableCell>
                     </TableRow>
@@ -614,6 +637,9 @@ export default function PurchaseRequestPage() {
                         <TableCell className="text-center text-xs">
                           {new Date(request.dateTimeIn).toLocaleString()}
                         </TableCell>
+                        <TableCell className="text-center text-xs">
+                          {request.dateTimeOut ? new Date(request.dateTimeOut).toLocaleString() : '-'}
+                        </TableCell>
                         <TableCell className="text-center text-xs">{request.fullName}</TableCell>
                         <TableCell className="text-center text-xs">{request.itemDescription}</TableCell>
                         <TableCell className="text-center text-xs">{request.quantity}</TableCell>
@@ -625,11 +651,22 @@ export default function PurchaseRequestPage() {
                                 ? 'bg-green-100 text-green-800'
                                 : request.status === 'Pending'
                                 ? 'bg-yellow-100 text-yellow-800'
-                                : 'bg-blue-100 text-blue-800'
+                                : request.status === 'Rejected'
+                                ? 'bg-red-100 text-red-800'
+                                : 'bg-gray-100 text-gray-800'
                             }`}
                           >
                             {request.status}
                           </span>
+                        </TableCell>
+                        <TableCell
+                          className={`text-center text-xs wrap-break-word whitespace-normal ${
+                            request.status === 'Rejected' ? 'text-red-600 font-medium' : ''
+                          }`}
+                        >
+                          {request.status === 'Completed'
+                            ? request.timeOutRemarks || request.remarks || '-'
+                            : request.remarks || '-'}
                         </TableCell>
                         <TableCell className="text-center">
                           <ActionButtons
@@ -637,7 +674,11 @@ export default function PurchaseRequestPage() {
                             onEdit={() => handleEditRequest(request.id)}
                             onTimeOut={() => handleTimeOut(request.id)}
                             onReject={() => handleRejectRequest(request.id)}
-                            showTimeOut={request.status !== 'Completed'}
+                            hidden={request.status === 'Rejected'}
+                            rejectDisabledReason={request.status === 'Rejected' ? 'Cannot edit rejected records' : undefined}
+                            showTimeOut={request.status !== 'Completed' && request.status !== 'Rejected'}
+                            showEdit={request.status !== 'Completed'}
+                            showReject={request.status !== 'Completed'}
                           />
                         </TableCell>
                       </TableRow>
@@ -657,12 +698,26 @@ export default function PurchaseRequestPage() {
           <DialogDescription>
             Are you sure you want to reject this purchase request? The status will be changed to "Rejected".
           </DialogDescription>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="rejectRemarks" className="text-sm font-medium text-gray-700">Rejection Remarks *</Label>
+              <textarea
+                id="rejectRemarks"
+                placeholder="Enter rejection remarks (required)"
+                value={rejectData.remarks}
+                onChange={(e) => setRejectData({ remarks: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 text-sm"
+                rows={3}
+              />
+            </div>
+          </div>
           <div className="flex gap-3 justify-end pt-6">
             <Button
               variant="outline"
               onClick={() => {
                 setDeleteConfirmOpen(false);
                 setRequestToDelete(null);
+                setRejectData({ remarks: '' });
               }}
               className="px-6"
             >
@@ -739,7 +794,8 @@ export default function PurchaseRequestPage() {
                     <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
                       selectedRequest.status === 'Completed' ? 'bg-green-100 text-green-800' :
                       selectedRequest.status === 'Pending' ? 'bg-yellow-100 text-yellow-800' :
-                      'bg-blue-100 text-blue-800'
+                      selectedRequest.status === 'Rejected' ? 'bg-red-100 text-red-800' :
+                      'bg-gray-100 text-gray-800'
                     }`}>
                       {selectedRequest.status}
                     </span>
