@@ -1,7 +1,18 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { overtimeService } from '@/services/localStorageService';
+
+const getCurrentDateTime = (): string => {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  const hours = String(now.getHours()).padStart(2, '0');
+  const minutes = String(now.getMinutes()).padStart(2, '0');
+  return `${year}-${month}-${day}T${hours}:${minutes}`;
+};
+
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -33,7 +44,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Plus, Menu, Settings, LogOut, BarChart3, FileText, Home } from 'lucide-react';
+import { Plus, Menu, LogOut } from 'lucide-react';
+import { Sidebar } from '@/components/Sidebar';
 import { ActionButtons } from '@/components/ActionButtons';
 
 interface Overtime {
@@ -188,10 +200,10 @@ export default function OvertimePage() {
         remarks: '',
         timeOutRemarks: '',
       };
-      await overtimeService.addOvertime(newOvertime);
+      const result = await overtimeService.addOvertime(newOvertime);
       setSuccess('Overtime request added successfully');
 
-      setOvertimes([newOvertime as Overtime, ...overtimes]);
+      setOvertimes([result as Overtime, ...overtimes]);
 
       setFormData({
         dateTimeIn: '',
@@ -309,25 +321,26 @@ export default function OvertimePage() {
     }
   };
 
-  const handleDeleteOvertime = (id: string) => {
+  const handleRejectOvertime = (id: string) => {
     setOvertimeToDelete(id);
     setDeleteConfirmOpen(true);
   };
 
-  const confirmDeleteOvertime = async () => {
+  const confirmRejectOvertime = async () => {
     if (!overtimeToDelete) return;
 
     setIsLoading(true);
     try {
-      await overtimeService.deleteOvertime(overtimeToDelete);
-      setOvertimes(overtimes.filter(o => o.id !== overtimeToDelete));
-      setSuccess('Overtime request deleted successfully');
+      await overtimeService.updateOvertime(overtimeToDelete, { status: 'Rejected' });
+      const updatedOvertimes = overtimes.map(o => o.id === overtimeToDelete ? { ...o, status: 'Rejected' } : o);
+      setOvertimes(updatedOvertimes);
+      setSuccess('Overtime request rejected successfully');
       setOvertimeToDelete(null);
       setDeleteConfirmOpen(false);
       setSuccessModalOpen(true);
     } catch (err) {
-      console.error('Failed to delete overtime:', err);
-      setSuccess(err instanceof Error ? err.message : 'Error deleting overtime request');
+      console.error('Failed to reject overtime:', err);
+      setSuccess(err instanceof Error ? err.message : 'Error rejecting overtime request');
       setSuccessModalOpen(true);
     } finally {
       setIsLoading(false);
@@ -383,13 +396,13 @@ export default function OvertimePage() {
           </Button>
         </SheetTrigger>
         <SheetContent side="left" className="w-64 p-0">
-          <OvertimeSidebar recordTypes={recordTypes} onNavigate={() => setSidebarOpen(false)} />
+          <Sidebar recordTypes={recordTypes} onNavigate={() => setSidebarOpen(false)} />
         </SheetContent>
       </Sheet>
 
       {/* Desktop Sidebar */}
       <div className="hidden md:block w-64 bg-white border-r border-gray-200 shadow-sm">
-        <OvertimeSidebar recordTypes={recordTypes} onNavigate={undefined} />
+        <Sidebar recordTypes={recordTypes} onNavigate={undefined} />
       </div>
 
       {/* Main Content */}
@@ -421,7 +434,24 @@ export default function OvertimePage() {
               </div>
               <Dialog open={isDialogOpen} onOpenChange={handleDialogOpenChange}>
                 <DialogTrigger asChild>
-                  <Button className="gap-2 bg-indigo-600 hover:bg-indigo-700">
+                  <Button 
+                    className="gap-2 bg-indigo-600 hover:bg-indigo-700"
+                    onClick={() => {
+                      setEditingId(null);
+                      setFormData({
+                        dateTimeIn: getCurrentDateTime(),
+                        dateTimeOut: '',
+                        fullName: '',
+                        designation: '',
+                        inclusiveDateStart: '',
+                        inclusiveDateEnd: '',
+                        inclusiveTimeStart: '',
+                        inclusiveTimeEnd: '',
+                        purpose: '',
+                        placeOfAssignment: '',
+                      });
+                    }}
+                  >
                     <Plus className="h-4 w-4" />
                     Add Overtime Request
                   </Button>
@@ -649,12 +679,12 @@ export default function OvertimePage() {
                             onView={() => handleViewOvertime(item.id)}
                             onEdit={() => handleEditOvertime(item.id)}
                             onTimeOut={() => handleTimeOut(item.id)}
-                            onDelete={() => handleDeleteOvertime(item.id)}
+                            onReject={() => handleRejectOvertime(item.id)}
                             canEdit={user?.role === 'admin' || (!!item.dateTimeOut === false && item.status === 'Pending')}
-                            canDelete={user?.role === 'admin' || (!!item.dateTimeOut === false && item.status === 'Pending')}
+                            canReject={user?.role === 'admin' || (!!item.dateTimeOut === false && item.status === 'Pending')}
                             showTimeOut={!item.dateTimeOut}
                             editDisabledReason={user?.role !== 'admin' && (!!item.dateTimeOut || item.status !== 'Pending') ? 'Users can only edit pending records' : undefined}
-                            deleteDisabledReason={user?.role !== 'admin' && (!!item.dateTimeOut || item.status !== 'Pending') ? 'Users can only delete pending records' : undefined}
+                            rejectDisabledReason={user?.role !== 'admin' && (!!item.dateTimeOut || item.status !== 'Pending') ? 'Users can only reject pending records' : undefined}
                           />
                         </TableCell>
                       </TableRow>
@@ -715,10 +745,10 @@ export default function OvertimePage() {
             </Button>
             <Button
               className="bg-red-600 hover:bg-red-700 text-white"
-              onClick={confirmDeleteOvertime}
+              onClick={confirmRejectOvertime}
               disabled={isLoading}
             >
-              {isLoading ? 'Deleting...' : 'Delete'}
+              {isLoading ? 'Rejecting...' : 'Reject'}
             </Button>
           </div>
         </DialogContent>
@@ -876,118 +906,3 @@ export default function OvertimePage() {
   );
 }
 
-interface OvertimeSidebarProps {
-  recordTypes: string[];
-  onNavigate?: () => void;
-}
-
-function OvertimeSidebar({ recordTypes, onNavigate }: OvertimeSidebarProps) {
-  const { user } = useAuth();
-  const navigate = useNavigate();
-
-  const menuItems = [
-    { icon: Home, label: 'Dashboard', href: '/dashboard' },
-  ];
-
-  return (
-    <div className="h-full flex flex-col bg-white">
-      <div className="p-6 border-b border-gray-200">
-        <h2 className="text-xl font-bold text-indigo-600">PGO</h2>
-        <p className="text-xs text-gray-500">Record Management</p>
-      </div>
-
-      <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
-        {menuItems.map((item) => (
-          <button
-            key={item.label}
-            onClick={() => {
-              onNavigate?.();
-              navigate(item.href);
-            }}
-            className="w-full flex items-center gap-3 px-4 py-2 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors text-left"
-          >
-            <item.icon className="h-5 w-5" />
-            <span className="text-sm font-medium">{item.label}</span>
-          </button>
-        ))}
-
-        <div className="space-y-1">
-          <div className="flex items-center gap-3 px-4 py-2 text-gray-700">
-            <FileText className="h-5 w-5" />
-            <span className="text-sm font-medium">Records</span>
-          </div>
-          <div className="pl-8 space-y-1">
-            {recordTypes.map((type: string) => (
-              <button
-                key={type}
-                onClick={() => {
-                  onNavigate?.();
-                  if (type === 'Locator') {
-                    navigate('/locator');
-                  } else if (type === 'Admin to PGO') {
-                    navigate('/admin-to-pgo');
-                  } else if (type === 'Leave') {
-                    navigate('/leave');
-                  } else if (type === 'Letter') {
-                    navigate('/letter');
-                  } else if (type === 'Request for Overtime') {
-                    navigate('/overtime');
-                  } else if (type === 'Travel Order') {
-                    navigate('/travel-order');
-                  } else if (type === 'Voucher') {
-                    navigate('/voucher');
-                  } else if (type === 'Others') {
-                    navigate('/others');
-                  }
-                }}
-                className="w-full block px-4 py-2 text-sm text-gray-600 rounded-lg hover:bg-gray-100 transition-colors text-left"
-              >
-                {type}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Reports */}
-        <button
-          onClick={() => {
-            onNavigate?.();
-            navigate('/reports');
-          }}
-          className="w-full flex items-center gap-3 px-4 py-2 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors text-left mt-2"
-        >
-          <BarChart3 className="h-5 w-5" />
-          <span className="text-sm font-medium">Reports</span>
-        </button>
-      </nav>
-
-      <div className="p-4 border-t border-gray-200">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center">
-            <span className="text-sm font-semibold text-indigo-600">
-              {user?.name.charAt(0).toUpperCase()}
-            </span>
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-gray-900 truncate">{user?.name}</p>
-            <p className="text-xs text-gray-500 truncate">{user?.role}</p>
-          </div>
-        </div>
-      </div>
-
-      <div className="p-4 border-t border-gray-200 space-y-2">
-        <Button
-          variant="outline"
-          className="w-full justify-start gap-2 text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50"
-          onClick={() => {
-            onNavigate?.();
-            navigate('/settings');
-          }}
-        >
-          <Settings className="h-4 w-4" />
-          Settings
-        </Button>
-      </div>
-    </div>
-  );
-}

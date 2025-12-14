@@ -1,28 +1,28 @@
 import { Button } from '@/components/ui/button';
-import { Eye, Edit2, Clock, Trash2 } from 'lucide-react';
+import { Eye, Edit2, Clock, X } from 'lucide-react';
 
 interface ActionButtonsProps {
   onView: () => void;
   onEdit: () => void;
   onTimeOut: () => void;
-  onDelete: () => void;
+  onReject: () => void;
   canEdit?: boolean;
-  canDelete?: boolean;
+  canReject?: boolean;
   showTimeOut?: boolean;
   editDisabledReason?: string;
-  deleteDisabledReason?: string;
+  rejectDisabledReason?: string;
 }
 
 export function ActionButtons({
   onView,
   onEdit,
   onTimeOut,
-  onDelete,
+  onReject,
   canEdit = true,
-  canDelete = true,
+  canReject = true,
   showTimeOut = true,
   editDisabledReason,
-  deleteDisabledReason,
+  rejectDisabledReason,
 }: ActionButtonsProps) {
   return (
     <div className="flex items-center justify-center gap-2">
@@ -66,20 +66,20 @@ export function ActionButtons({
         </Button>
       )}
 
-      {/* Delete Button */}
+      {/* Reject Button */}
       <Button
         variant="ghost"
         size="sm"
-        onClick={onDelete}
-        disabled={!canDelete}
+        onClick={onReject}
+        disabled={!canReject}
         className={`h-6 w-6 p-0 ${
-          canDelete
+          canReject
             ? 'text-red-600 hover:text-red-700 hover:bg-red-50'
             : 'text-gray-400 cursor-not-allowed hover:bg-transparent'
         }`}
-        title={deleteDisabledReason || 'Delete'}
+        title={rejectDisabledReason || 'Reject'}
       >
-        <Trash2 className="h-3 w-3" />
+        <X className="h-3 w-3" />
       </Button>
     </div>
   );

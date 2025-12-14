@@ -27,21 +27,18 @@ import {
 import {
   Menu,
   LogOut,
-  Settings,
-  FileText,
-  BarChart3,
   Search,
-  Home,
 } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { voucherService, letterService, leaveService, locatorService, adminToPGOService, othersService, travelOrderService, overtimeService } from '@/services/localStorageService';
+import { Sidebar } from '@/components/Sidebar';
+import { voucherService, letterService, leaveService, locatorService, adminToPGOService, othersService, travelOrderService, overtimeService, obligationRequestService, purchaseRequestService } from '@/services/localStorageService';
 
 interface Record {
   id: string;
   trackingId: string;
   title: string;
   date: string;
-  status: 'active' | 'archived' | 'pending' | 'completed';
+  status: 'active' | 'archived' | 'pending' | 'completed' | 'rejected';
   category: string;
 }
 
@@ -65,7 +62,7 @@ export default function DashboardPage() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [messageModalOpen, setMessageModalOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<'pending' | 'completed'>('pending');
+  const [activeTab, setActiveTab] = useState<'pending' | 'completed' | 'rejected'>('pending');
 
   // Load records on mount
   useEffect(() => {
@@ -74,7 +71,7 @@ export default function DashboardPage() {
         const allRecords: Record[] = [];
 
         // Fetch all collections in parallel
-        const [vouchers, letters, leaves, locators, adminToPGO, others, travelOrders, overtimes] = await Promise.all([
+        const [vouchers, letters, leaves, locators, adminToPGO, others, travelOrders, overtimes, obligationRequests, purchaseRequests] = await Promise.all([
           voucherService.getVouchers(),
           letterService.getLetters(),
           leaveService.getLeaves(),
@@ -82,18 +79,20 @@ export default function DashboardPage() {
           adminToPGOService.getRecords(),
           othersService.getRecords(),
           travelOrderService.getTravelOrders(),
-          overtimeService.getOvertimes()
+          overtimeService.getOvertimes(),
+          obligationRequestService.getObligationRequests(),
+          purchaseRequestService.getPurchaseRequests()
         ]);
 
         // Process vouchers
         vouchers.forEach((v: any) => {
-          if (v.status === 'Pending' || v.status === 'Completed') {
+          if (v.status === 'Pending' || v.status === 'Completed' || v.status === 'Rejected') {
             allRecords.push({
               id: v.id,
               trackingId: v.trackingId,
               title: v.payee,
               date: new Date(v.dateTimeIn).toLocaleString(),
-              status: v.status === 'Completed' ? 'completed' : 'pending',
+              status: v.status === 'Completed' ? 'completed' : v.status === 'Rejected' ? 'rejected' : 'pending',
               category: 'Voucher'
             });
           }
@@ -101,13 +100,13 @@ export default function DashboardPage() {
 
         // Process letters
         letters.forEach((l: any) => {
-          if (l.status === 'Pending' || l.status === 'Completed') {
+          if (l.status === 'Pending' || l.status === 'Completed' || l.status === 'Rejected') {
             allRecords.push({
               id: l.id,
               trackingId: l.trackingId,
               title: extractName(l.fullName),
               date: new Date(l.dateTimeIn).toLocaleString(),
-              status: l.status === 'Completed' ? 'completed' : 'pending',
+              status: l.status === 'Completed' ? 'completed' : l.status === 'Rejected' ? 'rejected' : 'pending',
               category: 'Letter'
             });
           }
@@ -115,13 +114,13 @@ export default function DashboardPage() {
 
         // Process leaves
         leaves.forEach((lv: any) => {
-          if (lv.status === 'Pending' || lv.status === 'Completed') {
+          if (lv.status === 'Pending' || lv.status === 'Completed' || lv.status === 'Rejected') {
             allRecords.push({
               id: lv.id,
               trackingId: lv.trackingId,
               title: extractName(lv.fullName),
               date: new Date(lv.dateTimeIn).toLocaleString(),
-              status: lv.status === 'Completed' ? 'completed' : 'pending',
+              status: lv.status === 'Completed' ? 'completed' : lv.status === 'Rejected' ? 'rejected' : 'pending',
               category: 'Leave'
             });
           }
@@ -129,13 +128,13 @@ export default function DashboardPage() {
 
         // Process locators
         locators.forEach((loc: any) => {
-          if (loc.status === 'Pending' || loc.status === 'Completed') {
+          if (loc.status === 'Pending' || loc.status === 'Completed' || loc.status === 'Rejected') {
             allRecords.push({
               id: loc.id,
               trackingId: loc.trackingId,
               title: extractName(loc.fullName),
               date: new Date(loc.dateTimeIn).toLocaleString(),
-              status: loc.status === 'Completed' ? 'completed' : 'pending',
+              status: loc.status === 'Completed' ? 'completed' : loc.status === 'Rejected' ? 'rejected' : 'pending',
               category: 'Locator'
             });
           }
@@ -143,13 +142,13 @@ export default function DashboardPage() {
 
         // Process admin to PGO
         adminToPGO.forEach((a: any) => {
-          if (a.status === 'Pending' || a.status === 'Completed') {
+          if (a.status === 'Pending' || a.status === 'Completed' || a.status === 'Rejected') {
             allRecords.push({
               id: a.id,
               trackingId: a.trackingId,
               title: extractName(a.fullName),
               date: new Date(a.dateTimeIn).toLocaleString(),
-              status: a.status === 'Completed' ? 'completed' : 'pending',
+              status: a.status === 'Completed' ? 'completed' : a.status === 'Rejected' ? 'rejected' : 'pending',
               category: 'Admin to PGO'
             });
           }
@@ -157,13 +156,13 @@ export default function DashboardPage() {
 
         // Process others
         others.forEach((o: any) => {
-          if (o.status === 'Pending' || o.status === 'Completed') {
+          if (o.status === 'Pending' || o.status === 'Completed' || o.status === 'Rejected') {
             allRecords.push({
               id: o.id,
               trackingId: o.trackingId,
               title: extractName(o.fullName),
               date: new Date(o.dateTimeIn).toLocaleString(),
-              status: o.status === 'Completed' ? 'completed' : 'pending',
+              status: o.status === 'Completed' ? 'completed' : o.status === 'Rejected' ? 'rejected' : 'pending',
               category: 'Others'
             });
           }
@@ -171,13 +170,13 @@ export default function DashboardPage() {
 
         // Process travel orders
         travelOrders.forEach((t: any) => {
-          if (t.status === 'Pending' || t.status === 'Completed') {
+          if (t.status === 'Pending' || t.status === 'Completed' || t.status === 'Rejected') {
             allRecords.push({
               id: t.id,
               trackingId: t.trackingId,
               title: extractName(t.fullName),
               date: new Date(t.dateTimeIn).toLocaleString(),
-              status: t.status === 'Completed' ? 'completed' : 'pending',
+              status: t.status === 'Completed' ? 'completed' : t.status === 'Rejected' ? 'rejected' : 'pending',
               category: 'Travel Order'
             });
           }
@@ -185,14 +184,42 @@ export default function DashboardPage() {
 
         // Process overtimes
         overtimes.forEach((ot: any) => {
-          if (ot.status === 'Pending' || ot.status === 'Completed') {
+          if (ot.status === 'Pending' || ot.status === 'Completed' || ot.status === 'Rejected') {
             allRecords.push({
               id: ot.id,
               trackingId: ot.trackingId,
               title: extractName(ot.fullName),
               date: new Date(ot.dateTimeIn).toLocaleString(),
-              status: ot.status === 'Completed' ? 'completed' : 'pending',
+              status: ot.status === 'Completed' ? 'completed' : ot.status === 'Rejected' ? 'rejected' : 'pending',
               category: 'Overtime'
+            });
+          }
+        });
+
+        // Process obligation requests
+        obligationRequests.forEach((or: any) => {
+          if (or.status === 'Pending' || or.status === 'Completed' || or.status === 'Rejected') {
+            allRecords.push({
+              id: or.id,
+              trackingId: or.trackingId,
+              title: extractName(or.fullName),
+              date: new Date(or.dateTimeIn).toLocaleString(),
+              status: or.status === 'Completed' ? 'completed' : or.status === 'Rejected' ? 'rejected' : 'pending',
+              category: 'Obligation Request'
+            });
+          }
+        });
+
+        // Process purchase requests
+        purchaseRequests.forEach((pr: any) => {
+          if (pr.status === 'Pending' || pr.status === 'Completed' || pr.status === 'Rejected') {
+            allRecords.push({
+              id: pr.id,
+              trackingId: pr.trackingId,
+              title: extractName(pr.fullName),
+              date: new Date(pr.dateTimeIn).toLocaleString(),
+              status: pr.status === 'Completed' ? 'completed' : pr.status === 'Rejected' ? 'rejected' : 'pending',
+              category: 'Purchase Request'
             });
           }
         });
@@ -243,13 +270,13 @@ export default function DashboardPage() {
           </Button>
         </SheetTrigger>
         <SheetContent side="left" className="w-64 p-0">
-          <Sidebar />
+          <Sidebar recordTypes={recordTypes} onNavigate={() => setSidebarOpen(false)} />
         </SheetContent>
       </Sheet>
 
       {/* Desktop Sidebar */}
       <div className="hidden md:block w-64 bg-white border-r border-gray-200 shadow-sm">
-        <Sidebar />
+        <Sidebar recordTypes={recordTypes} onNavigate={undefined} />
       </div>
 
       {/* Main Content */}
@@ -280,7 +307,7 @@ export default function DashboardPage() {
           )}
 
           {/* Stats Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
             <Card>
               <CardHeader className="pb-3">
                 <CardTitle className="text-sm font-medium text-gray-600">Total Records</CardTitle>
@@ -312,6 +339,17 @@ export default function DashboardPage() {
                   {records.filter(r => r.status === 'completed').length}
                 </div>
                 <p className="text-xs text-gray-500 mt-1">Finished items</p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm font-medium text-gray-600">Rejected Records</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-3xl font-bold text-red-600">
+                  {records.filter(r => r.status === 'rejected').length}
+                </div>
+                <p className="text-xs text-gray-500 mt-1">Rejected items</p>
               </CardContent>
             </Card>
           </div>
@@ -346,6 +384,16 @@ export default function DashboardPage() {
                   }`}
                 >
                   Completed ({records.filter(r => r.status === 'completed').length})
+                </button>
+                <button
+                  onClick={() => setActiveTab('rejected')}
+                  className={`px-4 py-2 font-medium text-sm transition-colors ${
+                    activeTab === 'rejected'
+                      ? 'text-indigo-600 border-b-2 border-indigo-600'
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                >
+                  Rejected ({records.filter(r => r.status === 'rejected').length})
                 </button>
               </div>
             </CardHeader>
@@ -446,131 +494,15 @@ export default function DashboardPage() {
   );
 }
 
-function Sidebar() {
-  const { user } = useAuth();
-  const navigate = useNavigate();
-
-  const handleSettings = () => {
-    navigate('/settings');
-  };
-
-  const recordTypes = [
-    'Leave',
-    'Letter',
-    'Locator',
-    'Obligation Request',
-    'Purchase Request',
-    'Request for Overtime',
-    'Travel Order',
-    'Voucher',
-    'Admin to PGO',
-    'Others',
-  ];
-
-  const menuItems = [
-    { icon: Home, label: 'Dashboard', href: '/dashboard' },
-  ];
-
-  return (
-    <div className="h-full flex flex-col bg-white">
-      {/* Logo */}
-      <div className="p-6 border-b border-gray-200">
-        <h2 className="text-xl font-bold text-indigo-600">PGO</h2>
-        <p className="text-xs text-gray-500">Record Management</p>
-      </div>
-
-      {/* Menu Items */}
-      <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
-        {menuItems.map((item) => (
-          <button
-            key={item.label}
-            onClick={() => navigate(item.href)}
-            className="w-full flex items-center gap-3 px-4 py-2 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors text-left"
-          >
-            <item.icon className="h-5 w-5" />
-            <span className="text-sm font-medium">{item.label}</span>
-          </button>
-        ))}
-
-        {/* Records Menu */}
-        <div className="space-y-1">
-          <div className="flex items-center gap-3 px-4 py-2 text-gray-700">
-            <FileText className="h-5 w-5" />
-            <span className="text-sm font-medium">Records</span>
-          </div>
-          <div className="pl-8 space-y-1">
-            {recordTypes.map((type) => (
-              <button
-                key={type}
-                onClick={() => {
-                  if (type === 'Locator') {
-                    navigate('/locator');
-                  } else if (type === 'Admin to PGO') {
-                    navigate('/admin-to-pgo');
-                  } else if (type === 'Leave') {
-                    navigate('/leave');
-                  } else if (type === 'Letter') {
-                    navigate('/letter');
-                  } else if (type === 'Request for Overtime') {
-                    navigate('/overtime');
-                  } else if (type === 'Travel Order') {
-                    navigate('/travel-order');
-                  } else if (type === 'Voucher') {
-                    navigate('/voucher');
-                  } else if (type === 'Others') {
-                    navigate('/others');
-                  }
-                }}
-                className="w-full block px-4 py-2 text-sm text-gray-600 rounded-lg hover:bg-gray-100 transition-colors text-left"
-              >
-                {type}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Reports */}
-        <button
-          onClick={() => navigate('/reports')}
-          className="w-full flex items-center gap-3 px-4 py-2 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors text-left mt-2"
-        >
-          <BarChart3 className="h-5 w-5" />
-          <span className="text-sm font-medium">Reports</span>
-        </button>
-      </nav>
-
-      {/* User Info - Bottom */}
-      <div className="p-4 border-t border-gray-200">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center">
-            <span className="text-sm font-semibold text-indigo-600">
-              {user?.name.charAt(0).toUpperCase()}
-            </span>
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-gray-900 truncate">{user?.name}</p>
-            <p className="text-xs text-gray-500 truncate">{user?.role}</p>
-          </div>
-        </div>
-      </div>
-
-      {/* Bottom Actions */}
-      <div className="p-4 border-t border-gray-200 space-y-2">
-        {user?.role === 'admin' && (
-          <Button
-            variant="outline"
-            className="w-full justify-start gap-2 text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50"
-            onClick={handleSettings}
-          >
-            <Settings className="h-4 w-4" />
-            Settings
-          </Button>
-        )}
-        {user?.role !== 'admin' && (
-          <></>
-        )}
-      </div>
-
-    </div>
-  );
-}
+const recordTypes = [
+  'Leave',
+  'Letter',
+  'Locator',
+  'Obligation Request',
+  'Purchase Request',
+  'Request for Overtime',
+  'Travel Order',
+  'Voucher',
+  'Admin to PGO',
+  'Others',
+];

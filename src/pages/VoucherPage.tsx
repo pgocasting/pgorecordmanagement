@@ -34,7 +34,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Plus, Menu, Settings, LogOut, BarChart3, FileText, Home } from 'lucide-react';
+import { Plus, Menu, LogOut } from 'lucide-react';
+import { Sidebar } from '@/components/Sidebar';
 import { ActionButtons } from '@/components/ActionButtons';
 
 interface Voucher {
@@ -60,6 +61,29 @@ const formatCurrency = (amount: string | number | undefined): string => {
   if (isNaN(num)) return '-';
   return `₱${num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 };
+
+const getCurrentDateTime = (): string => {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  const hours = String(now.getHours()).padStart(2, '0');
+  const minutes = String(now.getMinutes()).padStart(2, '0');
+  return `${year}-${month}-${day}T${hours}:${minutes}`;
+};
+
+const recordTypes = [
+  'Leave',
+  'Letter',
+  'Locator',
+  'Obligation Request',
+  'Purchase Request',
+  'Request for Overtime',
+  'Travel Order',
+  'Voucher',
+  'Admin to PGO',
+  'Others',
+];
 
 export default function VoucherPage() {
   const navigate = useNavigate();
@@ -171,10 +195,10 @@ export default function VoucherPage() {
         remarks: '',
         timeOutRemarks: '',
       };
-      await voucherService.addVoucher(newVoucher);
+      const result = await voucherService.addVoucher(newVoucher);
       setSuccess('Voucher added successfully');
 
-      setVouchers([newVoucher as Voucher, ...vouchers]);
+      setVouchers([result as Voucher, ...vouchers]);
 
       setFormData({
         dateTimeIn: '',
@@ -256,7 +280,7 @@ export default function VoucherPage() {
     }
   };
 
-  const handleDeleteVoucher = (id: string) => {
+  const handleRejectVoucher = (id: string) => {
     setVoucherToDelete(id);
     setDeleteConfirmOpen(true);
   };
@@ -279,20 +303,21 @@ export default function VoucherPage() {
     }
   };
 
-  const confirmDeleteVoucher = async () => {
+  const confirmRejectVoucher = async () => {
     if (!voucherToDelete) return;
 
     setIsLoading(true);
     try {
-      await voucherService.deleteVoucher(voucherToDelete);
-      setVouchers(vouchers.filter(v => v.id !== voucherToDelete));
-      setSuccess('Voucher deleted successfully');
+      await voucherService.updateVoucher(voucherToDelete, { status: 'Rejected' });
+      const updatedVouchers = vouchers.map(v => v.id === voucherToDelete ? { ...v, status: 'Rejected' } : v);
+      setVouchers(updatedVouchers);
+      setSuccess('Voucher rejected successfully');
       setVoucherToDelete(null);
       setDeleteConfirmOpen(false);
       setSuccessModalOpen(true);
     } catch (err) {
-      console.error('Failed to delete voucher:', err);
-      setSuccess(err instanceof Error ? err.message : 'Error deleting voucher');
+      console.error('Failed to reject voucher:', err);
+      setSuccess(err instanceof Error ? err.message : 'Error rejecting voucher');
       setSuccessModalOpen(true);
     } finally {
       setIsLoading(false);
@@ -362,13 +387,13 @@ export default function VoucherPage() {
           </Button>
         </SheetTrigger>
         <SheetContent side="left" className="w-64 p-0">
-          <VoucherSidebar onNavigate={() => setSidebarOpen(false)} />
+          <Sidebar recordTypes={recordTypes} onNavigate={() => setSidebarOpen(false)} />
         </SheetContent>
       </Sheet>
 
       {/* Desktop Sidebar */}
       <div className="hidden md:block w-64 bg-white border-r border-gray-200 shadow-sm">
-        <VoucherSidebar onNavigate={undefined} />
+        <Sidebar recordTypes={recordTypes} onNavigate={undefined} />
       </div>
 
       {/* Main Content */}
@@ -405,7 +430,7 @@ export default function VoucherPage() {
                     onClick={() => {
                       setEditingId(null);
                       setFormData({
-                        dateTimeIn: '',
+                        dateTimeIn: getCurrentDateTime(),
                         dvNo: '',
                         payee: '',
                         particulars: '',
@@ -622,12 +647,12 @@ export default function VoucherPage() {
                               onView={() => handleViewVoucher(voucher.id)}
                               onEdit={() => handleEditVoucher(voucher.id)}
                               onTimeOut={() => handleTimeOut(voucher.id)}
-                              onDelete={() => handleDeleteVoucher(voucher.id)}
+                              onReject={() => handleRejectVoucher(voucher.id)}
                               canEdit={user?.role === 'admin' || (!!voucher.dateTimeOut === false && voucher.status === 'Pending')}
-                              canDelete={user?.role === 'admin' || (!!voucher.dateTimeOut === false && voucher.status === 'Pending')}
+                              canReject={user?.role === 'admin' || (!!voucher.dateTimeOut === false && voucher.status === 'Pending')}
                               showTimeOut={!voucher.dateTimeOut}
                               editDisabledReason={user?.role !== 'admin' && (!!voucher.dateTimeOut || voucher.status !== 'Pending') ? 'Users can only edit pending records' : undefined}
-                              deleteDisabledReason={user?.role !== 'admin' && (!!voucher.dateTimeOut || voucher.status !== 'Pending') ? 'Users can only delete pending records' : undefined}
+                              rejectDisabledReason={user?.role !== 'admin' && (!!voucher.dateTimeOut || voucher.status !== 'Pending') ? 'Users can only reject pending records' : undefined}
                             />
                           </TableCell>
                         </TableRow>
@@ -727,13 +752,13 @@ export default function VoucherPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Delete Confirmation Modal */}
+      {/* Reject Confirmation Modal */}
       <Dialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Confirm Delete</DialogTitle>
+            <DialogTitle>Confirm Reject</DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete this voucher? This action cannot be undone.
+              Are you sure you want to reject this voucher? The status will be changed to "Rejected".
             </DialogDescription>
           </DialogHeader>
           <div className="flex gap-2 justify-end pt-4">
@@ -746,10 +771,10 @@ export default function VoucherPage() {
             </Button>
             <Button
               className="bg-red-600 hover:bg-red-700 text-white"
-              onClick={confirmDeleteVoucher}
+              onClick={confirmRejectVoucher}
               disabled={isLoading}
             >
-              {isLoading ? 'Deleting...' : 'Delete'}
+              {isLoading ? 'Rejecting...' : 'Reject'}
             </Button>
           </div>
         </DialogContent>
@@ -866,121 +891,3 @@ export default function VoucherPage() {
   );
 }
 
-interface VoucherSidebarProps {
-  onNavigate?: () => void;
-}
-
-function VoucherSidebar({ onNavigate }: VoucherSidebarProps) {
-  const { user } = useAuth();
-  const navigate = useNavigate();
-
-  const menuItems = [
-    { icon: Home, label: 'Dashboard', href: '/dashboard' },
-  ];
-
-  const recordTypes = ['Leave', 'Letter', 'Locator', 'Obligation Request', 'Purchase Request', 'Request for Overtime', 'Travel Order', 'Voucher', 'Admin to PGO', 'Others'];
-
-  return (
-    <div className="h-full flex flex-col bg-white">
-      <div className="p-6 border-b border-gray-200">
-        <h2 className="text-xl font-bold text-indigo-600">PGO</h2>
-        <p className="text-xs text-gray-500">Record Management</p>
-      </div>
-
-      <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
-        {menuItems.map((item) => (
-          <button
-            key={item.label}
-            onClick={() => {
-              onNavigate?.();
-              navigate(item.href);
-            }}
-            className="w-full flex items-center gap-3 px-4 py-2 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors text-left"
-          >
-            <item.icon className="h-5 w-5" />
-            <span className="text-sm font-medium">{item.label}</span>
-          </button>
-        ))}
-
-        <div className="space-y-1">
-          <div className="flex items-center gap-3 px-4 py-2 text-gray-700">
-            <FileText className="h-5 w-5" />
-            <span className="text-sm font-medium">Records</span>
-          </div>
-          <div className="pl-8 space-y-1">
-            {recordTypes.map((type) => (
-              <button
-                key={type}
-                onClick={() => {
-                  onNavigate?.();
-                  if (type === 'Locator') {
-                    navigate('/locator');
-                  } else if (type === 'Admin to PGO') {
-                    navigate('/admin-to-pgo');
-                  } else if (type === 'Leave') {
-                    navigate('/leave');
-                  } else if (type === 'Letter') {
-                    navigate('/letter');
-                  } else if (type === 'Request for Overtime') {
-                    navigate('/overtime');
-                  } else if (type === 'Travel Order') {
-                    navigate('/travel-order');
-                  } else if (type === 'Voucher') {
-                    navigate('/voucher');
-                  } else if (type === 'Others') {
-                    navigate('/others');
-                  }
-                }}
-                className="w-full block px-4 py-2 text-sm text-gray-600 rounded-lg hover:bg-gray-100 transition-colors text-left"
-              >
-                {type}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Reports */}
-        <button
-          onClick={() => {
-            onNavigate?.();
-            navigate('/reports');
-          }}
-          className="w-full flex items-center gap-3 px-4 py-2 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors text-left mt-2"
-        >
-          <BarChart3 className="h-5 w-5" />
-          <span className="text-sm font-medium">Reports</span>
-        </button>
-      </nav>
-
-      <div className="p-4 border-t border-gray-200">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center">
-            <span className="text-sm font-semibold text-indigo-600">
-              {user?.name.charAt(0).toUpperCase()}
-            </span>
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-gray-900 truncate">{user?.name}</p>
-            <p className="text-xs text-gray-500 truncate">{user?.role}</p>
-          </div>
-        </div>
-      </div>
-
-      <div className="p-4 border-t border-gray-200 space-y-2">
-        {user?.role === 'admin' && (
-          <Button
-            variant="outline"
-            className="w-full justify-start gap-2 text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50"
-            onClick={() => {
-              onNavigate?.();
-              navigate('/settings');
-            }}
-          >
-            <Settings className="h-4 w-4" />
-            Settings
-          </Button>
-        )}
-      </div>
-    </div>
-  );
-}

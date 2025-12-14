@@ -2,6 +2,16 @@ import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { othersService } from '@/services/localStorageService';
+
+const getCurrentDateTime = (): string => {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  const hours = String(now.getHours()).padStart(2, '0');
+  const minutes = String(now.getMinutes()).padStart(2, '0');
+  return `${year}-${month}-${day}T${hours}:${minutes}`;
+};
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -34,7 +44,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Plus, Menu, Settings, LogOut, BarChart3, FileText, Home } from 'lucide-react';
+import { Plus, Menu, LogOut } from 'lucide-react';
+import { Sidebar } from '@/components/Sidebar';
 import { ActionButtons } from '@/components/ActionButtons';
 
 interface Others {
@@ -74,6 +85,19 @@ const formatCurrency = (amount: string | number | undefined): string => {
   if (isNaN(num)) return '-';
   return `₱${num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 };
+
+const recordTypes = [
+  'Leave',
+  'Letter',
+  'Locator',
+  'Obligation Request',
+  'Purchase Request',
+  'Request for Overtime',
+  'Travel Order',
+  'Voucher',
+  'Admin to PGO',
+  'Others',
+];
 
 export default function OthersPage() {
   const navigate = useNavigate();
@@ -189,10 +213,10 @@ export default function OthersPage() {
         remarks: '',
         timeOutRemarks: '',
       };
-      await othersService.addRecord(newRecord);
+      const result = await othersService.addRecord(newRecord);
       setSuccess('Record added successfully');
 
-      setRecords([newRecord as Others, ...records]);
+      setRecords([result as Others, ...records]);
 
       setFormData({
         dateTimeIn: '',
@@ -276,7 +300,7 @@ export default function OthersPage() {
     }
   };
 
-  const handleDeleteRecord = (id: string) => {
+  const handleRejectRecord = (id: string) => {
     setRecordToDelete(id);
     setDeleteConfirmOpen(true);
   };
@@ -301,20 +325,24 @@ export default function OthersPage() {
     }
   };
 
-  const confirmDeleteRecord = async () => {
+  const confirmRejectRecord = async () => {
     if (!recordToDelete) return;
-    
+
+    setIsLoading(true);
     try {
-      await othersService.deleteRecord(recordToDelete);
-      setRecords(records.filter(r => r.id !== recordToDelete));
-      setSuccess('Record deleted successfully');
+      await othersService.updateRecord(recordToDelete, { status: 'Rejected' });
+      const updatedRecords = records.map(r => r.id === recordToDelete ? { ...r, status: 'Rejected' } : r);
+      setRecords(updatedRecords);
+      setSuccess('Record rejected successfully');
       setRecordToDelete(null);
       setDeleteConfirmOpen(false);
       setSuccessModalOpen(true);
     } catch (err) {
-      console.error('Failed to delete record:', err);
-      setSuccess('Error deleting record');
+      console.error('Failed to reject record:', err);
+      setSuccess('Error rejecting record');
       setSuccessModalOpen(true);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -377,13 +405,13 @@ export default function OthersPage() {
           </Button>
         </SheetTrigger>
         <SheetContent side="left" className="w-64 p-0">
-          <OthersSidebar recordTypes={['Leave', 'Letter', 'Locator', 'Obligation Request', 'Purchase Request', 'Request for Overtime', 'Travel Order', 'Voucher', 'Admin to PGO', 'Others']} onNavigate={() => setSidebarOpen(false)} />
+          <Sidebar recordTypes={recordTypes} onNavigate={() => setSidebarOpen(false)} />
         </SheetContent>
       </Sheet>
 
       {/* Desktop Sidebar */}
       <div className="hidden md:block w-64 bg-white border-r border-gray-200 shadow-sm">
-        <OthersSidebar recordTypes={['Leave', 'Letter', 'Locator', 'Obligation Request', 'Purchase Request', 'Request for Overtime', 'Travel Order', 'Voucher', 'Admin to PGO', 'Others']} onNavigate={undefined} />
+        <Sidebar recordTypes={recordTypes} onNavigate={undefined} />
       </div>
 
       {/* Main Content */}
@@ -420,7 +448,7 @@ export default function OthersPage() {
                     onClick={() => {
                       setEditingId(null);
                       setFormData({
-                        dateTimeIn: '',
+                        dateTimeIn: getCurrentDateTime(),
                         dateTimeOut: '',
                         fullName: '',
                         designationOffice: '',
@@ -670,12 +698,12 @@ export default function OthersPage() {
                             onView={() => handleViewRecord(record.id)}
                             onEdit={() => handleEditRecord(record.id)}
                             onTimeOut={() => handleTimeOut(record.id)}
-                            onDelete={() => handleDeleteRecord(record.id)}
+                            onReject={() => handleRejectRecord(record.id)}
                             canEdit={user?.role === 'admin' || (!!record.dateTimeOut === false && record.status === 'Pending')}
-                            canDelete={user?.role === 'admin' || (!!record.dateTimeOut === false && record.status === 'Pending')}
+                            canReject={user?.role === 'admin' || (!!record.dateTimeOut === false && record.status === 'Pending')}
                             showTimeOut={!record.dateTimeOut}
                             editDisabledReason={user?.role !== 'admin' && (!!record.dateTimeOut || record.status !== 'Pending') ? 'Users can only edit pending records' : undefined}
-                            deleteDisabledReason={user?.role !== 'admin' && (!!record.dateTimeOut || record.status !== 'Pending') ? 'Users can only delete pending records' : undefined}
+                            rejectDisabledReason={user?.role !== 'admin' && (!!record.dateTimeOut || record.status !== 'Pending') ? 'Users can only reject pending records' : undefined}
                           />
                         </TableCell>
                       </TableRow>
@@ -818,13 +846,13 @@ export default function OthersPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Delete Confirmation Modal */}
+      {/* Reject Confirmation Modal */}
       <Dialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Confirm Delete</DialogTitle>
+            <DialogTitle>Confirm Reject</DialogTitle>
           </DialogHeader>
-          <p className="text-sm text-gray-600">Are you sure you want to delete this record? This action cannot be undone.</p>
+          <p className="text-sm text-gray-600">Are you sure you want to reject this record? The status will be changed to "Rejected".</p>
           <div className="flex gap-2 justify-end pt-4">
             <Button
               variant="outline"
@@ -834,9 +862,9 @@ export default function OthersPage() {
             </Button>
             <Button
               className="bg-red-600 hover:bg-red-700"
-              onClick={confirmDeleteRecord}
+              onClick={confirmRejectRecord}
             >
-              Delete
+              Reject
             </Button>
           </div>
         </DialogContent>
@@ -949,128 +977,3 @@ export default function OthersPage() {
   );
 }
 
-interface OthersSidebarProps {
-  recordTypes: string[];
-  onNavigate?: () => void;
-}
-
-function OthersSidebar({ recordTypes, onNavigate }: OthersSidebarProps) {
-  const { user } = useAuth();
-  const navigate = useNavigate();
-
-  const menuItems = [
-    { icon: Home, label: 'Dashboard', href: '/dashboard' },
-  ];
-
-  return (
-    <div className="h-full flex flex-col bg-white">
-      {/* Logo */}
-      <div className="p-6 border-b border-gray-200">
-        <h2 className="text-xl font-bold text-indigo-600">PGO</h2>
-        <p className="text-xs text-gray-500">Record Management</p>
-      </div>
-
-      {/* Menu Items */}
-      <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
-        {menuItems.map((item) => (
-          <button
-            key={item.label}
-            onClick={() => {
-              onNavigate?.();
-              navigate(item.href);
-            }}
-            className="w-full flex items-center gap-3 px-4 py-2 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors text-left"
-          >
-            <item.icon className="h-5 w-5" />
-            <span className="text-sm font-medium">{item.label}</span>
-          </button>
-        ))}
-
-        {/* Records Menu */}
-        <div className="space-y-1">
-          <div className="flex items-center gap-3 px-4 py-2 text-gray-700">
-            <FileText className="h-5 w-5" />
-            <span className="text-sm font-medium">Records</span>
-          </div>
-          <div className="pl-8 space-y-1">
-            {recordTypes.map((type) => (
-              <button
-                key={type}
-                onClick={() => {
-                  onNavigate?.();
-                  if (type === 'Locator') {
-                    navigate('/locator');
-                  } else if (type === 'Admin to PGO') {
-                    navigate('/admin-to-pgo');
-                  } else if (type === 'Leave') {
-                    navigate('/leave');
-                  } else if (type === 'Letter') {
-                    navigate('/letter');
-                  } else if (type === 'Request for Overtime') {
-                    navigate('/overtime');
-                  } else if (type === 'Travel Order') {
-                    navigate('/travel-order');
-                  } else if (type === 'Voucher') {
-                    navigate('/voucher');
-                  } else if (type === 'Others') {
-                    navigate('/others');
-                  }
-                }}
-                className="w-full block px-4 py-2 text-sm text-gray-600 rounded-lg hover:bg-gray-100 transition-colors text-left"
-              >
-                {type}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Reports */}
-        <button
-          onClick={() => {
-            onNavigate?.();
-            navigate('/reports');
-          }}
-          className="w-full flex items-center gap-3 px-4 py-2 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors text-left mt-2"
-        >
-          <BarChart3 className="h-5 w-5" />
-          <span className="text-sm font-medium">Reports</span>
-        </button>
-      </nav>
-
-      {/* User Info - Bottom */}
-      <div className="p-4 border-t border-gray-200">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center">
-            <span className="text-sm font-semibold text-indigo-600">
-              {user?.name.charAt(0).toUpperCase()}
-            </span>
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-gray-900 truncate">{user?.name}</p>
-            <p className="text-xs text-gray-500 truncate">{user?.role}</p>
-          </div>
-        </div>
-      </div>
-
-      {/* Bottom Actions */}
-      <div className="p-4 border-t border-gray-200 space-y-2">
-        {user?.role === 'admin' && (
-          <Button
-            variant="outline"
-            className="w-full justify-start gap-2 text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50"
-            onClick={() => {
-              onNavigate?.();
-              navigate('/settings');
-            }}
-          >
-            <Settings className="h-4 w-4" />
-            Settings
-          </Button>
-        )}
-        {user?.role !== 'admin' && (
-          <></>
-        )}
-      </div>
-    </div>
-  );
-}

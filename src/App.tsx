@@ -11,6 +11,9 @@ import OvertimePage from './pages/OvertimePage';
 import TravelOrderPage from './pages/TravelOrderPage';
 import VoucherPage from './pages/VoucherPage';
 import OthersPage from './pages/OthersPage';
+import ReportPage from './pages/ReportPage';
+import ObligationRequestPage from './pages/ObligationRequestPage';
+import PurchaseRequestPage from './pages/PurchaseRequestPage';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated } = useAuth();
@@ -105,6 +108,30 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <OthersPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/reports"
+        element={
+          <ProtectedRoute>
+            <ReportPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/obligation-request"
+        element={
+          <ProtectedRoute>
+            <ObligationRequestPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/purchase-request"
+        element={
+          <ProtectedRoute>
+            <PurchaseRequestPage />
           </ProtectedRoute>
         }
       />

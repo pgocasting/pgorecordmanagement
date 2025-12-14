@@ -41,7 +41,9 @@ import {
   TabsTrigger,
 } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { AlertCircle, Plus, Trash2, Menu, LogOut, BarChart3, FileText, ArrowLeft } from 'lucide-react';
+import { AlertCircle } from 'lucide-react';
+import { Plus, Menu, LogOut, Trash2 } from 'lucide-react';
+import { Sidebar } from '@/components/Sidebar';
 
 export default function SettingsPage() {
   const navigate = useNavigate();
@@ -345,13 +347,13 @@ export default function SettingsPage() {
           </Button>
         </SheetTrigger>
         <SheetContent side="left" className="w-64 p-0">
-          <SettingsSidebar recordTypes={recordTypes} onNavigate={() => setSidebarOpen(false)} />
+          <Sidebar recordTypes={recordTypes} onNavigate={() => setSidebarOpen(false)} />
         </SheetContent>
       </Sheet>
 
       {/* Desktop Sidebar */}
       <div className="hidden md:block w-64 bg-white border-r border-gray-200 shadow-sm">
-        <SettingsSidebar recordTypes={recordTypes} onNavigate={undefined} />
+        <Sidebar recordTypes={recordTypes} onNavigate={undefined} />
       </div>
 
       {/* Main Content */}
@@ -872,110 +874,3 @@ export default function SettingsPage() {
   );
 }
 
-interface SettingsSidebarProps {
-  recordTypes: string[];
-  onNavigate?: () => void;
-}
-
-function SettingsSidebar({ recordTypes, onNavigate }: SettingsSidebarProps) {
-  const { user } = useAuth();
-  const navigate = useNavigate();
-
-  const menuItems = [
-    { icon: BarChart3, label: 'Dashboard', href: '/dashboard' },
-  ];
-
-  return (
-    <div className="h-full flex flex-col bg-white">
-      {/* Logo */}
-      <div className="p-6 border-b border-gray-200">
-        <h2 className="text-xl font-bold text-indigo-600">PGO</h2>
-        <p className="text-xs text-gray-500">Record Management</p>
-      </div>
-
-      {/* Menu Items */}
-      <nav className="flex-1 p-4 space-y-2">
-        {menuItems.map((item) => (
-          <button
-            key={item.label}
-            onClick={() => {
-              onNavigate?.();
-              navigate(item.href);
-            }}
-            className="w-full flex items-center gap-3 px-4 py-2 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors text-left"
-          >
-            <item.icon className="h-5 w-5" />
-            <span className="text-sm font-medium">{item.label}</span>
-          </button>
-        ))}
-
-        {/* Records Menu */}
-        <div className="space-y-1">
-          <div className="flex items-center gap-3 px-4 py-2 text-gray-700">
-            <FileText className="h-5 w-5" />
-            <span className="text-sm font-medium">Records</span>
-          </div>
-          <div className="pl-8 space-y-1">
-            {recordTypes.map((type) => (
-              <button
-                key={type}
-                onClick={() => {
-                  onNavigate?.();
-                  if (type === 'Locator') {
-                    navigate('/locator');
-                  } else if (type === 'Admin to PGO') {
-                    navigate('/admin-to-pgo');
-                  } else if (type === 'Leave') {
-                    navigate('/leave');
-                  } else if (type === 'Letter') {
-                    navigate('/letter');
-                  } else if (type === 'Request for Overtime') {
-                    navigate('/overtime');
-                  } else if (type === 'Travel Order') {
-                    navigate('/travel-order');
-                  } else if (type === 'Voucher') {
-                    navigate('/voucher');
-                  } else if (type === 'Others') {
-                    navigate('/others');
-                  }
-                }}
-                className="w-full block px-4 py-2 text-sm text-gray-600 rounded-lg hover:bg-gray-100 transition-colors text-left"
-              >
-                {type}
-              </button>
-            ))}
-          </div>
-        </div>
-      </nav>
-
-      {/* User Info - Bottom */}
-      <div className="p-4 border-t border-gray-200">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center">
-            <span className="text-sm font-semibold text-indigo-600">
-              {user?.name.charAt(0).toUpperCase()}
-            </span>
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-gray-900 truncate">{user?.name}</p>
-            <p className="text-xs text-gray-500 truncate">{user?.role}</p>
-          </div>
-        </div>
-      </div>
-
-      {/* Bottom Actions - Admin Only */}
-      {user?.role === 'admin' && (
-        <div className="p-4 border-t border-gray-200 space-y-2">
-          <Button
-            variant="outline"
-            className="w-full justify-start gap-2"
-            onClick={() => navigate('/dashboard')}
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Back to Dashboard
-          </Button>
-        </div>
-      )}
-    </div>
-  );
-}

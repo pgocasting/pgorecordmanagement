@@ -98,9 +98,39 @@ interface Others {
   purpose: string;
   amount: string;
   status: string;
+}
+
+interface ObligationRequest {
+  id: string;
+  trackingId: string;
+  dateTimeIn: string;
+  dateTimeOut?: string;
+  fullName: string;
+  designation: string;
+  obligationType: string;
+  amount: number;
+  particulars: string;
+  status: string;
   remarks: string;
   timeOutRemarks?: string;
-  linkAttachments?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface PurchaseRequest {
+  id: string;
+  trackingId: string;
+  dateTimeIn: string;
+  dateTimeOut?: string;
+  fullName: string;
+  designation: string;
+  itemDescription: string;
+  quantity: number;
+  estimatedCost: number;
+  purpose: string;
+  status: string;
+  remarks: string;
+  timeOutRemarks?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -153,7 +183,26 @@ const getCurrentTimestamp = () => new Date().toISOString();
 const getItems = <T>(collection: string): T[] => {
   try {
     const data = localStorage.getItem(getStorageKey(collection));
-    return data ? JSON.parse(data) : [];
+    if (!data) return [];
+    
+    const items = JSON.parse(data);
+    
+    // Ensure all items have unique IDs - assign them if missing and persist
+    let needsSave = false;
+    const updatedItems = items.map((item: any) => {
+      if (!item.id) {
+        item.id = `${collection}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        needsSave = true;
+      }
+      return item;
+    });
+    
+    // Persist ID assignments back to storage to ensure consistency
+    if (needsSave) {
+      localStorage.setItem(getStorageKey(collection), JSON.stringify(updatedItems));
+    }
+    
+    return updatedItems;
   } catch (error) {
     console.error(`Error getting ${collection}:`, error);
     return [];
@@ -168,13 +217,14 @@ const saveItems = <T>(collection: string, items: T[]): void => {
   }
 };
 
-const addItem = <T extends { id: string }>(collection: string, item: T): T => {
+const addItem = <T extends { id?: string }>(collection: string, item: T): T & { id: string } => {
   const items = getItems<T>(collection);
   const newItem = {
     ...item,
+    id: item.id || `${collection}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
     createdAt: getCurrentTimestamp(),
     updatedAt: getCurrentTimestamp()
-  };
+  } as T & { id: string };
   items.push(newItem);
   saveItems(collection, items);
   return newItem;
@@ -361,6 +411,44 @@ export const overtimeService = {
 
   async deleteOvertime(overtimeId: string) {
     return deleteItem('overtimes', overtimeId);
+  }
+};
+
+// Obligation Request Service
+export const obligationRequestService = {
+  async addObligationRequest(obligationRequestData: any) {
+    return addItem<ObligationRequest>('obligationRequests', obligationRequestData);
+  },
+
+  async getObligationRequests() {
+    return getItems<ObligationRequest>('obligationRequests');
+  },
+
+  async updateObligationRequest(obligationRequestId: string, obligationRequestData: any) {
+    return updateItem<ObligationRequest>('obligationRequests', obligationRequestId, obligationRequestData);
+  },
+
+  async deleteObligationRequest(obligationRequestId: string) {
+    return deleteItem('obligationRequests', obligationRequestId);
+  }
+};
+
+// Purchase Request Service
+export const purchaseRequestService = {
+  async addPurchaseRequest(purchaseRequestData: any) {
+    return addItem<PurchaseRequest>('purchaseRequests', purchaseRequestData);
+  },
+
+  async getPurchaseRequests() {
+    return getItems<PurchaseRequest>('purchaseRequests');
+  },
+
+  async updatePurchaseRequest(purchaseRequestId: string, purchaseRequestData: any) {
+    return updateItem<PurchaseRequest>('purchaseRequests', purchaseRequestId, purchaseRequestData);
+  },
+
+  async deletePurchaseRequest(purchaseRequestId: string) {
+    return deleteItem('purchaseRequests', purchaseRequestId);
   }
 };
 

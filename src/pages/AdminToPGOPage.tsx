@@ -2,6 +2,16 @@ import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { adminToPGOService } from '@/services/localStorageService';
+
+const getCurrentDateTime = (): string => {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  const hours = String(now.getHours()).padStart(2, '0');
+  const minutes = String(now.getMinutes()).padStart(2, '0');
+  return `${year}-${month}-${day}T${hours}:${minutes}`;
+};
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -33,7 +43,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Plus, Menu, Settings, LogOut, BarChart3, FileText, Home } from 'lucide-react';
+import { Plus, Menu, LogOut } from 'lucide-react';
+import { Sidebar } from '@/components/Sidebar';
 import { ActionButtons } from '@/components/ActionButtons';
 
 interface AdminToPGO {
@@ -162,16 +173,16 @@ export default function AdminToPGOPage() {
       !formData.officeAddress ||
       !formData.particulars
     ) {
+      setSuccess('Please fill in all required fields');
+      setSuccessModalOpen(true);
       return;
     }
 
-    // If editing, show confirmation modal
     if (editingId) {
       setEditConfirmOpen(true);
       return;
     }
 
-    // If adding new, proceed directly
     setIsLoading(true);
     try {
       const newRecord: AdminToPGO = {
@@ -179,13 +190,14 @@ export default function AdminToPGOPage() {
         trackingId: nextTrackingId,
         ...formData,
         status: 'Pending',
+        remarks: '',
+        timeOutRemarks: '',
       };
       
-      // Save to Firestore
-      await adminToPGOService.addRecord(newRecord);
+      const result = await adminToPGOService.addRecord(newRecord);
       
-      setRecords((prev) => [{ ...newRecord, id: newRecord.trackingId, remarks: '', timeOutRemarks: '' }, ...prev]);
-      setSuccess('Record added successfully');
+      setRecords((prev) => [result as AdminToPGO, ...prev]);
+      setSuccess('Admin to PGO record added successfully');
 
       setFormData({
         dateTimeIn: '',
@@ -199,6 +211,8 @@ export default function AdminToPGOPage() {
       setSuccessModalOpen(true);
     } catch (err) {
       console.error('Failed to save record:', err);
+      setSuccess('Error saving record');
+      setSuccessModalOpen(true);
     } finally {
       setIsLoading(false);
     }
@@ -209,18 +223,15 @@ export default function AdminToPGOPage() {
 
     setIsLoading(true);
     try {
-      // Update in Firestore
-      await adminToPGOService.updateRecord(editingId, formData);
-      
-      setRecords((prev) =>
-        prev.map((item) =>
-          item.id === editingId
-            ? { ...item, ...formData }
-            : item
-        )
-      );
-      setSuccess('Record updated successfully');
+      const updateData = {
+        ...formData,
+      };
+      await adminToPGOService.updateRecord(editingId, updateData);
+      setSuccess('Admin to PGO record updated successfully');
       setEditingId(null);
+
+      const updatedRecords = records.map(r => r.id === editingId ? { ...r, ...updateData } : r);
+      setRecords(updatedRecords);
 
       setFormData({
         dateTimeIn: '',
@@ -235,6 +246,8 @@ export default function AdminToPGOPage() {
       setSuccessModalOpen(true);
     } catch (err) {
       console.error('Failed to save record:', err);
+      setSuccess('Error updating record');
+      setSuccessModalOpen(true);
     } finally {
       setIsLoading(false);
     }
@@ -256,7 +269,7 @@ export default function AdminToPGOPage() {
     }
   };
 
-  const handleDeleteRecord = (id: string) => {
+  const handleRejectRecord = (id: string) => {
     setRecordToDelete(id);
     setDeleteConfirmOpen(true);
   };
@@ -264,7 +277,6 @@ export default function AdminToPGOPage() {
   const handleDialogOpenChange = (open: boolean) => {
     setIsDialogOpen(open);
     if (!open) {
-      // Clear editing state when dialog closes
       setEditingId(null);
       setFormData({
         dateTimeIn: '',
@@ -277,14 +289,25 @@ export default function AdminToPGOPage() {
     }
   };
 
-  const confirmDeleteRecord = () => {
+  const confirmRejectRecord = async () => {
     if (!recordToDelete) return;
-    
-    setRecords((prev) => prev.filter((item) => item.id !== recordToDelete));
-    setSuccess('Record deleted successfully');
-    setDeleteConfirmOpen(false);
-    setRecordToDelete(null);
-    setSuccessModalOpen(true);
+
+    setIsLoading(true);
+    try {
+      await adminToPGOService.updateRecord(recordToDelete, { status: 'Rejected' });
+      const updatedRecords = records.map(r => r.id === recordToDelete ? { ...r, status: 'Rejected' } : r);
+      setRecords(updatedRecords);
+      setSuccess('Admin to PGO record rejected successfully');
+      setRecordToDelete(null);
+      setDeleteConfirmOpen(false);
+      setSuccessModalOpen(true);
+    } catch (err) {
+      console.error('Failed to reject record:', err);
+      setSuccess('Error rejecting record');
+      setSuccessModalOpen(true);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleTimeOut = (id: string) => {
@@ -355,13 +378,13 @@ export default function AdminToPGOPage() {
           </Button>
         </SheetTrigger>
         <SheetContent side="left" className="w-64 p-0">
-          <AdminToPGOSidebar recordTypes={recordTypes} onNavigate={() => setSidebarOpen(false)} />
+          <Sidebar recordTypes={recordTypes} onNavigate={() => setSidebarOpen(false)} />
         </SheetContent>
       </Sheet>
 
       {/* Desktop Sidebar */}
       <div className="hidden md:block w-64 bg-white border-r border-gray-200 shadow-sm">
-        <AdminToPGOSidebar recordTypes={recordTypes} onNavigate={undefined} />
+        <Sidebar recordTypes={recordTypes} onNavigate={undefined} />
       </div>
 
       {/* Main Content */}
@@ -393,7 +416,20 @@ export default function AdminToPGOPage() {
               </div>
               <Dialog open={isDialogOpen} onOpenChange={handleDialogOpenChange}>
                 <DialogTrigger asChild>
-                  <Button className="gap-2 bg-indigo-600 hover:bg-indigo-700">
+                  <Button 
+                    className="gap-2 bg-indigo-600 hover:bg-indigo-700"
+                    onClick={() => {
+                      setEditingId(null);
+                      setFormData({
+                        dateTimeIn: getCurrentDateTime(),
+                        dateTimeOut: '',
+                        fullName: '',
+                        officeAddress: '',
+                        particulars: '',
+                        remarks: '',
+                      });
+                    }}
+                  >
                     <Plus className="h-4 w-4" />
                     Add Record
                   </Button>
@@ -571,12 +607,8 @@ export default function AdminToPGOPage() {
                             onView={() => handleViewRecord(record.id)}
                             onEdit={() => handleEditRecord(record.id)}
                             onTimeOut={() => handleTimeOut(record.id)}
-                            onDelete={() => handleDeleteRecord(record.id)}
-                            canEdit={user?.role === 'admin' || (!!record.dateTimeOut === false && record.status === 'Pending')}
-                            canDelete={user?.role === 'admin' || (!!record.dateTimeOut === false && record.status === 'Pending')}
-                            showTimeOut={!record.dateTimeOut}
-                            editDisabledReason={user?.role !== 'admin' && (!!record.dateTimeOut || record.status !== 'Pending') ? 'Users can only edit pending records' : undefined}
-                            deleteDisabledReason={user?.role !== 'admin' && (!!record.dateTimeOut || record.status !== 'Pending') ? 'Users can only delete pending records' : undefined}
+                            onReject={() => handleRejectRecord(record.id)}
+                            showTimeOut={record.status !== 'Completed'}
                           />
                         </TableCell>
                       </TableRow>
@@ -590,29 +622,28 @@ export default function AdminToPGOPage() {
         </div>
       </div>
 
-      {/* Edit Confirmation Modal */}
-      <Dialog open={editConfirmOpen} onOpenChange={setEditConfirmOpen}>
+      {/* Reject Confirmation Modal */}
+      <Dialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
         <DialogContent className="sm:max-w-md">
-          <DialogTitle className="text-lg font-semibold">Confirm Update</DialogTitle>
+          <DialogTitle className="text-lg font-semibold">Confirm Reject</DialogTitle>
           <p className="text-sm text-gray-600 mt-4">
-            Are you sure you want to update this record? This action cannot be undone.
+            Are you sure you want to reject this record? The status will be changed to "Rejected".
           </p>
           <div className="flex gap-3 justify-end pt-6">
             <Button
               variant="outline"
               onClick={() => {
-                setEditConfirmOpen(false);
+                setDeleteConfirmOpen(false);
               }}
               className="px-6"
             >
               Cancel
             </Button>
             <Button
-              onClick={confirmEditRecord}
-              disabled={isLoading}
-              className="px-6 bg-amber-600 hover:bg-amber-700 text-white"
+              onClick={confirmRejectRecord}
+              className="px-6 bg-red-600 hover:bg-red-700 text-white"
             >
-              {isLoading ? 'Updating...' : 'Update'}
+              Reject
             </Button>
           </div>
         </DialogContent>
@@ -666,34 +697,6 @@ export default function AdminToPGOPage() {
               className="px-6 bg-blue-600 hover:bg-blue-700 text-white"
             >
               {isLoading ? 'Recording...' : 'Record Time Out'}
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Delete Confirmation Modal */}
-      <Dialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogTitle className="text-lg font-semibold">Confirm Delete</DialogTitle>
-          <p className="text-sm text-gray-600 mt-4">
-            You are about to permanently remove this record. All associated data will be lost. Please confirm this action.
-          </p>
-          <div className="flex gap-3 justify-end pt-6">
-            <Button
-              variant="outline"
-              onClick={() => {
-                setDeleteConfirmOpen(false);
-                setRecordToDelete(null);
-              }}
-              className="px-6"
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={confirmDeleteRecord}
-              className="px-6 bg-red-600 hover:bg-red-700 text-white"
-            >
-              Delete
             </Button>
           </div>
         </DialogContent>
@@ -821,122 +824,3 @@ export default function AdminToPGOPage() {
   );
 }
 
-interface AdminToPGOSidebarProps {
-  recordTypes: string[];
-  onNavigate?: () => void;
-}
-
-function AdminToPGOSidebar({ recordTypes, onNavigate }: AdminToPGOSidebarProps) {
-  const { user } = useAuth();
-  const navigate = useNavigate();
-
-  const menuItems = [
-    { icon: Home, label: 'Dashboard', href: '/dashboard' },
-  ];
-
-  return (
-    <div className="h-full flex flex-col bg-white">
-      {/* Logo */}
-      <div className="p-6 border-b border-gray-200">
-        <h2 className="text-xl font-bold text-indigo-600">PGO</h2>
-        <p className="text-xs text-gray-500">Record Management</p>
-      </div>
-
-      {/* Menu Items */}
-      <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
-        {menuItems.map((item) => (
-          <button
-            key={item.label}
-            onClick={() => {
-              onNavigate?.();
-              navigate(item.href);
-            }}
-            className="w-full flex items-center gap-3 px-4 py-2 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors text-left"
-          >
-            <item.icon className="h-5 w-5" />
-            <span className="text-sm font-medium">{item.label}</span>
-          </button>
-        ))}
-
-        {/* Records Menu */}
-        <div className="space-y-1">
-          <div className="flex items-center gap-3 px-4 py-2 text-gray-700">
-            <FileText className="h-5 w-5" />
-            <span className="text-sm font-medium">Records</span>
-          </div>
-          <div className="pl-8 space-y-1">
-            {recordTypes.map((type) => (
-              <button
-                key={type}
-                onClick={() => {
-                  onNavigate?.();
-                  if (type === 'Admin to PGO') {
-                    navigate('/admin-to-pgo');
-                  } else if (type === 'Locator') {
-                    navigate('/locator');
-                  } else if (type === 'Leave') {
-                    navigate('/leave');
-                  } else if (type === 'Letter') {
-                    navigate('/letter');
-                  } else if (type === 'Request for Overtime') {
-                    navigate('/overtime');
-                  } else if (type === 'Travel Order') {
-                    navigate('/travel-order');
-                  } else if (type === 'Voucher') {
-                    navigate('/voucher');
-                  } else if (type === 'Others') {
-                    navigate('/others');
-                  }
-                }}
-                className="w-full block px-4 py-2 text-sm text-gray-600 rounded-lg hover:bg-gray-100 transition-colors text-left"
-              >
-                {type}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Reports */}
-        <button
-          onClick={() => {
-            onNavigate?.();
-            navigate('/reports');
-          }}
-          className="w-full flex items-center gap-3 px-4 py-2 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors text-left mt-2"
-        >
-          <BarChart3 className="h-5 w-5" />
-          <span className="text-sm font-medium">Reports</span>
-        </button>
-      </nav>
-
-      {/* User Info - Bottom */}
-      <div className="p-4 border-t border-gray-200">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center">
-            <span className="text-sm font-semibold text-indigo-600">
-              {user?.name.charAt(0).toUpperCase()}
-            </span>
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-gray-900 truncate">{user?.name}</p>
-            <p className="text-xs text-gray-500 truncate">{user?.role}</p>
-          </div>
-        </div>
-      </div>
-
-      {/* Bottom Actions */}
-      <div className="p-4 border-t border-gray-200 space-y-2">
-        {user?.role === 'admin' && (
-          <Button
-            variant="outline"
-            className="w-full justify-start gap-2 text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50"
-            onClick={() => navigate('/settings')}
-          >
-            <Settings className="h-4 w-4" />
-            Settings
-          </Button>
-        )}
-      </div>
-    </div>
-  );
-}
