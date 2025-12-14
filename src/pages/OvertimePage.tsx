@@ -49,7 +49,6 @@ import { Sidebar } from '@/components/Sidebar';
 import { ActionButtons } from '@/components/ActionButtons';
 import SuccessModal from '@/components/SuccessModal';
 import TimeOutModal from '@/components/TimeOutModal';
-import LoadingScene from '@/components/LoadingScene';
 
 interface Overtime {
   id: string;
@@ -388,10 +387,6 @@ export default function OvertimePage() {
       setIsLoading(false);
     }
   };
-
-  if (isLoading) {
-    return <LoadingScene message="Loading overtime requests..." />;
-  }
 
   return (
     <div className="flex h-screen bg-gray-50">

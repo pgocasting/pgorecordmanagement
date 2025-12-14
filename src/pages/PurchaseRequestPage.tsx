@@ -49,7 +49,6 @@ import { Plus, Menu, LogOut } from 'lucide-react';
 import { ActionButtons } from '@/components/ActionButtons';
 import SuccessModal from '@/components/SuccessModal';
 import TimeOutModal from '@/components/TimeOutModal';
-import LoadingScene from '@/components/LoadingScene';
 
 interface PurchaseRequest {
   id: string;
@@ -357,10 +356,6 @@ export default function PurchaseRequestPage() {
       setIsLoading(false);
     }
   };
-
-  if (isLoading) {
-    return <LoadingScene message="Loading purchase requests..." />;
-  }
 
   return (
     <div className="flex h-screen bg-gray-50">

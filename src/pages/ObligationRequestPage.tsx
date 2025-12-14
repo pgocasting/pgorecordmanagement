@@ -49,7 +49,6 @@ import { Plus, Menu, LogOut } from 'lucide-react';
 import { ActionButtons } from '@/components/ActionButtons';
 import SuccessModal from '@/components/SuccessModal';
 import TimeOutModal from '@/components/TimeOutModal';
-import LoadingScene from '@/components/LoadingScene';
 
 interface ObligationRequest {
   id: string;
@@ -349,10 +348,6 @@ export default function ObligationRequestPage() {
       setIsLoading(false);
     }
   };
-
-  if (isLoading) {
-    return <LoadingScene message="Loading obligation requests..." />;
-  }
 
   return (
     <div className="flex h-screen bg-gray-50">
