@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertCircle, LogIn, Mail, Lock, Eye, EyeOff } from 'lucide-react';
+import LoadingScene from '@/components/LoadingScene';
 
 export default function LoginPage() {
   const [username, setUsername] = useState('');
@@ -38,10 +39,13 @@ export default function LoginPage() {
       navigate('/dashboard');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Login failed. Please check your credentials.');
-    } finally {
       setIsLoading(false);
     }
   };
+
+  if (isLoading) {
+    return <LoadingScene message="Signing in..." />;
+  }
 
   return (
     <div className="min-h-screen bg-white flex items-center justify-center p-4">
