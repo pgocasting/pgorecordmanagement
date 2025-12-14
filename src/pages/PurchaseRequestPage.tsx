@@ -48,6 +48,7 @@ import {
 import { Plus, Menu, LogOut } from 'lucide-react';
 import { ActionButtons } from '@/components/ActionButtons';
 import SuccessModal from '@/components/SuccessModal';
+import TimeOutModal from '@/components/TimeOutModal';
 
 interface PurchaseRequest {
   id: string;
@@ -703,56 +704,21 @@ export default function PurchaseRequestPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Time Out Confirmation Modal */}
-      <Dialog open={timeOutConfirmOpen} onOpenChange={setTimeOutConfirmOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogTitle className="text-lg font-semibold">Record Time Out</DialogTitle>
-          <DialogDescription>
-            Record the time out details for this purchase request.
-          </DialogDescription>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="timeOutDate" className="text-sm font-medium text-gray-700">Date/Time Out *</Label>
-              <Input
-                id="timeOutDate"
-                type="datetime-local"
-                value={timeOutData.dateTimeOut}
-                onChange={(e) => setTimeOutData({ ...timeOutData, dateTimeOut: e.target.value })}
-                className="w-full"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="timeOutRemarks" className="text-sm font-medium text-gray-700">Remarks</Label>
-              <Textarea
-                id="timeOutRemarks"
-                value={timeOutData.timeOutRemarks}
-                onChange={(e) => setTimeOutData({ ...timeOutData, timeOutRemarks: e.target.value })}
-                placeholder="Enter time out remarks"
-                rows={3}
-              />
-            </div>
-          </div>
-          <div className="flex gap-3 justify-end pt-6">
-            <Button
-              variant="outline"
-              onClick={() => {
-                setTimeOutConfirmOpen(false);
-                setRequestToTimeOut(null);
-              }}
-              className="px-6"
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={confirmTimeOut}
-              disabled={isLoading}
-              className="px-6 bg-blue-600 hover:bg-blue-700 text-white"
-            >
-              {isLoading ? 'Recording...' : 'Record Time Out'}
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+      {/* Time Out Modal */}
+      <TimeOutModal
+        open={timeOutConfirmOpen}
+        onOpenChange={setTimeOutConfirmOpen}
+        onConfirm={confirmTimeOut}
+        onCancel={() => {
+          setTimeOutConfirmOpen(false);
+          setRequestToTimeOut(null);
+        }}
+        dateTimeOut={timeOutData.dateTimeOut}
+        onDateTimeOutChange={(value) => setTimeOutData({ ...timeOutData, dateTimeOut: value })}
+        remarks={timeOutData.timeOutRemarks}
+        onRemarksChange={(value) => setTimeOutData({ ...timeOutData, timeOutRemarks: value })}
+        isLoading={isLoading}
+      />
 
       {/* View Modal */}
       <Dialog open={viewModalOpen} onOpenChange={setViewModalOpen}>

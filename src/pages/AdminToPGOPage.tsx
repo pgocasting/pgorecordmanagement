@@ -47,6 +47,7 @@ import { Plus, Menu, LogOut } from 'lucide-react';
 import { Sidebar } from '@/components/Sidebar';
 import { ActionButtons } from '@/components/ActionButtons';
 import SuccessModal from '@/components/SuccessModal';
+import TimeOutModal from '@/components/TimeOutModal';
 
 interface AdminToPGO {
   id: string;
@@ -642,57 +643,20 @@ export default function AdminToPGOPage() {
       </Dialog>
 
       {/* Time Out Modal */}
-      <Dialog open={timeOutConfirmOpen} onOpenChange={setTimeOutConfirmOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Record Time Out</DialogTitle>
-            <DialogDescription>
-              Enter the date/time out and any remarks for this Admin to PGO record.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="timeOutDateTime">Date/Time OUT *</Label>
-              <Input
-                id="timeOutDateTime"
-                type="datetime-local"
-                value={timeOutData.dateTimeOut}
-                onChange={(e) => setTimeOutData({ ...timeOutData, dateTimeOut: e.target.value })}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="timeOutRemarks">Remarks</Label>
-              <textarea
-                id="timeOutRemarks"
-                placeholder="Enter time out remarks (optional)"
-                value={timeOutData.timeOutRemarks}
-                onChange={(e) => setTimeOutData({ ...timeOutData, timeOutRemarks: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                rows={3}
-              />
-            </div>
-          </div>
-          <div className="flex gap-3 justify-end pt-6">
-            <Button
-              variant="outline"
-              onClick={() => {
-                setTimeOutConfirmOpen(false);
-                setRecordToTimeOut(null);
-              }}
-              className="px-6"
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={confirmTimeOut}
-              disabled={isLoading}
-              className="px-6 bg-blue-600 hover:bg-blue-700 text-white"
-            >
-              {isLoading ? 'Recording...' : 'Record Time Out'}
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+      <TimeOutModal
+        open={timeOutConfirmOpen}
+        onOpenChange={setTimeOutConfirmOpen}
+        onConfirm={confirmTimeOut}
+        onCancel={() => {
+          setTimeOutConfirmOpen(false);
+          setRecordToTimeOut(null);
+        }}
+        dateTimeOut={timeOutData.dateTimeOut}
+        onDateTimeOutChange={(value) => setTimeOutData({ ...timeOutData, dateTimeOut: value })}
+        remarks={timeOutData.timeOutRemarks}
+        onRemarksChange={(value) => setTimeOutData({ ...timeOutData, timeOutRemarks: value })}
+        isLoading={isLoading}
+      />
 
       {/* Success Modal */}
       <SuccessModal
