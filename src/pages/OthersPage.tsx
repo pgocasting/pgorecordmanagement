@@ -701,11 +701,11 @@ export default function OthersPage() {
                             onEdit={() => handleEditRecord(record.id)}
                             onTimeOut={() => handleTimeOut(record.id)}
                             onReject={() => handleRejectRecord(record.id)}
-                            canEdit={user?.role === 'admin' || (!!record.dateTimeOut === false && record.status === 'Pending')}
-                            canReject={user?.role === 'admin' || (!!record.dateTimeOut === false && record.status === 'Pending')}
-                            showTimeOut={!record.dateTimeOut}
-                            editDisabledReason={user?.role !== 'admin' && (!!record.dateTimeOut || record.status !== 'Pending') ? 'Users can only edit pending records' : undefined}
-                            rejectDisabledReason={user?.role !== 'admin' && (!!record.dateTimeOut || record.status !== 'Pending') ? 'Users can only reject pending records' : undefined}
+                            canEdit={record.status !== 'Rejected' && record.status !== 'Completed' && (user?.role === 'admin' || (!!record.dateTimeOut === false && record.status === 'Pending'))}
+                            canReject={record.status !== 'Rejected' && record.status !== 'Completed' && (user?.role === 'admin' || (!!record.dateTimeOut === false && record.status === 'Pending'))}
+                            showTimeOut={!record.dateTimeOut && record.status !== 'Rejected' && record.status !== 'Completed'}
+                            editDisabledReason={record.status === 'Rejected' ? 'Cannot edit rejected records' : (record.status === 'Completed' ? 'Cannot edit completed records' : (user?.role !== 'admin' && (!!record.dateTimeOut || record.status !== 'Pending') ? 'Users can only edit pending records' : undefined))}
+                            rejectDisabledReason={record.status === 'Rejected' ? 'Record already rejected' : (record.status === 'Completed' ? 'Cannot reject completed records' : (user?.role !== 'admin' && (!!record.dateTimeOut || record.status !== 'Pending') ? 'Users can only reject pending records' : undefined))}
                           />
                         </TableCell>
                       </TableRow>

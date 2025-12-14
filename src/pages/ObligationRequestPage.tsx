@@ -616,7 +616,11 @@ export default function ObligationRequestPage() {
                             onEdit={() => handleEditRequest(request.id)}
                             onTimeOut={() => handleTimeOut(request.id)}
                             onReject={() => handleRejectRequest(request.id)}
-                            showTimeOut={request.status !== 'Completed'}
+                            canEdit={request.status !== 'Rejected' && request.status !== 'Completed'}
+                            canReject={request.status !== 'Rejected' && request.status !== 'Completed'}
+                            showTimeOut={request.status !== 'Completed' && request.status !== 'Rejected'}
+                            editDisabledReason={request.status === 'Rejected' ? 'Cannot edit rejected records' : (request.status === 'Completed' ? 'Cannot edit completed records' : undefined)}
+                            rejectDisabledReason={request.status === 'Rejected' ? 'Record already rejected' : (request.status === 'Completed' ? 'Cannot reject completed records' : undefined)}
                           />
                         </TableCell>
                       </TableRow>

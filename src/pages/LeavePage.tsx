@@ -681,7 +681,11 @@ export default function LeavePage() {
                             onEdit={() => handleEditLeave(item.id)}
                             onTimeOut={() => handleTimeOut(item.id)}
                             onReject={() => handleRejectLeave(item.id)}
-                            showTimeOut={item.status !== 'Completed'}
+                            canEdit={item.status !== 'Rejected' && item.status !== 'Completed'}
+                            canReject={item.status !== 'Rejected' && item.status !== 'Completed'}
+                            showTimeOut={item.status !== 'Completed' && item.status !== 'Rejected'}
+                            editDisabledReason={item.status === 'Rejected' ? 'Cannot edit rejected records' : (item.status === 'Completed' ? 'Cannot edit completed records' : undefined)}
+                            rejectDisabledReason={item.status === 'Rejected' ? 'Record already rejected' : (item.status === 'Completed' ? 'Cannot reject completed records' : undefined)}
                           />
                         </TableCell>
                       </TableRow>
