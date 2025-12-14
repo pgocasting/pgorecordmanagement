@@ -47,6 +47,7 @@ import {
 } from '@/components/ui/dialog';
 import { Plus, Menu, LogOut } from 'lucide-react';
 import { ActionButtons } from '@/components/ActionButtons';
+import SuccessModal from '@/components/SuccessModal';
 
 interface PurchaseRequest {
   id: string;
@@ -845,31 +846,12 @@ export default function PurchaseRequestPage() {
       </Dialog>
 
       {/* Success Modal */}
-      <Dialog open={successModalOpen} onOpenChange={setSuccessModalOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Success</DialogTitle>
-            <DialogDescription>
-              {success}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="flex items-center gap-3">
-            <div className="shrink-0">
-              <svg className="h-6 w-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-              </svg>
-            </div>
-          </div>
-          <div className="flex justify-end pt-4">
-            <Button
-              onClick={() => setSuccessModalOpen(false)}
-              className="bg-green-600 hover:bg-green-700"
-            >
-              OK
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+      <SuccessModal
+        open={successModalOpen}
+        onOpenChange={setSuccessModalOpen}
+        message={success}
+        isError={success.includes('Error')}
+      />
     </div>
   );
 }

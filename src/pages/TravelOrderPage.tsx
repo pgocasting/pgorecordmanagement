@@ -47,6 +47,7 @@ import {
 import { Plus, Menu, LogOut } from 'lucide-react';
 import { Sidebar } from '@/components/Sidebar';
 import { ActionButtons } from '@/components/ActionButtons';
+import SuccessModal from '@/components/SuccessModal';
 
 interface TravelOrder {
   id: string;
@@ -872,35 +873,12 @@ export default function TravelOrderPage() {
       </Dialog>
 
       {/* Success Modal */}
-      <Dialog open={successModalOpen} onOpenChange={setSuccessModalOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>{success.includes('Error') ? 'Error' : 'Success'}</DialogTitle>
-          </DialogHeader>
-          <div className="flex items-center gap-3">
-            <div className="shrink-0">
-              {success.includes('Error') ? (
-                <svg className="h-6 w-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              ) : (
-                <svg className="h-6 w-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
-              )}
-            </div>
-            <p className="text-sm text-gray-700">{success}</p>
-          </div>
-          <div className="flex justify-end pt-4">
-            <Button
-              onClick={() => setSuccessModalOpen(false)}
-              className={success.includes('Error') ? 'bg-red-600 hover:bg-red-700' : 'bg-green-600 hover:bg-green-700'}
-            >
-              OK
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+      <SuccessModal
+        open={successModalOpen}
+        onOpenChange={setSuccessModalOpen}
+        message={success}
+        isError={success.includes('Error')}
+      />
     </div>
   );
 }

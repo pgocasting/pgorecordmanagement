@@ -47,6 +47,7 @@ import {
 import { Plus, Menu, LogOut } from 'lucide-react';
 import { Sidebar } from '@/components/Sidebar';
 import { ActionButtons } from '@/components/ActionButtons';
+import SuccessModal from '@/components/SuccessModal';
 
 interface Locator {
   id: string;
@@ -679,11 +680,11 @@ export default function LocatorPage() {
                             onEdit={() => handleEditLocator(item.id)}
                             onTimeOut={() => handleTimeOut(item.id)}
                             onReject={() => handleRejectLocator(item.id)}
-                            canEdit={user?.role === 'admin' || (!!item.dateTimeOut === false && item.status === 'Pending')}
-                            canReject={user?.role === 'admin' || (!!item.dateTimeOut === false && item.status === 'Pending')}
-                            showTimeOut={!item.dateTimeOut}
-                            editDisabledReason={user?.role !== 'admin' && (!!item.dateTimeOut || item.status !== 'Pending') ? 'Users can only edit pending records' : undefined}
-                            rejectDisabledReason={user?.role !== 'admin' && (!!item.dateTimeOut || item.status !== 'Pending') ? 'Users can only reject pending records' : undefined}
+                            canEdit={item.status !== 'Rejected' && (user?.role === 'admin' || (!!item.dateTimeOut === false && item.status === 'Pending'))}
+                            canReject={item.status !== 'Rejected' && (user?.role === 'admin' || (!!item.dateTimeOut === false && item.status === 'Pending'))}
+                            showTimeOut={!item.dateTimeOut && item.status !== 'Rejected'}
+                            editDisabledReason={item.status === 'Rejected' ? 'Cannot edit rejected records' : (user?.role !== 'admin' && (!!item.dateTimeOut || item.status !== 'Pending') ? 'Users can only edit pending records' : undefined)}
+                            rejectDisabledReason={item.status === 'Rejected' ? 'Record already rejected' : (user?.role !== 'admin' && (!!item.dateTimeOut || item.status !== 'Pending') ? 'Users can only reject pending records' : undefined)}
                           />
                         </TableCell>
                       </TableRow>
@@ -807,31 +808,12 @@ export default function LocatorPage() {
       </Dialog>
 
       {/* Success Modal */}
-      <Dialog open={successModalOpen} onOpenChange={setSuccessModalOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Success</DialogTitle>
-            <DialogDescription>
-              {success}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="flex items-center gap-3">
-            <div className="shrink-0">
-              <svg className="h-6 w-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-              </svg>
-            </div>
-          </div>
-          <div className="flex justify-end pt-4">
-            <Button
-              onClick={() => setSuccessModalOpen(false)}
-              className="bg-green-600 hover:bg-green-700"
-            >
-              OK
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+      <SuccessModal
+        open={successModalOpen}
+        onOpenChange={setSuccessModalOpen}
+        message={success}
+        isError={success.includes('Error')}
+      />
 
       {/* View Modal */}
       <Dialog open={viewModalOpen} onOpenChange={setViewModalOpen}>

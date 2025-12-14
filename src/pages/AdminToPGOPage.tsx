@@ -46,6 +46,7 @@ import {
 import { Plus, Menu, LogOut } from 'lucide-react';
 import { Sidebar } from '@/components/Sidebar';
 import { ActionButtons } from '@/components/ActionButtons';
+import SuccessModal from '@/components/SuccessModal';
 
 interface AdminToPGO {
   id: string;
@@ -595,7 +596,11 @@ export default function AdminToPGOPage() {
                             onEdit={() => handleEditRecord(record.id)}
                             onTimeOut={() => handleTimeOut(record.id)}
                             onReject={() => handleRejectRecord(record.id)}
-                            showTimeOut={record.status !== 'Completed'}
+                            canEdit={record.status !== 'Rejected'}
+                            canReject={record.status !== 'Rejected'}
+                            showTimeOut={record.status !== 'Completed' && record.status !== 'Rejected'}
+                            editDisabledReason={record.status === 'Rejected' ? 'Cannot edit rejected records' : undefined}
+                            rejectDisabledReason={record.status === 'Rejected' ? 'Record already rejected' : undefined}
                           />
                         </TableCell>
                       </TableRow>
@@ -690,29 +695,12 @@ export default function AdminToPGOPage() {
       </Dialog>
 
       {/* Success Modal */}
-      <Dialog open={successModalOpen} onOpenChange={setSuccessModalOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Success</DialogTitle>
-          </DialogHeader>
-          <div className="flex items-center gap-3">
-            <div className="shrink-0">
-              <svg className="h-6 w-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-              </svg>
-            </div>
-            <p className="text-sm text-gray-700">{success}</p>
-          </div>
-          <div className="flex justify-end pt-4">
-            <Button
-              onClick={() => setSuccessModalOpen(false)}
-              className="bg-green-600 hover:bg-green-700"
-            >
-              OK
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+      <SuccessModal
+        open={successModalOpen}
+        onOpenChange={setSuccessModalOpen}
+        message={success}
+        isError={success.includes('Error')}
+      />
 
       {/* View Modal */}
       <Dialog open={viewModalOpen} onOpenChange={setViewModalOpen}>

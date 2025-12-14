@@ -47,6 +47,7 @@ import {
 import { Plus, Menu, LogOut } from 'lucide-react';
 import { ActionButtons } from '@/components/ActionButtons';
 import { Sidebar } from '@/components/Sidebar';
+import SuccessModal from '@/components/SuccessModal';
 
 interface Letter {
   id: string;
@@ -694,30 +695,12 @@ export default function LetterPage() {
       </Dialog>
 
       {/* Success Modal */}
-      <Dialog open={successModalOpen} onOpenChange={setSuccessModalOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Success</DialogTitle>
-          </DialogHeader>
-          <div className="flex items-center gap-3">
-            <div className="shrink-0">
-              <svg className="h-6 w-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-              </svg>
-            </div>
-            <p className="text-sm text-gray-700">{success}</p>
-          </div>
-          <div className="flex justify-end pt-4">
-            <Button
-              className="bg-green-600 hover:bg-green-700"
-              onClick={() => setSuccessModalOpen(false)}
-            >
-              OK
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+      <SuccessModal
+        open={successModalOpen}
+        onOpenChange={setSuccessModalOpen}
+        message={success}
+        isError={success.includes('Error')}
+      />
     </div>
   );
 }
-
