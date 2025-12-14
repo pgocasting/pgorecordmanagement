@@ -90,7 +90,6 @@ export default function OvertimePage() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [successModalOpen, setSuccessModalOpen] = useState(false);
-  const [editConfirmOpen, setEditConfirmOpen] = useState(false);
   const [timeOutConfirmOpen, setTimeOutConfirmOpen] = useState(false);
   const [overtimeToTimeOut, setOvertimeToTimeOut] = useState<string | null>(null);
   const [timeOutData, setTimeOutData] = useState({
@@ -192,7 +191,39 @@ export default function OvertimePage() {
     }
 
     if (editingId) {
-      setEditConfirmOpen(true);
+      setIsLoading(true);
+      try {
+        const updateData = {
+          ...formData,
+        };
+        await overtimeService.updateOvertime(editingId, updateData);
+        setSuccess('Overtime updated successfully');
+        setEditingId(null);
+
+        const updatedOvertimes = overtimes.map(o => o.id === editingId ? { ...o, ...updateData } : o);
+        setOvertimes(updatedOvertimes);
+
+        setFormData({
+          dateTimeIn: '',
+          dateTimeOut: '',
+          fullName: '',
+          designation: '',
+          inclusiveDateStart: '',
+          inclusiveDateEnd: '',
+          inclusiveTimeStart: '',
+          inclusiveTimeEnd: '',
+          purpose: '',
+          placeOfAssignment: '',
+        });
+        setIsDialogOpen(false);
+        setSuccessModalOpen(true);
+      } catch (err) {
+        console.error('Failed to update overtime:', err);
+        setSuccess('Error updating overtime');
+        setSuccessModalOpen(true);
+      } finally {
+        setIsLoading(false);
+      }
       return;
     }
 
@@ -227,42 +258,6 @@ export default function OvertimePage() {
     } catch (err) {
       console.error('Failed to save overtime:', err);
       setSuccess('Error saving overtime request');
-      setSuccessModalOpen(true);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const confirmEditOvertime = async () => {
-    if (!editingId) return;
-
-    setIsLoading(true);
-    try {
-      await overtimeService.updateOvertime(editingId, formData);
-      setSuccess('Overtime request updated successfully');
-      setEditingId(null);
-
-      const updatedOvertimes = overtimes.map(o => o.id === editingId ? { ...o, ...formData } : o);
-      setOvertimes(updatedOvertimes);
-
-      setFormData({
-        dateTimeIn: '',
-        dateTimeOut: '',
-        fullName: '',
-        designation: '',
-        inclusiveDateStart: '',
-        inclusiveDateEnd: '',
-        inclusiveTimeStart: '',
-        inclusiveTimeEnd: '',
-        purpose: '',
-        placeOfAssignment: '',
-      });
-      setIsDialogOpen(false);
-      setEditConfirmOpen(false);
-      setSuccessModalOpen(true);
-    } catch (err) {
-      console.error('Failed to save overtime:', err);
-      setSuccess('Error updating overtime request');
       setSuccessModalOpen(true);
     } finally {
       setIsLoading(false);

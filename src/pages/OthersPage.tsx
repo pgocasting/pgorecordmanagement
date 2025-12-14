@@ -305,11 +305,6 @@ export default function OthersPage() {
     }
   };
 
-  const handleRejectRecord = (id: string) => {
-    setRecordToDelete(id);
-    setDeleteConfirmOpen(true);
-  };
-
   const handleDialogOpenChange = (open: boolean) => {
     setIsDialogOpen(open);
     if (!open) {

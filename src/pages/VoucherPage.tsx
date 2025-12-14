@@ -355,14 +355,6 @@ export default function VoucherPage() {
     setTimeOutConfirmOpen(true);
   };
 
-  const handleTimeOutModalOpenChange = (open: boolean) => {
-    if (!open) {
-      setVoucherToTimeOut(null);
-      setTimeOutData({ dateTimeOut: '', timeOutRemarks: '' });
-    }
-    setTimeOutConfirmOpen(open);
-  };
-
   const confirmTimeOut = async () => {
     if (!voucherToTimeOut || !timeOutData.dateTimeOut) return;
 

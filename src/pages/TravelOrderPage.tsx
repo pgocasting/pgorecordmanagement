@@ -90,7 +90,6 @@ export default function TravelOrderPage() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [successModalOpen, setSuccessModalOpen] = useState(false);
-  const [editConfirmOpen, setEditConfirmOpen] = useState(false);
   const [timeOutConfirmOpen, setTimeOutConfirmOpen] = useState(false);
   const [travelOrderToTimeOut, setTravelOrderToTimeOut] = useState<string | null>(null);
   const [timeOutData, setTimeOutData] = useState({
@@ -191,7 +190,39 @@ export default function TravelOrderPage() {
     }
 
     if (editingId) {
-      setEditConfirmOpen(true);
+      setIsLoading(true);
+      try {
+        const updateData = {
+          ...formData,
+        };
+        await travelOrderService.updateTravelOrder(editingId, updateData);
+        setSuccess('Travel order updated successfully');
+        setEditingId(null);
+
+        const updatedTravelOrders = travelOrders.map(t => t.id === editingId ? { ...t, ...updateData } : t);
+        setTravelOrders(updatedTravelOrders);
+
+        setFormData({
+          dateTimeIn: '',
+          dateTimeOut: '',
+          fullName: '',
+          designation: '',
+          inclusiveDateStart: '',
+          inclusiveDateEnd: '',
+          inclusiveTimeStart: '',
+          inclusiveTimeEnd: '',
+          purpose: '',
+          placeOfAssignment: '',
+        });
+        setIsDialogOpen(false);
+        setSuccessModalOpen(true);
+      } catch (err) {
+        console.error('Failed to update travel order:', err);
+        setSuccess('Error updating travel order');
+        setSuccessModalOpen(true);
+      } finally {
+        setIsLoading(false);
+      }
       return;
     }
 
@@ -226,42 +257,6 @@ export default function TravelOrderPage() {
     } catch (err) {
       console.error('Failed to save travel order:', err);
       setSuccess('Error saving travel order');
-      setSuccessModalOpen(true);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const confirmEditTravelOrder = async () => {
-    if (!editingId) return;
-
-    setIsLoading(true);
-    try {
-      await travelOrderService.updateTravelOrder(editingId, formData);
-      setSuccess('Travel order updated successfully');
-      setEditingId(null);
-
-      const updatedTravelOrders = travelOrders.map(t => t.id === editingId ? { ...t, ...formData } : t);
-      setTravelOrders(updatedTravelOrders);
-
-      setFormData({
-        dateTimeIn: '',
-        dateTimeOut: '',
-        fullName: '',
-        designation: '',
-        inclusiveDateStart: '',
-        inclusiveDateEnd: '',
-        inclusiveTimeStart: '',
-        inclusiveTimeEnd: '',
-        purpose: '',
-        placeOfAssignment: '',
-      });
-      setIsDialogOpen(false);
-      setEditConfirmOpen(false);
-      setSuccessModalOpen(true);
-    } catch (err) {
-      console.error('Failed to save travel order:', err);
-      setSuccess('Error updating travel order');
       setSuccessModalOpen(true);
     } finally {
       setIsLoading(false);
