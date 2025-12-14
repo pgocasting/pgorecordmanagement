@@ -49,6 +49,7 @@ import { Sidebar } from '@/components/Sidebar';
 import { ActionButtons } from '@/components/ActionButtons';
 import SuccessModal from '@/components/SuccessModal';
 import TimeOutModal from '@/components/TimeOutModal';
+import LoadingScene from '@/components/LoadingScene';
 
 interface TravelOrder {
   id: string;
@@ -385,6 +386,10 @@ export default function TravelOrderPage() {
       setIsLoading(false);
     }
   };
+
+  if (isLoading) {
+    return <LoadingScene message="Loading travel orders..." />;
+  }
 
   return (
     <div className="flex h-screen bg-gray-50">

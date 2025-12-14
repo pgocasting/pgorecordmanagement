@@ -5,6 +5,7 @@ import { leaveService, letterService, voucherService, locatorService, adminToPGO
 import { Menu, LogOut, Download } from 'lucide-react';
 import { Sidebar } from '@/components/Sidebar';
 import { Button } from '@/components/ui/button';
+import LoadingScene from '@/components/LoadingScene';
 import {
   Sheet,
   SheetContent,
@@ -257,6 +258,10 @@ export default function ReportPage() {
     a.download = `report_${reportType}_${new Date().toISOString().split('T')[0]}.csv`;
     a.click();
   };
+
+  if (isLoading) {
+    return <LoadingScene message="Generating report..." />;
+  }
 
   return (
     <div className="flex h-screen bg-gray-50">

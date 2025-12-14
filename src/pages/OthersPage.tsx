@@ -49,6 +49,7 @@ import { Sidebar } from '@/components/Sidebar';
 import { ActionButtons } from '@/components/ActionButtons';
 import SuccessModal from '@/components/SuccessModal';
 import TimeOutModal from '@/components/TimeOutModal';
+import LoadingScene from '@/components/LoadingScene';
 
 interface Others {
   id: string;
@@ -396,6 +397,10 @@ export default function OthersPage() {
       setIsLoading(false);
     }
   };
+
+  if (isLoading) {
+    return <LoadingScene message="Loading records..." />;
+  }
 
   return (
     <div className="flex h-screen bg-gray-50">

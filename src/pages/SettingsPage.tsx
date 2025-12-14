@@ -44,6 +44,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertCircle } from 'lucide-react';
 import { Plus, Menu, LogOut, Trash2 } from 'lucide-react';
 import { Sidebar } from '@/components/Sidebar';
+import LoadingScene from '@/components/LoadingScene';
 
 export default function SettingsPage() {
   const navigate = useNavigate();
@@ -54,6 +55,7 @@ export default function SettingsPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [activeTab, setActiveTab] = useState('users');
   const [isConfirmPasswordOpen, setIsConfirmPasswordOpen] = useState(false);
   const [changePasswordData, setChangePasswordData] = useState({
@@ -104,6 +106,7 @@ export default function SettingsPage() {
   ];
 
   const handleLogout = () => {
+    setIsLoggingOut(true);
     logout();
     navigate('/login');
   };
@@ -336,6 +339,10 @@ export default function SettingsPage() {
       setTimeout(() => setSuccess(''), 3000);
     }
   };
+
+  if (isLoggingOut) {
+    return <LoadingScene message="Signing out..." />;
+  }
 
   return (
     <div className="flex h-screen bg-gray-50">

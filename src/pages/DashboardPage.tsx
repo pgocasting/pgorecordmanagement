@@ -31,6 +31,7 @@ import {
 } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Sidebar } from '@/components/Sidebar';
+import LoadingScene from '@/components/LoadingScene';
 import { voucherService, letterService, leaveService, locatorService, adminToPGOService, othersService, travelOrderService, overtimeService, obligationRequestService, purchaseRequestService } from '@/services/firebaseService';
 
 interface Record {
@@ -63,6 +64,7 @@ export default function DashboardPage() {
   const [success, setSuccess] = useState('');
   const [messageModalOpen, setMessageModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'pending' | 'completed' | 'rejected'>('pending');
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   // Load records on mount
   useEffect(() => {
@@ -235,6 +237,7 @@ export default function DashboardPage() {
   }, []);
 
   const handleLogout = () => {
+    setIsLoggingOut(true);
     logout();
     navigate('/login');
   };
@@ -260,6 +263,10 @@ export default function DashboardPage() {
         return 'bg-gray-100 text-gray-800';
     }
   };
+
+  if (isLoggingOut) {
+    return <LoadingScene message="Signing out..." />;
+  }
 
   return (
     <div className="flex h-screen bg-gray-50">

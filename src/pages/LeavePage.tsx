@@ -48,6 +48,7 @@ import { Plus, Menu, LogOut } from 'lucide-react';
 import { Sidebar } from '@/components/Sidebar';
 import SuccessModal from '@/components/SuccessModal';
 import TimeOutModal from '@/components/TimeOutModal';
+import LoadingScene from '@/components/LoadingScene';
 
 interface Leave {
   id: string;
@@ -396,6 +397,10 @@ export default function LeavePage() {
       setIsLoading(false);
     }
   };
+
+  if (isLoading) {
+    return <LoadingScene message="Loading leaves..." />;
+  }
 
   return (
     <div className="flex h-screen bg-gray-50">
