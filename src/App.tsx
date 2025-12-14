@@ -14,6 +14,7 @@ import OthersPage from './pages/OthersPage';
 import ReportPage from './pages/ReportPage';
 import ObligationRequestPage from './pages/ObligationRequestPage';
 import PurchaseRequestPage from './pages/PurchaseRequestPage';
+import NotFoundPage from './pages/NotFoundPage';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated } = useAuth();
@@ -136,6 +137,7 @@ function AppRoutes() {
         }
       />
       <Route path="/" element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <Navigate to="/login" replace />} />
+      <Route path="*" element={<NotFoundPage />} />
     </Routes>
   );
 }
