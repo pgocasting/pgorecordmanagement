@@ -49,6 +49,7 @@ import { ActionButtons } from '@/components/ActionButtons';
 import { Sidebar } from '@/components/Sidebar';
 import SuccessModal from '@/components/SuccessModal';
 import TimeOutModal from '@/components/TimeOutModal';
+import LoadingScene from '@/components/LoadingScene';
 
 interface Letter {
   id: string;
@@ -307,6 +308,10 @@ export default function LetterPage() {
     'Admin to PGO',
     'Others',
   ];
+
+  if (isLoading) {
+    return <LoadingScene message="Loading letters..." />;
+  }
 
   return (
     <div className="flex h-screen bg-gray-50">
