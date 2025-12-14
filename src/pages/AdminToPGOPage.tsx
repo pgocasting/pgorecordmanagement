@@ -86,7 +86,6 @@ export default function AdminToPGOPage() {
   const [successModalOpen, setSuccessModalOpen] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [recordToDelete, setRecordToDelete] = useState<string | null>(null);
-  const [editConfirmOpen, setEditConfirmOpen] = useState(false);
   const [timeOutConfirmOpen, setTimeOutConfirmOpen] = useState(false);
   const [recordToTimeOut, setRecordToTimeOut] = useState<string | null>(null);
   const [timeOutData, setTimeOutData] = useState({
@@ -179,7 +178,7 @@ export default function AdminToPGOPage() {
     }
 
     if (editingId) {
-      setEditConfirmOpen(true);
+      confirmEditRecord();
       return;
     }
 
@@ -242,7 +241,6 @@ export default function AdminToPGOPage() {
         remarks: '',
       });
       setIsDialogOpen(false);
-      setEditConfirmOpen(false);
       setSuccessModalOpen(true);
     } catch (err) {
       console.error('Failed to save record:', err);

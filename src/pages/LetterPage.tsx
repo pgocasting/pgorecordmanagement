@@ -194,7 +194,7 @@ export default function LetterPage() {
     }
   };
 
-  const handleEdit = (letter: Letter) => {
+  const handleEditLetter = (letter: Letter) => {
     setFormData({
       dateTimeIn: letter.dateTimeIn,
       dateTimeOut: letter.dateTimeOut || '',
@@ -523,9 +523,12 @@ export default function LetterPage() {
                         <TableCell className="text-center">
                           <ActionButtons
                             onView={() => handleView(letter)}
-                            onEdit={() => handleEditLetter(letter.id)}
+                            onEdit={() => handleEditLetter(letter)}
                             onTimeOut={() => handleTimeOut(letter.id)}
-                            onReject={() => setLetterToDelete(letter.id) || setDeleteConfirmOpen(true)}
+                            onReject={() => {
+                              setLetterToDelete(letter.id);
+                              setDeleteConfirmOpen(true);
+                            }}
                             showTimeOut={letter.status !== 'Completed'}
                           />
                         </TableCell>
