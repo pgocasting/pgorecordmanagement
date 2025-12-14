@@ -492,17 +492,6 @@ export default function AdminToPGOPage() {
                     )}
 
                     <div className="space-y-2">
-                      <Label htmlFor="fullName">Full Name *</Label>
-                      <Input
-                        id="fullName"
-                        name="fullName"
-                        placeholder="Enter full name"
-                        value={formData.fullName}
-                        onChange={handleInputChange}
-                      />
-                    </div>
-
-                    <div className="space-y-2">
                       <Label htmlFor="officeAddress">Office / Address *</Label>
                       <Select value={formData.officeAddress} onValueChange={(value) => handleSelectChange('officeAddress', value)}>
                         <SelectTrigger 
