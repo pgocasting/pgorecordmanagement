@@ -46,6 +46,8 @@ import {
 } from '@/components/ui/select';
 import { Plus, Menu, LogOut } from 'lucide-react';
 import { Sidebar } from '@/components/Sidebar';
+import SuccessModal from '@/components/SuccessModal';
+import TimeOutModal from '@/components/TimeOutModal';
 
 interface Leave {
   id: string;
@@ -944,6 +946,31 @@ export default function LeavePage() {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Success Modal */}
+      <SuccessModal
+        open={successModalOpen}
+        onOpenChange={setSuccessModalOpen}
+        message={success}
+        isError={success.includes('Error')}
+      />
+
+      {/* Time Out Modal */}
+      <TimeOutModal
+        open={timeOutConfirmOpen}
+        onOpenChange={setTimeOutConfirmOpen}
+        onConfirm={confirmTimeOut}
+        onCancel={() => {
+          setTimeOutConfirmOpen(false);
+          setLeaveToTimeOut(null);
+          setTimeOutData({ dateTimeOut: '', timeOutRemarks: '' });
+        }}
+        dateTimeOut={timeOutData.dateTimeOut}
+        onDateTimeOutChange={(value) => setTimeOutData({ ...timeOutData, dateTimeOut: value })}
+        remarks={timeOutData.timeOutRemarks}
+        onRemarksChange={(value) => setTimeOutData({ ...timeOutData, timeOutRemarks: value })}
+        isLoading={isLoading}
+      />
     </div>
   );
 }
