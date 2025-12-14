@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { travelOrderService } from '@/services/localStorageService';
+import { travelOrderService } from '@/services/firebaseService';
 
 const getCurrentDateTime = (): string => {
   const now = new Date();

@@ -101,7 +101,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       // Fallback to localStorage authentication using username
       const allUsers = getStoredUsers();
-      const foundUser = allUsers.find((u: User) => u.username === username && u.password === password);
+      const foundUser = allUsers.find((u: User) => u.username.toLowerCase() === username.toLowerCase() && u.password === password);
       
       if (foundUser) {
         setUser(foundUser);

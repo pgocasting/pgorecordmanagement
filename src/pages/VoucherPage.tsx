@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { voucherService } from '@/services/localStorageService';
+import { voucherService } from '@/services/firebaseService';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
