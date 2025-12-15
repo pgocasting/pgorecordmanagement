@@ -33,9 +33,23 @@ export function Sidebar({ onNavigate, recordTypes = [] }: SidebarProps) {
   return (
     <div className="h-full flex flex-col bg-white">
       {/* Logo Section */}
-      <div className="p-6 border-b border-gray-200">
-        <h2 className="text-xl font-bold text-indigo-600">PGO</h2>
-        <p className="text-xs text-gray-500">Record Management</p>
+      <div className="p-6 border-b border-gray-200 bg-gradient-to-r from-indigo-50 to-blue-50">
+        <div className="flex items-center gap-4">
+          <div className="shrink-0">
+            <img 
+              src="/images/bataan-logo.png" 
+              alt="Bataan Logo" 
+              className="h-16 w-16 object-contain"
+              onError={(e) => {
+                e.currentTarget.style.display = 'none';
+              }}
+            />
+          </div>
+          <div className="flex flex-col justify-center">
+            <h2 className="text-2xl font-bold text-indigo-700 leading-none tracking-tight">PGO</h2>
+            <p className="text-sm text-black font-medium leading-none mt-1">Record Management</p>
+          </div>
+        </div>
       </div>
 
       {/* Navigation */}
