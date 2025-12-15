@@ -462,19 +462,22 @@ export default function ReportPage() {
                   <TableBody>
                     {isLoading ? (
                       <TableRow>
-                        <TableCell colSpan={5} className="text-center py-4">
+                        <TableCell colSpan={6} className="text-center py-4">
                           Loading report data...
                         </TableCell>
                       </TableRow>
                     ) : reportData.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={5} className="text-center py-4 text-gray-500">
+                        <TableCell colSpan={6} className="text-center py-4 text-gray-500">
                           No records found for the selected period and category.
                         </TableCell>
                       </TableRow>
                     ) : (
                       reportData.map((record) => (
                         <TableRow key={record.id} className="hover:bg-gray-50">
+                          <TableCell className="text-center text-xs text-gray-600">
+                            {record.receivedBy || '-'}
+                          </TableCell>
                           <TableCell className="text-center font-semibold text-indigo-600 text-xs">
                             {record.trackingId}
                           </TableCell>
