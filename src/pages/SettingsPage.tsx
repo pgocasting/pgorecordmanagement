@@ -398,6 +398,8 @@ export default function SettingsPage() {
   };
 
   const handleAddDesignation = () => {
+    setError('');
+    setSuccess('');
     if (!newDesignation.trim()) {
       setError('Designation name is required');
       return;
@@ -406,12 +408,13 @@ export default function SettingsPage() {
       setError('This designation already exists');
       return;
     }
-    setError('');
     setConfirmAction({ type: 'add', value: newDesignation });
     setConfirmDialogOpen(true);
   };
 
   const handleEditDesignation = (oldDesignation: string) => {
+    setError('');
+    setSuccess('');
     if (!newDesignation.trim()) {
       setError('Designation name is required');
       return;
@@ -424,7 +427,6 @@ export default function SettingsPage() {
       setError('This designation already exists');
       return;
     }
-    setError('');
     setConfirmAction({ type: 'edit', value: newDesignation });
     setConfirmDialogOpen(true);
   };
@@ -445,6 +447,7 @@ export default function SettingsPage() {
         setNewDesignation('');
         setDesignationDialogOpen(false);
         setEditingDesignation(null);
+        setError('');
       } else if (confirmAction.type === 'edit' && confirmAction.value && editingDesignation) {
         await designationService.updateDesignation(editingDesignation, confirmAction.value);
         const updated = await designationService.getDesignations();
@@ -453,16 +456,18 @@ export default function SettingsPage() {
         setNewDesignation('');
         setEditingDesignation(null);
         setDesignationDialogOpen(false);
+        setError('');
       } else if (confirmAction.type === 'delete' && confirmAction.value) {
         await designationService.deleteDesignation(confirmAction.value);
         const updated = await designationService.getDesignations();
         setDesignations(updated);
         setSuccess('Designation deleted successfully!');
+        setError('');
       }
       window.dispatchEvent(new Event('designationsUpdated'));
     } catch (err) {
       console.error('Error updating designation:', err);
-      setError('Failed to update designation');
+      setError(err instanceof Error ? err.message : 'Failed to update designation');
     } finally {
       setIsLoading(false);
       setConfirmDialogOpen(false);
