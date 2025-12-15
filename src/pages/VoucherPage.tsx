@@ -739,6 +739,11 @@ export default function VoucherPage() {
               </div>
 
               <div>
+                <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Received By</p>
+                <p className="text-sm font-medium text-gray-900 mt-1">{selectedVoucher.receivedBy || '-'}</p>
+              </div>
+
+              <div>
                 <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wide mb-4">Voucher Information</h3>
                 <div className="grid grid-cols-2 gap-6">
                   <div>
@@ -757,6 +762,14 @@ export default function VoucherPage() {
                     <p className="text-xs font-medium text-gray-600 uppercase">Type</p>
                     <p className="text-sm font-semibold text-gray-900 mt-1">{selectedVoucher.voucherType}</p>
                   </div>
+                  <div>
+                    <p className="text-xs font-medium text-gray-600 uppercase">Designation / Office</p>
+                    <p className="text-sm font-semibold text-gray-900 mt-1">{selectedVoucher.designationOffice}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs font-medium text-gray-600 uppercase">Funds</p>
+                    <p className="text-sm font-semibold text-gray-900 mt-1">{selectedVoucher.funds}</p>
+                  </div>
                 </div>
               </div>
 
@@ -768,6 +781,11 @@ export default function VoucherPage() {
               <div>
                 <p className="text-xs font-medium text-gray-600 uppercase">Date/Time Out</p>
                 <p className="text-sm font-semibold text-gray-900 mt-1">{selectedVoucher.dateTimeOut ? new Date(selectedVoucher.dateTimeOut).toLocaleString() : '-'}</p>
+              </div>
+
+              <div>
+                <p className="text-xs font-medium text-gray-600 uppercase">Remarks</p>
+                <p className="text-sm font-semibold text-gray-900 mt-1">{selectedVoucher.remarks || selectedVoucher.timeOutRemarks || '-'}</p>
               </div>
 
               <div className="flex justify-end gap-2 pt-4 border-t border-gray-200">

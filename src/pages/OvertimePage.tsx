@@ -800,6 +800,10 @@ export default function OvertimePage() {
                   <p className="text-gray-900">{selectedOvertime.status}</p>
                 </div>
               </div>
+              <div>
+                <p className="text-gray-600 font-medium">Received By</p>
+                <p className="text-gray-900">{selectedOvertime.receivedBy || '-'}</p>
+              </div>
               <div className="grid grid-cols-2 gap-2">
                 <div>
                   <p className="text-gray-600 font-medium">Full Name</p>
@@ -836,9 +840,29 @@ export default function OvertimePage() {
                 <p className="text-gray-600 font-medium">Place of Assignment</p>
                 <p className="text-gray-900">{selectedOvertime.placeOfAssignment}</p>
               </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <p className="text-gray-600 font-medium">Inclusive Date Start</p>
+                  <p className="text-gray-900">{selectedOvertime.inclusiveDateStart || '-'}</p>
+                </div>
+                <div>
+                  <p className="text-gray-600 font-medium">Inclusive Date End</p>
+                  <p className="text-gray-900">{selectedOvertime.inclusiveDateEnd || '-'}</p>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <p className="text-gray-600 font-medium">Inclusive Time Start</p>
+                  <p className="text-gray-900">{selectedOvertime.inclusiveTimeStart || '-'}</p>
+                </div>
+                <div>
+                  <p className="text-gray-600 font-medium">Inclusive Time End</p>
+                  <p className="text-gray-900">{selectedOvertime.inclusiveTimeEnd || '-'}</p>
+                </div>
+              </div>
               <div>
                 <p className="text-gray-600 font-medium">Remarks</p>
-                <p className="text-gray-900">{selectedOvertime.remarks || '-'}</p>
+                <p className="text-gray-900">{selectedOvertime.remarks || selectedOvertime.timeOutRemarks || '-'}</p>
               </div>
             </div>
           )}

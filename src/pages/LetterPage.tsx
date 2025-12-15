@@ -585,16 +585,35 @@ export default function LetterPage() {
           </DialogHeader>
           {selectedLetter && (
             <div className="space-y-6">
-              {/* Header Row - Tracking ID, Date/Time IN */}
-              <div className="grid grid-cols-2 gap-6 pb-4 border-b border-gray-200">
+              {/* Header Row - Tracking ID, Status, Date/Time IN */}
+              <div className="grid grid-cols-3 gap-6 pb-4 border-b border-gray-200">
                 <div>
                   <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Tracking ID</p>
                   <p className="text-lg font-bold text-indigo-600 mt-1">{selectedLetter.trackingId}</p>
                 </div>
                 <div>
+                  <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Status</p>
+                  <p className="mt-2">
+                    <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                      selectedLetter.status === 'Completed' ? 'bg-green-100 text-green-800' :
+                      selectedLetter.status === 'Pending' ? 'bg-yellow-100 text-yellow-800' :
+                      selectedLetter.status === 'Rejected' ? 'bg-red-100 text-red-800' :
+                      'bg-gray-100 text-gray-800'
+                    }`}>
+                      {selectedLetter.status}
+                    </span>
+                  </p>
+                </div>
+                <div>
                   <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Date/Time In</p>
                   <p className="text-sm font-medium text-gray-900 mt-1">{new Date(selectedLetter.dateTimeIn).toLocaleString()}</p>
                 </div>
+              </div>
+
+              {/* Received By */}
+              <div>
+                <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Received By</p>
+                <p className="text-sm font-medium text-gray-900 mt-1">{selectedLetter.receivedBy || '-'}</p>
               </div>
 
               {/* Personal Information */}
@@ -625,6 +644,12 @@ export default function LetterPage() {
                   <p className="text-xs font-medium text-gray-600 uppercase">Particulars</p>
                   <p className="text-sm font-semibold text-gray-900 mt-1 whitespace-pre-wrap">{selectedLetter.particulars}</p>
                 </div>
+              </div>
+
+              {/* Remarks */}
+              <div>
+                <p className="text-xs font-medium text-gray-600 uppercase">Remarks</p>
+                <p className="text-sm font-semibold text-gray-900 mt-1">{selectedLetter.remarks || selectedLetter.timeOutRemarks || '-'}</p>
               </div>
 
               {/* Close Button */}

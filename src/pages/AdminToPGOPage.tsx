@@ -742,6 +742,12 @@ export default function AdminToPGOPage() {
                 </div>
               </div>
 
+              {/* Received By */}
+              <div>
+                <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Received By</p>
+                <p className="text-sm font-medium text-gray-900 mt-1">{selectedRecord.receivedBy || '-'}</p>
+              </div>
+
               {/* Personal Information */}
               <div>
                 <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wide mb-4">Personal Information</h3>
@@ -778,14 +784,8 @@ export default function AdminToPGOPage() {
                 <div className="space-y-4">
                   <div>
                     <p className="text-xs font-medium text-gray-600 uppercase">Remarks</p>
-                    <p className="text-sm font-semibold text-gray-900 mt-1">{selectedRecord.remarks || '-'}</p>
+                    <p className="text-sm font-semibold text-gray-900 mt-1">{selectedRecord.remarks || selectedRecord.timeOutRemarks || '-'}</p>
                   </div>
-                  {selectedRecord.timeOutRemarks && (
-                    <div>
-                      <p className="text-xs font-semibold text-blue-600 uppercase">Time Out Remarks</p>
-                      <p className="text-sm font-semibold text-blue-900 mt-1">{selectedRecord.timeOutRemarks}</p>
-                    </div>
-                  )}
                 </div>
               </div>
 

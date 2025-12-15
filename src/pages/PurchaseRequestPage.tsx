@@ -815,6 +815,11 @@ export default function PurchaseRequestPage() {
               </div>
 
               <div>
+                <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Received By</p>
+                <p className="text-sm font-medium text-gray-900 mt-1">{selectedRequest.receivedBy || '-'}</p>
+              </div>
+
+              <div>
                 <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wide mb-4">Request Information</h3>
                 <div className="grid grid-cols-2 gap-6">
                   <div>
@@ -841,24 +846,31 @@ export default function PurchaseRequestPage() {
                 <p className="text-sm font-semibold text-gray-900 mt-1">{selectedRequest.itemDescription}</p>
               </div>
 
+              <div className="grid grid-cols-2 gap-6">
+                <div>
+                  <p className="text-xs font-medium text-gray-600 uppercase">Quantity</p>
+                  <p className="text-sm font-semibold text-gray-900 mt-1">{selectedRequest.quantity}</p>
+                </div>
+                <div>
+                  <p className="text-xs font-medium text-gray-600 uppercase">Estimated Cost</p>
+                  <p className="text-sm font-semibold text-gray-900 mt-1">₱{selectedRequest.estimatedCost.toLocaleString()}</p>
+                </div>
+              </div>
+
               <div>
                 <p className="text-xs font-medium text-gray-600 uppercase">Purpose</p>
                 <p className="text-sm font-semibold text-gray-900 mt-1">{selectedRequest.purpose}</p>
               </div>
 
-              {selectedRequest.dateTimeOut && (
-                <div>
-                  <p className="text-xs font-medium text-gray-600 uppercase">Date/Time Out</p>
-                  <p className="text-sm font-semibold text-gray-900 mt-1">{new Date(selectedRequest.dateTimeOut).toLocaleString()}</p>
-                </div>
-              )}
+              <div>
+                <p className="text-xs font-medium text-gray-600 uppercase">Date/Time Out</p>
+                <p className="text-sm font-semibold text-gray-900 mt-1">{selectedRequest.dateTimeOut ? new Date(selectedRequest.dateTimeOut).toLocaleString() : '-'}</p>
+              </div>
 
-              {selectedRequest.remarks && (
-                <div>
-                  <p className="text-xs font-medium text-gray-600 uppercase">Remarks</p>
-                  <p className="text-sm font-semibold text-gray-900 mt-1">{selectedRequest.remarks}</p>
-                </div>
-              )}
+              <div>
+                <p className="text-xs font-medium text-gray-600 uppercase">Remarks</p>
+                <p className="text-sm font-semibold text-gray-900 mt-1">{selectedRequest.remarks || selectedRequest.timeOutRemarks || '-'}</p>
+              </div>
 
               <div className="flex justify-end gap-2 pt-4 border-t border-gray-200">
                 <Button

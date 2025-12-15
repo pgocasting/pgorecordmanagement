@@ -908,6 +908,12 @@ export default function LeavePage() {
                 </div>
               </div>
 
+              {/* Received By */}
+              <div>
+                <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Received By</p>
+                <p className="text-sm font-medium text-gray-900 mt-1">{selectedLeave.receivedBy || '-'}</p>
+              </div>
+
               {/* Personal Information */}
               <div>
                 <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wide mb-4">Personal Information</h3>
@@ -938,13 +944,19 @@ export default function LeavePage() {
                 </div>
               </div>
 
+              {/* Purpose */}
+              <div>
+                <p className="text-xs font-medium text-gray-600 uppercase">Purpose</p>
+                <p className="text-sm font-semibold text-gray-900 mt-1">{selectedLeave.purpose || '-'}</p>
+              </div>
+
               {/* Leave Period */}
               <div>
                 <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wide mb-4">Leave Period</h3>
                 <div className="grid grid-cols-2 gap-6">
                   <div>
                     <p className="text-xs font-medium text-gray-600 uppercase">Inclusive Date Start</p>
-                    <p className="text-sm font-semibold text-gray-900 mt-1">{selectedLeave.inclusiveDateStart}</p>
+                    <p className="text-sm font-semibold text-gray-900 mt-1">{selectedLeave.inclusiveDateStart || '-'}</p>
                   </div>
                   <div>
                     <p className="text-xs font-medium text-gray-600 uppercase">Inclusive Date End</p>

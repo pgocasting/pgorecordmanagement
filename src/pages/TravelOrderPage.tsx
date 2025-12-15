@@ -807,6 +807,10 @@ export default function TravelOrderPage() {
                   <p className="text-gray-900">{selectedTravelOrder.status}</p>
                 </div>
               </div>
+              <div>
+                <p className="text-gray-600 font-medium">Received By</p>
+                <p className="text-gray-900">{selectedTravelOrder.receivedBy || '-'}</p>
+              </div>
               <div className="grid grid-cols-2 gap-2">
                 <div>
                   <p className="text-gray-600 font-medium">Full Name</p>
@@ -843,9 +847,29 @@ export default function TravelOrderPage() {
                 <p className="text-gray-600 font-medium">Place of Assignment</p>
                 <p className="text-gray-900">{selectedTravelOrder.placeOfAssignment}</p>
               </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <p className="text-gray-600 font-medium">Inclusive Date Start</p>
+                  <p className="text-gray-900">{selectedTravelOrder.inclusiveDateStart || '-'}</p>
+                </div>
+                <div>
+                  <p className="text-gray-600 font-medium">Inclusive Date End</p>
+                  <p className="text-gray-900">{selectedTravelOrder.inclusiveDateEnd || '-'}</p>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <p className="text-gray-600 font-medium">Inclusive Time Start</p>
+                  <p className="text-gray-900">{selectedTravelOrder.inclusiveTimeStart || '-'}</p>
+                </div>
+                <div>
+                  <p className="text-gray-600 font-medium">Inclusive Time End</p>
+                  <p className="text-gray-900">{selectedTravelOrder.inclusiveTimeEnd || '-'}</p>
+                </div>
+              </div>
               <div>
                 <p className="text-gray-600 font-medium">Remarks</p>
-                <p className="text-gray-900">{selectedTravelOrder.remarks || '-'}</p>
+                <p className="text-gray-900">{selectedTravelOrder.remarks || selectedTravelOrder.timeOutRemarks || '-'}</p>
               </div>
             </div>
           )}

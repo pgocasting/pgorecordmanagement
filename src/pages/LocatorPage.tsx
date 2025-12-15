@@ -861,6 +861,12 @@ export default function LocatorPage() {
                 </div>
               </div>
 
+              {/* Received By */}
+              <div>
+                <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Received By</p>
+                <p className="text-sm font-medium text-gray-900 mt-1">{selectedLocator.receivedBy || '-'}</p>
+              </div>
+
               {/* Personal Information */}
               <div>
                 <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wide mb-4">Personal Information</h3>
