@@ -333,8 +333,8 @@ export default function ReportPage() {
               <CardTitle className="text-base">Report Filters</CardTitle>
             </CardHeader>
             <CardContent className="pt-2">
-              <div className="flex items-end gap-2">
-                <div className="flex-1">
+              <div className="flex items-center gap-3">
+                <div className="w-32">
                   <label className="text-xs font-medium text-gray-700 block mb-1">
                     Report Type
                   </label>
@@ -352,7 +352,7 @@ export default function ReportPage() {
                   </Select>
                 </div>
 
-                <div className="flex-1">
+                <div className="w-40">
                   <label className="text-xs font-medium text-gray-700 block mb-1">
                     Category
                   </label>
@@ -371,31 +371,33 @@ export default function ReportPage() {
                   </Select>
                 </div>
 
-                <div className="text-xs text-gray-600 flex-1">
+                <div className="text-xs text-gray-600">
                   <p className="mb-1 font-medium">Period</p>
-                  <p className="text-xs">
+                  <p className="text-xs whitespace-nowrap">
                     <span className="font-semibold">{dateRange.start}</span> to{' '}
                     <span className="font-semibold">{dateRange.end}</span>
                   </p>
                 </div>
 
-                <Button
-                  onClick={generateReport}
-                  className="gap-2 bg-blue-600 hover:bg-blue-700 h-8 text-xs"
-                  disabled={isLoading}
-                >
-                  <RefreshCw className={`h-3 w-3 ${isLoading ? 'animate-spin' : ''}`} />
-                  Refresh
-                </Button>
+                <div className="flex gap-2 ml-auto">
+                  <Button
+                    onClick={generateReport}
+                    className="gap-2 bg-blue-600 hover:bg-blue-700 h-8 text-xs"
+                    disabled={isLoading}
+                  >
+                    <RefreshCw className={`h-3 w-3 ${isLoading ? 'animate-spin' : ''}`} />
+                    Refresh
+                  </Button>
 
-                <Button
-                  onClick={exportToCSV}
-                  className="gap-2 bg-green-600 hover:bg-green-700 h-8 text-xs"
-                  disabled={reportData.length === 0 || isLoading}
-                >
-                  <Download className="h-3 w-3" />
-                  Export CSV
-                </Button>
+                  <Button
+                    onClick={exportToCSV}
+                    className="gap-2 bg-green-600 hover:bg-green-700 h-8 text-xs"
+                    disabled={reportData.length === 0 || isLoading}
+                  >
+                    <Download className="h-3 w-3" />
+                    Export CSV
+                  </Button>
+                </div>
               </div>
             </CardContent>
           </Card>

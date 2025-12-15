@@ -1107,15 +1107,17 @@ export default function SettingsPage() {
                 </CardHeader>
                 <CardContent>
                   {/* Designations List */}
-                  <div className="space-y-2">
-                    {designations.length > 0 ? (
-                      designations.map((designation) => (
+                  {designations.length > 0 ? (
+                    <div className="space-y-3">
+                      {designations.map((designation) => (
                         <div
                           key={designation}
-                          className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200 hover:bg-gray-100 transition gap-2"
+                          className="flex items-center justify-between p-4 bg-white rounded-lg border border-gray-200 hover:border-indigo-300 hover:shadow-sm transition-all"
                         >
-                          <span className="text-sm font-medium text-gray-900 truncate min-w-0">{designation}</span>
-                          <div className="flex gap-2 shrink-0">
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-semibold text-gray-900">{designation}</p>
+                          </div>
+                          <div className="flex gap-1 shrink-0 ml-4">
                             <Button
                               variant="ghost"
                               size="sm"
@@ -1124,10 +1126,10 @@ export default function SettingsPage() {
                                 setEditingDesignation(designation);
                                 setDesignationDialogOpen(true);
                               }}
-                              className="h-6 w-6 p-0 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                              className="h-8 w-8 p-0 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded"
                               title="Edit"
                             >
-                              <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                               </svg>
                             </Button>
@@ -1135,20 +1137,24 @@ export default function SettingsPage() {
                               variant="ghost"
                               size="sm"
                               onClick={() => handleDeleteDesignation(designation)}
-                              className="h-6 w-6 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+                              className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50 rounded"
                               title="Delete"
                             >
-                              <Trash2 className="h-3 w-3" />
+                              <Trash2 className="h-4 w-4" />
                             </Button>
                           </div>
                         </div>
-                      ))
-                    ) : (
-                      <div className="text-center py-8 text-gray-500">
-                        <p className="text-sm">No designations yet. Add one to get started.</p>
-                      </div>
-                    )}
-                  </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-12 text-gray-500">
+                      <svg className="h-12 w-12 mx-auto mb-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+                      </svg>
+                      <p className="text-sm font-medium">No designations yet</p>
+                      <p className="text-xs mt-1">Add one to get started</p>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             </TabsContent>
