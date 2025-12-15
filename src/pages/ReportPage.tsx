@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { leaveService, letterService, voucherService, locatorService, adminToPGOService, othersService, travelOrderService, overtimeService } from '@/services/firebaseService';
-import { Menu, LogOut, Download } from 'lucide-react';
+import { leaveService, letterService, voucherService, locatorService, adminToPGOService, othersService, travelOrderService, overtimeService, obligationRequestService, purchaseRequestService } from '@/services/firebaseService';
+import { Menu, LogOut, Download, RefreshCw } from 'lucide-react';
 import { Sidebar } from '@/components/Sidebar';
 import { Button } from '@/components/ui/button';
 import {
@@ -80,8 +80,8 @@ export default function ReportPage() {
 
   const getDateRange = () => {
     const now = new Date();
-    let start = new Date();
-    let end = new Date();
+    let start = new Date(now);
+    let end = new Date(now);
 
     switch (reportType) {
       case 'daily':
@@ -118,8 +118,18 @@ export default function ReportPage() {
   };
 
   const filterRecordsByDateRange = (records: any[], start: Date, end: Date) => {
+    if (!records || records.length === 0) return [];
+    
     return records.filter((record) => {
+      if (!record.dateTimeIn) return false;
+      
       const recordDate = new Date(record.dateTimeIn);
+      
+      if (isNaN(recordDate.getTime())) {
+        console.warn('Invalid date for record:', record.id, record.dateTimeIn);
+        return false;
+      }
+      
       return recordDate >= start && recordDate <= end;
     });
   };
@@ -129,8 +139,8 @@ export default function ReportPage() {
     try {
       const { start, end } = getDateRange();
       setDateRange({
-        start: start.toLocaleDateString(),
-        end: end.toLocaleDateString(),
+        start: start.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+        end: end.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
       });
 
       let allRecords: ReportRecord[] = [];
@@ -211,6 +221,26 @@ export default function ReportPage() {
           ...overtimes.map((o: any) => ({
             ...o,
             category: 'Request for Overtime',
+          }))
+        );
+      }
+
+      if (selectedCategory === 'all' || selectedCategory === 'Obligation Request') {
+        const obligationRequests = await obligationRequestService.getObligationRequests();
+        allRecords.push(
+          ...obligationRequests.map((o: any) => ({
+            ...o,
+            category: 'Obligation Request',
+          }))
+        );
+      }
+
+      if (selectedCategory === 'all' || selectedCategory === 'Purchase Request') {
+        const purchaseRequests = await purchaseRequestService.getPurchaseRequests();
+        allRecords.push(
+          ...purchaseRequests.map((p: any) => ({
+            ...p,
+            category: 'Purchase Request',
           }))
         );
       }
@@ -350,9 +380,18 @@ export default function ReportPage() {
                 </div>
 
                 <Button
+                  onClick={generateReport}
+                  className="gap-2 bg-blue-600 hover:bg-blue-700 h-8 text-xs"
+                  disabled={isLoading}
+                >
+                  <RefreshCw className={`h-3 w-3 ${isLoading ? 'animate-spin' : ''}`} />
+                  Refresh
+                </Button>
+
+                <Button
                   onClick={exportToCSV}
                   className="gap-2 bg-green-600 hover:bg-green-700 h-8 text-xs"
-                  disabled={reportData.length === 0}
+                  disabled={reportData.length === 0 || isLoading}
                 >
                   <Download className="h-3 w-3" />
                   Export CSV
