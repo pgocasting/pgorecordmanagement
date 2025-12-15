@@ -58,6 +58,9 @@ interface ObligationRequest {
   dateTimeOut?: string;
   fullName: string;
   type: string;
+  designation?: string;
+  obligationType?: string;
+  particulars?: string;
   amount: number;
   status: string;
   remarks: string;
@@ -252,11 +255,11 @@ export default function ObligationRequestPage() {
         dateTimeIn: request.dateTimeIn,
         dateTimeOut: request.dateTimeOut || '',
         fullName: request.fullName,
-        designation: request.designation,
-        obligationType: request.obligationType,
+        designation: request.designation || '',
+        obligationType: request.obligationType || '',
         amount: request.amount.toString(),
-        particulars: request.particulars,
-        remarks: request.remarks,
+        particulars: request.particulars || '',
+        remarks: request.remarks || '',
       });
       setEditingId(id);
       setIsDialogOpen(true);

@@ -58,6 +58,10 @@ interface Locator {
   dateTimeOut?: string;
   fullName: string;
   designation: string;
+  inclusiveDateStart?: string;
+  inclusiveDateEnd?: string;
+  inclusiveTimeStart?: string;
+  inclusiveTimeEnd?: string;
   purpose: string;
   placeOfAssignment: string;
   status: string;
@@ -116,6 +120,7 @@ export default function LocatorPage() {
     inclusiveTimeEnd: '',
     purpose: '',
     placeOfAssignment: '',
+    receivedBy: '',
   });
 
   const recordTypes = [
@@ -201,11 +206,11 @@ export default function LocatorPage() {
     try {
       const newLocator = {
         trackingId: generateTrackingId(),
-        receivedBy: user?.name || '',
-        ...formData,
         status: 'Pending',
         remarks: '',
         timeOutRemarks: '',
+        ...formData,
+        receivedBy: formData.receivedBy || user?.name || '',
       };
       const result = await locatorService.addLocator(newLocator);
       setSuccess('Locator added successfully');
@@ -223,6 +228,7 @@ export default function LocatorPage() {
         inclusiveTimeEnd: '',
         purpose: '',
         placeOfAssignment: '',
+        receivedBy: '',
       });
       setIsDialogOpen(false);
       setSuccessModalOpen(true);
@@ -258,6 +264,7 @@ export default function LocatorPage() {
         inclusiveTimeEnd: '',
         purpose: '',
         placeOfAssignment: '',
+        receivedBy: '',
       });
       setIsDialogOpen(false);
       setEditConfirmOpen(false);
@@ -279,12 +286,13 @@ export default function LocatorPage() {
         dateTimeOut: locator.dateTimeOut || '',
         fullName: locator.fullName,
         designation: locator.designation,
-        inclusiveDateStart: locator.inclusiveDateStart,
-        inclusiveDateEnd: locator.inclusiveDateEnd,
-        inclusiveTimeStart: locator.inclusiveTimeStart,
-        inclusiveTimeEnd: locator.inclusiveTimeEnd,
+        inclusiveDateStart: locator.inclusiveDateStart || '',
+        inclusiveDateEnd: locator.inclusiveDateEnd || '',
+        inclusiveTimeStart: locator.inclusiveTimeStart || '',
+        inclusiveTimeEnd: locator.inclusiveTimeEnd || '',
         purpose: locator.purpose,
         placeOfAssignment: locator.placeOfAssignment,
+        receivedBy: locator.receivedBy || '',
       });
       setEditingId(id);
       setIsDialogOpen(true);
@@ -342,6 +350,7 @@ export default function LocatorPage() {
         inclusiveTimeEnd: '',
         purpose: '',
         placeOfAssignment: '',
+        receivedBy: '',
       });
     }
   };
@@ -473,6 +482,7 @@ export default function LocatorPage() {
                         inclusiveTimeEnd: '',
                         purpose: '',
                         placeOfAssignment: '',
+                        receivedBy: '',
                       });
                     }}
                   >

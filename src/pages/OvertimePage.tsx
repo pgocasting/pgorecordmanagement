@@ -58,6 +58,10 @@ interface Overtime {
   dateTimeOut?: string;
   fullName: string;
   designation: string;
+  inclusiveDateStart?: string;
+  inclusiveDateEnd?: string;
+  inclusiveTimeStart?: string;
+  inclusiveTimeEnd?: string;
   purpose: string;
   placeOfAssignment: string;
   status: string;
@@ -270,10 +274,10 @@ export default function OvertimePage() {
         dateTimeOut: overtime.dateTimeOut || '',
         fullName: overtime.fullName,
         designation: overtime.designation,
-        inclusiveDateStart: overtime.inclusiveDateStart,
-        inclusiveDateEnd: overtime.inclusiveDateEnd,
-        inclusiveTimeStart: overtime.inclusiveTimeStart,
-        inclusiveTimeEnd: overtime.inclusiveTimeEnd,
+        inclusiveDateStart: overtime.inclusiveDateStart || '',
+        inclusiveDateEnd: overtime.inclusiveDateEnd || '',
+        inclusiveTimeStart: overtime.inclusiveTimeStart || '',
+        inclusiveTimeEnd: overtime.inclusiveTimeEnd || '',
         purpose: overtime.purpose,
         placeOfAssignment: overtime.placeOfAssignment,
       });

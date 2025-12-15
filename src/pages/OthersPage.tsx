@@ -58,7 +58,12 @@ interface Others {
   dateTimeOut?: string;
   fullName: string;
   designationOffice: string;
+  inclusiveDateStart?: string;
+  inclusiveDateEnd?: string;
+  inclusiveTimeStart?: string;
+  inclusiveTimeEnd?: string;
   purpose: string;
+  amount?: string;
   status: string;
   remarks: string;
   timeOutRemarks?: string;

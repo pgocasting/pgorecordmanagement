@@ -3,6 +3,7 @@
 interface Voucher {
   id: string;
   trackingId: string;
+  receivedBy: string;
   dateTimeIn: string;
   dateTimeOut?: string;
   dvNo: string;
@@ -22,6 +23,7 @@ interface Voucher {
 interface Letter {
   id: string;
   trackingId: string;
+  receivedBy: string;
   dateTimeIn: string;
   dateTimeOut?: string;
   fullName: string;
@@ -37,6 +39,7 @@ interface Letter {
 interface Leave {
   id: string;
   trackingId: string;
+  receivedBy: string;
   fullName: string;
   designation: string;
   leaveType: string;
@@ -52,6 +55,7 @@ interface Leave {
 interface Locator {
   id: string;
   trackingId: string;
+  receivedBy: string;
   dateTimeIn: string;
   dateTimeOut?: string;
   fullName: string;
@@ -72,6 +76,7 @@ interface Locator {
 interface AdminToPGO {
   id: string;
   trackingId: string;
+  receivedBy: string;
   dateTimeIn: string;
   dateTimeOut?: string;
   fullName: string;
@@ -87,29 +92,36 @@ interface AdminToPGO {
 interface Others {
   id: string;
   trackingId: string;
+  receivedBy: string;
   dateTimeIn: string;
-  dateTimeOut: string;
+  dateTimeOut?: string;
   fullName: string;
   designationOffice: string;
-  inclusiveDateStart: string;
-  inclusiveDateEnd: string;
-  inclusiveTimeStart: string;
-  inclusiveTimeEnd: string;
+  inclusiveDateStart?: string;
+  inclusiveDateEnd?: string;
+  inclusiveTimeStart?: string;
+  inclusiveTimeEnd?: string;
   purpose: string;
-  amount: string;
+  amount?: string;
   status: string;
+  remarks?: string;
+  timeOutRemarks?: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 interface ObligationRequest {
   id: string;
   trackingId: string;
+  receivedBy: string;
+  type?: string;
   dateTimeIn: string;
   dateTimeOut?: string;
   fullName: string;
-  designation: string;
-  obligationType: string;
+  designation?: string;
+  obligationType?: string;
   amount: number;
-  particulars: string;
+  particulars?: string;
   status: string;
   remarks: string;
   timeOutRemarks?: string;
@@ -120,6 +132,7 @@ interface ObligationRequest {
 interface PurchaseRequest {
   id: string;
   trackingId: string;
+  receivedBy: string;
   dateTimeIn: string;
   dateTimeOut?: string;
   fullName: string;
@@ -138,6 +151,7 @@ interface PurchaseRequest {
 interface TravelOrder {
   id: string;
   trackingId: string;
+  receivedBy?: string;
   dateTimeIn: string;
   dateTimeOut?: string;
   fullName: string;
@@ -158,14 +172,15 @@ interface TravelOrder {
 interface Overtime {
   id: string;
   trackingId: string;
+  receivedBy: string;
   dateTimeIn: string;
   dateTimeOut?: string;
   fullName: string;
   designation: string;
-  inclusiveDateStart: string;
-  inclusiveDateEnd: string;
-  inclusiveTimeStart: string;
-  inclusiveTimeEnd: string;
+  inclusiveDateStart?: string;
+  inclusiveDateEnd?: string;
+  inclusiveTimeStart?: string;
+  inclusiveTimeEnd?: string;
   purpose: string;
   placeOfAssignment: string;
   status: string;

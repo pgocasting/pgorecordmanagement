@@ -196,12 +196,12 @@ export default function VoucherPage() {
     try {
       const newVoucher = {
         trackingId: nextTrackingId,
-        amount: parseFloat(formData.amount),
         status: 'Pending',
-        remarks: '',
         timeOutRemarks: '',
-        receivedBy: user?.name || '',
         ...formData,
+        amount: parseFloat(formData.amount),
+        remarks: formData.remarks || '',
+        receivedBy: formData.receivedBy || user?.name || '',
       };
       const result = await voucherService.addVoucher(newVoucher);
       setSuccess('Voucher added successfully');
@@ -210,6 +210,7 @@ export default function VoucherPage() {
 
       setFormData({
         dateTimeIn: '',
+        receivedBy: '',
         dvNo: '',
         payee: '',
         particulars: '',
@@ -238,6 +239,7 @@ export default function VoucherPage() {
       const updateData = {
         ...formData,
         amount: parseFloat(formData.amount),
+        remarks: formData.remarks || '',
       };
       await voucherService.updateVoucher(editingId, updateData);
       setSuccess('Voucher updated successfully');
@@ -248,6 +250,7 @@ export default function VoucherPage() {
 
       setFormData({
         dateTimeIn: '',
+        receivedBy: '',
         dvNo: '',
         payee: '',
         particulars: '',
@@ -274,6 +277,7 @@ export default function VoucherPage() {
     if (voucher) {
       setFormData({
         dateTimeIn: voucher.dateTimeIn,
+        receivedBy: voucher.receivedBy || '',
         dvNo: voucher.dvNo,
         payee: voucher.payee,
         particulars: voucher.particulars,
@@ -300,6 +304,7 @@ export default function VoucherPage() {
       setEditingId(null);
       setFormData({
         dateTimeIn: '',
+        receivedBy: '',
         dvNo: '',
         payee: '',
         particulars: '',
@@ -450,6 +455,7 @@ export default function VoucherPage() {
                       setEditingId(null);
                       setFormData({
                         dateTimeIn: getCurrentDateTime(),
+                        receivedBy: '',
                         dvNo: '',
                         payee: '',
                         particulars: '',

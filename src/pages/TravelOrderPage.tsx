@@ -53,19 +53,22 @@ import TimeOutModal from '@/components/TimeOutModal';
 interface TravelOrder {
   id: string;
   trackingId: string;
+  receivedBy?: string;
   dateTimeIn: string;
   dateTimeOut?: string;
   fullName: string;
   designation: string;
-  inclusiveDateStart: string;
-  inclusiveDateEnd: string;
-  inclusiveTimeStart: string;
-  inclusiveTimeEnd: string;
+  inclusiveDateStart?: string;
+  inclusiveDateEnd?: string;
+  inclusiveTimeStart?: string;
+  inclusiveTimeEnd?: string;
   purpose: string;
   placeOfAssignment: string;
   status: string;
   remarks: string;
   timeOutRemarks?: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 const getAcronym = (text: string): string => {
@@ -115,6 +118,7 @@ export default function TravelOrderPage() {
     inclusiveTimeEnd: '',
     purpose: '',
     placeOfAssignment: '',
+    receivedBy: '',
   });
 
   const recordTypes = [
@@ -213,6 +217,7 @@ export default function TravelOrderPage() {
           inclusiveTimeEnd: '',
           purpose: '',
           placeOfAssignment: '',
+          receivedBy: '',
         });
         setIsDialogOpen(false);
         setSuccessModalOpen(true);
@@ -230,11 +235,11 @@ export default function TravelOrderPage() {
     try {
       const newTravelOrder = {
         trackingId: generateTrackingId(),
-        receivedBy: user?.name || '',
-        ...formData,
         status: 'Pending',
         remarks: '',
         timeOutRemarks: '',
+        ...formData,
+        receivedBy: formData.receivedBy || user?.name || '',
       };
       const result = await travelOrderService.addTravelOrder(newTravelOrder);
       setSuccess('Travel order added successfully');
@@ -252,6 +257,7 @@ export default function TravelOrderPage() {
         inclusiveTimeEnd: '',
         purpose: '',
         placeOfAssignment: '',
+        receivedBy: '',
       });
       setIsDialogOpen(false);
       setSuccessModalOpen(true);
@@ -272,12 +278,13 @@ export default function TravelOrderPage() {
         dateTimeOut: travelOrder.dateTimeOut || '',
         fullName: travelOrder.fullName,
         designation: travelOrder.designation,
-        inclusiveDateStart: travelOrder.inclusiveDateStart,
-        inclusiveDateEnd: travelOrder.inclusiveDateEnd,
-        inclusiveTimeStart: travelOrder.inclusiveTimeStart,
-        inclusiveTimeEnd: travelOrder.inclusiveTimeEnd,
+        inclusiveDateStart: travelOrder.inclusiveDateStart || '',
+        inclusiveDateEnd: travelOrder.inclusiveDateEnd || '',
+        inclusiveTimeStart: travelOrder.inclusiveTimeStart || '',
+        inclusiveTimeEnd: travelOrder.inclusiveTimeEnd || '',
         purpose: travelOrder.purpose,
         placeOfAssignment: travelOrder.placeOfAssignment,
+        receivedBy: travelOrder.receivedBy || '',
       });
       setEditingId(id);
       setIsDialogOpen(true);
@@ -299,6 +306,7 @@ export default function TravelOrderPage() {
         inclusiveTimeEnd: '',
         purpose: '',
         placeOfAssignment: '',
+        receivedBy: '',
       });
     }
   };
@@ -467,6 +475,7 @@ export default function TravelOrderPage() {
                         inclusiveTimeEnd: '',
                         purpose: '',
                         placeOfAssignment: '',
+                        receivedBy: '',
                       });
                     }}
                   >
