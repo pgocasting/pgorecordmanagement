@@ -1,4 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { db } from '@/config/firebase';
+import { collection, addDoc, getDocs, deleteDoc, doc, query, where } from 'firebase/firestore';
 
 interface User {
   id: string;
@@ -89,31 +91,89 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // Initialize on mount
   useEffect(() => {
-    // Reset to default users on initialization
-    saveStoredUsers(DEFAULT_USERS);
+    const initializeUsers = async () => {
+      try {
+        // Try to load users from Firebase
+        const usersRef = collection(db, 'users');
+        const querySnapshot = await getDocs(usersRef);
+        
+        if (!querySnapshot.empty) {
+          const firebaseUsers: User[] = querySnapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+          } as User));
+          // Merge Firebase users with default admin user to ensure admin always exists
+          const mergedUsers = [...DEFAULT_USERS, ...firebaseUsers.filter(u => u.username !== 'admin')];
+          saveStoredUsers(mergedUsers);
+        } else {
+          // If no users in Firebase, use default users
+          saveStoredUsers(DEFAULT_USERS);
+        }
+      } catch (error) {
+        console.warn('Failed to load users from Firebase, using default users:', error);
+        // Fallback to default users
+        saveStoredUsers(DEFAULT_USERS);
+      }
 
-    // Load current user from localStorage
-    const currentUser = getStoredCurrentUser();
-    if (currentUser) {
-      setUser(currentUser);
-    }
-    
-    // Mark loading as complete
-    setIsLoading(false);
+      // Load current user from localStorage
+      const currentUser = getStoredCurrentUser();
+      if (currentUser) {
+        setUser(currentUser);
+      }
+      
+      // Mark loading as complete
+      setIsLoading(false);
+    };
+
+    initializeUsers();
   }, []);
 
   const login = async (username: string, password: string): Promise<void> => {
     try {
-      // Fallback to localStorage authentication using username
+      if (!username || !password) {
+        throw new Error('Username and password are required');
+      }
+
+      const normalizedUsername = username.toLowerCase().trim();
+      
+      // First check in-memory users (includes default admin)
       const allUsers = getStoredUsers();
-      const foundUser = allUsers.find((u: User) => u.username.toLowerCase() === username.toLowerCase() && u.password === password);
+      let foundUser = allUsers.find((u: User) => u && u.username && u.username.toLowerCase() === normalizedUsername && u.password === password);
       
       if (foundUser) {
         setUser(foundUser);
         saveStoredCurrentUser(foundUser);
-      } else {
-        throw new Error('Invalid username or password');
+        return;
       }
+
+      // Then try Firebase if not found in memory
+      try {
+        const usersRef = collection(db, 'users');
+        const q = query(usersRef, where('username', '==', normalizedUsername));
+        const querySnapshot = await getDocs(q);
+        
+        if (!querySnapshot.empty) {
+          const firebaseUser = querySnapshot.docs[0].data();
+          if (firebaseUser && firebaseUser.password === password) {
+            const firebaseFoundUser: User = {
+              id: querySnapshot.docs[0].id,
+              username: firebaseUser.username || normalizedUsername,
+              email: firebaseUser.email || `${normalizedUsername}@pgocasting.com`,
+              name: firebaseUser.name || normalizedUsername,
+              role: firebaseUser.role || 'user',
+              password: firebaseUser.password
+            };
+            setUser(firebaseFoundUser);
+            saveStoredCurrentUser(firebaseFoundUser);
+            return;
+          }
+        }
+      } catch (firebaseError) {
+        console.warn('Firebase login attempt failed:', firebaseError);
+      }
+      
+      // No user found
+      throw new Error('Invalid username or password');
     } catch (error) {
       throw error;
     }
@@ -126,31 +186,51 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const addUser = async (username: string, password: string, name: string, role: 'admin' | 'user', email?: string): Promise<void> => {
     try {
-      // Fallback to localStorage
-      const allUsers = getStoredUsers();
+      // Check if user already exists in Firebase
+      const usersRef = collection(db, 'users');
+      const q = query(usersRef, where('username', '==', username.toLowerCase()));
+      const querySnapshot = await getDocs(q);
       
-      if (allUsers.some(u => u.username === username)) {
+      if (!querySnapshot.empty) {
         throw new Error('Username already exists');
       }
       
-      const newUser: User = {
-        id: Date.now().toString(),
-        username,
-        email: email || `${username}@pgo.local`,
-        name,
+      // Follow same format as admin: proper email structure and consistent fields
+      const newUser = {
+        username: username.toLowerCase(), // Normalize username to lowercase like admin
+        email: email || `${username.toLowerCase()}@pgocasting.com`, // Use consistent domain like admin
+        name: name.trim(), // Trim whitespace
         role,
-        password
+        password,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
       };
       
-      const updatedUsers = [...allUsers, newUser];
+      // Save to Firebase
+      const docRef = await addDoc(usersRef, newUser);
+      
+      // Also save to in-memory storage for immediate access
+      const allUsers = getStoredUsers();
+      const userWithId: User = {
+        id: docRef.id,
+        ...newUser
+      };
+      const updatedUsers = [...allUsers, userWithId];
       saveStoredUsers(updatedUsers);
+      
+      console.log('User created successfully in Firebase:', docRef.id);
     } catch (error) {
+      console.error('Error adding user:', error);
       throw error;
     }
   };
 
   const deleteUser = async (userId: string): Promise<void> => {
     try {
+      // Delete from Firebase
+      await deleteDoc(doc(db, 'users', userId));
+      
+      // Also remove from in-memory storage
       const allUsers = getStoredUsers();
       const updatedUsers = allUsers.filter(u => u.id !== userId);
       
@@ -159,12 +239,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
       
       saveStoredUsers(updatedUsers);
+      console.log('User deleted successfully from Firebase:', userId);
     } catch (error) {
+      console.error('Error deleting user:', error);
       throw error;
     }
   };
 
-  const getAllUsers = () => getStoredUsers();
+  const getAllUsers = () => {
+    // Return users from in-memory storage (which is synced with Firebase)
+    return getStoredUsers();
+  };
 
   const getRecords = () => getStoredRecords();
 
