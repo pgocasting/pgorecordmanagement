@@ -52,6 +52,7 @@ import TimeOutModal from '@/components/TimeOutModal';
 interface Leave {
   id: string;
   trackingId: string;
+  receivedBy: string;
   dateTimeIn: string;
   dateTimeOut?: string;
   fullName: string;
@@ -216,12 +217,12 @@ export default function LeavePage() {
     try {
       const newLeave = {
         trackingId: generateTrackingId(),
+        receivedBy: user?.name || '',
         ...formData,
         status: 'Pending',
         remarks: '',
         timeOutRemarks: '',
       };
-      console.log('Adding leave:', newLeave);
       const result = await leaveService.addLeave(newLeave);
       console.log('Leave added successfully with ID:', result);
       setSuccess('Leave record added successfully');
@@ -323,7 +324,7 @@ export default function LeavePage() {
     try {
       const now = new Date();
       const dateTimeStr = now.toLocaleString();
-      const remarksWithDateTime = `[${dateTimeStr}] ${rejectData.remarks}`;
+      const remarksWithDateTime = `[${dateTimeStr}] [${user?.name || 'Unknown'}] ${rejectData.remarks}`;
       
       await leaveService.updateLeave(leaveToDelete, { status: 'Rejected', remarks: remarksWithDateTime });
       const updatedLeaves = leaves.map(l => l.id === leaveToDelete ? { ...l, status: 'Rejected', remarks: remarksWithDateTime } : l);
@@ -387,9 +388,10 @@ export default function LeavePage() {
 
     setIsLoading(true);
     try {
+      const timeOutRemarksWithUser = `[${user?.name || 'Unknown'}] ${timeOutData.timeOutRemarks}`;
       const result = await leaveService.updateLeave(leaveToTimeOut, {
         dateTimeOut: timeOutData.dateTimeOut,
-        timeOutRemarks: timeOutData.timeOutRemarks,
+        timeOutRemarks: timeOutRemarksWithUser,
         status: 'Completed'
       });
       
@@ -647,6 +649,7 @@ export default function LeavePage() {
               <Table>
                 <TableHeader>
                   <TableRow className="bg-gray-50">
+                    <TableHead className="font-semibold py-1 px-1 text-center text-xs">Received By</TableHead>
                     <TableHead className="font-semibold py-1 px-1 text-center text-xs">Tracking ID</TableHead>
                     <TableHead className="font-semibold py-1 px-1 text-center text-xs">Date/Time IN</TableHead>
                     <TableHead className="font-semibold py-1 px-1 text-center text-xs">Date/Time OUT</TableHead>
@@ -670,9 +673,10 @@ export default function LeavePage() {
                   ) : (
                     leaves.map((item) => (
                       <TableRow key={item.id} className="hover:bg-gray-50">
+                        <TableCell className="text-xs py-1 px-1 text-center wrap-break-word whitespace-normal">{item.receivedBy || '-'}</TableCell>
                         <TableCell className="text-xs py-1 px-1 text-center font-bold italic text-indigo-600 wrap-break-word whitespace-normal">{item.trackingId}</TableCell>
                         <TableCell className="text-xs py-1 px-1 text-center wrap-break-word whitespace-normal">{new Date(item.dateTimeIn).toLocaleString()}</TableCell>
-                        <TableCell className="text-xs py-1 px-1 text-center wrap-break-word whitespace-normal text-red-600">{item.dateTimeOut ? new Date(item.dateTimeOut).toLocaleString() : '-'}</TableCell>
+                        <TableCell className={`text-xs py-1 px-1 text-center wrap-break-word whitespace-normal ${item.status === 'Completed' ? 'text-green-600 font-medium' : 'text-red-600'}`}>{item.dateTimeOut ? new Date(item.dateTimeOut).toLocaleString() : '-'}</TableCell>
                         <TableCell className="text-xs py-1 px-1 text-center wrap-break-word whitespace-normal">{item.fullName}</TableCell>
                         <TableCell className="text-xs py-1 px-1 text-center wrap-break-word whitespace-normal">{item.designation}</TableCell>
                         <TableCell className="text-xs py-1 px-1 text-center wrap-break-word whitespace-normal">{item.leaveType}</TableCell>
@@ -695,7 +699,7 @@ export default function LeavePage() {
                             {item.status || 'Pending'}
                           </span>
                         </TableCell>
-                        <TableCell className={`text-xs py-1 px-1 text-center wrap-break-word whitespace-normal ${item.status === 'Rejected' ? 'text-red-600 font-medium' : ''}`}>{item.status === 'Completed' ? (item.timeOutRemarks || item.remarks || '-') : (item.remarks || '-')}</TableCell>
+                        <TableCell className={`text-xs py-1 px-1 text-center wrap-break-word whitespace-normal ${item.status === 'Completed' ? 'text-green-600 font-medium' : item.status === 'Rejected' ? 'text-red-600 font-medium' : ''}`}>{item.status === 'Completed' ? (item.timeOutRemarks || item.remarks || '-') : (item.remarks || '-')}</TableCell>
                         <TableCell className="py-1 px-1 text-center wrap-break-word whitespace-normal">
                           <ActionButtons
                             onView={() => handleViewLeave(item.id)}

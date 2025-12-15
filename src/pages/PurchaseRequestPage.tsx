@@ -53,6 +53,7 @@ import TimeOutModal from '@/components/TimeOutModal';
 interface PurchaseRequest {
   id: string;
   trackingId: string;
+  receivedBy: string;
   dateTimeIn: string;
   dateTimeOut?: string;
   fullName: string;
@@ -180,6 +181,7 @@ export default function PurchaseRequestPage() {
     try {
       const newRequest = {
         trackingId: nextTrackingId,
+        receivedBy: user?.name || '',
         ...formData,
         quantity: parseInt(formData.quantity),
         estimatedCost: parseFloat(formData.estimatedCost),
@@ -288,7 +290,7 @@ export default function PurchaseRequestPage() {
     try {
       const now = new Date();
       const dateTimeStr = now.toLocaleString();
-      const remarksWithDateTime = `[${dateTimeStr}] ${rejectData.remarks}`;
+      const remarksWithDateTime = `[${dateTimeStr}] [${user?.name || 'Unknown'}] ${rejectData.remarks}`;
       
       await purchaseRequestService.updatePurchaseRequest(requestToDelete, { status: 'Rejected', remarks: remarksWithDateTime });
       const updatedRequests = purchaseRequests.map(r => r.id === requestToDelete ? { ...r, status: 'Rejected', remarks: remarksWithDateTime } : r);
@@ -348,9 +350,10 @@ export default function PurchaseRequestPage() {
 
     setIsLoading(true);
     try {
+      const timeOutRemarksWithUser = `[${user?.name || 'Unknown'}] ${timeOutData.timeOutRemarks}`;
       const result = await purchaseRequestService.updatePurchaseRequest(requestToTimeOut, {
         dateTimeOut: timeOutData.dateTimeOut,
-        timeOutRemarks: timeOutData.timeOutRemarks,
+        timeOutRemarks: timeOutRemarksWithUser,
         status: 'Completed'
       });
 
@@ -609,6 +612,7 @@ export default function PurchaseRequestPage() {
               <Table>
                 <TableHeader>
                   <TableRow className="bg-gray-50">
+                    <TableHead className="text-center">Received By</TableHead>
                     <TableHead className="text-center">Tracking ID</TableHead>
                     <TableHead className="text-center">Date/Time IN</TableHead>
                     <TableHead className="text-center">Date/Time OUT</TableHead>
@@ -624,20 +628,23 @@ export default function PurchaseRequestPage() {
                 <TableBody>
                   {purchaseRequests.length === 0 ? (
                     <TableRow key="empty-state">
-                      <TableCell colSpan={10} className="text-center py-4 text-gray-500 text-xs">
+                      <TableCell colSpan={11} className="text-center py-4 text-gray-500 text-xs">
                         No purchase requests found. Click "Add Purchase Request" to create one.
                       </TableCell>
                     </TableRow>
                   ) : (
                     purchaseRequests.map((request) => (
                       <TableRow key={request.id} className="hover:bg-gray-50">
+                        <TableCell className="text-center text-xs">
+                          {request.receivedBy || '-'}
+                        </TableCell>
                         <TableCell className="text-center font-semibold text-indigo-600 text-xs">
                           {request.trackingId}
                         </TableCell>
                         <TableCell className="text-center text-xs">
                           {new Date(request.dateTimeIn).toLocaleString()}
                         </TableCell>
-                        <TableCell className="text-center text-xs">
+                        <TableCell className={`text-center text-xs ${request.status === 'Completed' ? 'text-green-600 font-medium' : ''}`}>
                           {request.dateTimeOut ? new Date(request.dateTimeOut).toLocaleString() : '-'}
                         </TableCell>
                         <TableCell className="text-center text-xs">{request.fullName}</TableCell>
@@ -661,7 +668,7 @@ export default function PurchaseRequestPage() {
                         </TableCell>
                         <TableCell
                           className={`text-center text-xs wrap-break-word whitespace-normal ${
-                            request.status === 'Rejected' ? 'text-red-600 font-medium' : ''
+                            request.status === 'Completed' ? 'text-green-600 font-medium' : request.status === 'Rejected' ? 'text-red-600 font-medium' : ''
                           }`}
                         >
                           {request.status === 'Completed'

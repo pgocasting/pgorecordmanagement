@@ -230,6 +230,7 @@ export default function TravelOrderPage() {
     try {
       const newTravelOrder = {
         trackingId: generateTrackingId(),
+        receivedBy: user?.name || '',
         ...formData,
         status: 'Pending',
         remarks: '',
@@ -338,7 +339,7 @@ export default function TravelOrderPage() {
     try {
       const now = new Date();
       const dateTimeStr = now.toLocaleString();
-      const remarksWithDateTime = `[${dateTimeStr}] ${rejectData.remarks}`;
+      const remarksWithDateTime = `[${dateTimeStr}] [${user?.name || 'Unknown'}] ${rejectData.remarks}`;
       
       await travelOrderService.updateTravelOrder(travelOrderToDelete, { status: 'Rejected', remarks: remarksWithDateTime });
       const updatedTravelOrders = travelOrders.map(t => t.id === travelOrderToDelete ? { ...t, status: 'Rejected', remarks: remarksWithDateTime } : t);
@@ -376,9 +377,10 @@ export default function TravelOrderPage() {
         throw new Error('Travel order record not found. It may have been deleted or the data is out of sync.');
       }
 
+      const timeOutRemarksWithUser = `[${user?.name || 'Unknown'}] ${timeOutData.timeOutRemarks}`;
       await travelOrderService.updateTravelOrder(travelOrderToTimeOut, {
         dateTimeOut: timeOutData.dateTimeOut,
-        timeOutRemarks: timeOutData.timeOutRemarks,
+        timeOutRemarks: timeOutRemarksWithUser,
         status: 'Completed'
       });
       
@@ -644,6 +646,7 @@ export default function TravelOrderPage() {
               <Table>
                 <TableHeader>
                   <TableRow className="bg-gray-50">
+                    <TableHead className="font-semibold py-1 px-1 text-center text-xs">Received By</TableHead>
                     <TableHead className="font-semibold py-1 px-1 text-center text-xs">Tracking ID</TableHead>
                     <TableHead className="font-semibold py-1 px-1 text-center text-xs">Date/Time IN</TableHead>
                     <TableHead className="font-semibold py-1 px-1 text-center text-xs">Date/Time OUT</TableHead>
@@ -666,9 +669,10 @@ export default function TravelOrderPage() {
                   ) : (
                     travelOrders.map((item) => (
                       <TableRow key={item.id} className="hover:bg-gray-50">
+                        <TableCell className="text-xs py-1 px-1 text-center wrap-break-word whitespace-normal">{item.receivedBy || '-'}</TableCell>
                         <TableCell className="text-xs py-1 px-1 text-center font-bold italic text-indigo-600 wrap-break-word whitespace-normal">{item.trackingId}</TableCell>
                         <TableCell className="text-xs py-1 px-1 text-center wrap-break-word whitespace-normal">{new Date(item.dateTimeIn).toLocaleString()}</TableCell>
-                        <TableCell className="text-xs py-1 px-1 text-center wrap-break-word whitespace-normal text-red-600">{item.dateTimeOut ? new Date(item.dateTimeOut).toLocaleString() : '-'}</TableCell>
+                        <TableCell className={`text-xs py-1 px-1 text-center wrap-break-word whitespace-normal ${item.status === 'Completed' ? 'text-green-600 font-medium' : 'text-red-600'}`}>{item.dateTimeOut ? new Date(item.dateTimeOut).toLocaleString() : '-'}</TableCell>
                         <TableCell className="text-xs py-1 px-1 text-center wrap-break-word whitespace-normal">{item.fullName}</TableCell>
                         <TableCell className="text-xs py-1 px-1 text-center wrap-break-word whitespace-normal">{item.designation}</TableCell>
                         <TableCell className="text-xs py-1 px-1 text-center wrap-break-word whitespace-normal">{item.purpose}</TableCell>
@@ -690,7 +694,7 @@ export default function TravelOrderPage() {
                             {item.status || 'Pending'}
                           </span>
                         </TableCell>
-                        <TableCell className={`text-xs py-1 px-1 text-center wrap-break-word whitespace-normal ${item.status === 'Rejected' ? 'text-red-600 font-medium' : ''}`}>{item.status === 'Completed' ? (item.timeOutRemarks || item.remarks || '-') : (item.remarks || '-')}</TableCell>
+                        <TableCell className={`text-xs py-1 px-1 text-center wrap-break-word whitespace-normal ${item.status === 'Completed' ? 'text-green-600 font-medium' : item.status === 'Rejected' ? 'text-red-600 font-medium' : ''}`}>{item.status === 'Completed' ? (item.timeOutRemarks || item.remarks || '-') : (item.remarks || '-')}</TableCell>
                         <TableCell className="py-1 px-1 text-center wrap-break-word whitespace-normal">
                           <ActionButtons
                             onView={() => handleViewTravelOrder(item.id)}

@@ -449,6 +449,7 @@ export default function ReportPage() {
                 <Table>
                   <TableHeader>
                     <TableRow className="bg-gray-50">
+                      <TableHead className="text-center text-xs">Received By</TableHead>
                       <TableHead className="text-center text-xs">Tracking ID</TableHead>
                       <TableHead className="text-center text-xs">Category</TableHead>
                       <TableHead className="text-center text-xs">Date/Time IN</TableHead>

@@ -53,16 +53,12 @@ import TimeOutModal from '@/components/TimeOutModal';
 interface Others {
   id: string;
   trackingId: string;
+  receivedBy: string;
   dateTimeIn: string;
-  dateTimeOut: string;
+  dateTimeOut?: string;
   fullName: string;
   designationOffice: string;
-  inclusiveDateStart: string;
-  inclusiveDateEnd: string;
-  inclusiveTimeStart: string;
-  inclusiveTimeEnd: string;
   purpose: string;
-  amount: string;
   status: string;
   remarks: string;
   timeOutRemarks?: string;
@@ -213,6 +209,7 @@ export default function OthersPage() {
     try {
       const newRecord = {
         trackingId: nextTrackingId,
+        receivedBy: user?.name || '',
         ...formData,
         status: 'Pending',
         remarks: '',
@@ -338,7 +335,7 @@ export default function OthersPage() {
     try {
       const now = new Date();
       const dateTimeStr = now.toLocaleString();
-      const remarksWithDateTime = `[${dateTimeStr}] ${rejectData.remarks}`;
+      const remarksWithDateTime = `[${dateTimeStr}] [${user?.name || 'Unknown'}] ${rejectData.remarks}`;
       
       await othersService.updateRecord(recordToDelete, { status: 'Rejected', remarks: remarksWithDateTime });
       const updatedRecords = records.map(r => r.id === recordToDelete ? { ...r, status: 'Rejected', remarks: remarksWithDateTime } : r);
@@ -390,10 +387,11 @@ export default function OthersPage() {
         throw new Error('Other record not found. It may have been deleted or the data is out of sync.');
       }
 
+      const timeOutRemarksWithUser = `[${user?.name || 'Unknown'}] ${timeOutData.timeOutRemarks}`;
       await othersService.updateRecord(recordToTimeOut, {
         dateTimeOut: timeOutData.dateTimeOut,
         status: 'Completed',
-        timeOutRemarks: timeOutData.timeOutRemarks
+        timeOutRemarks: timeOutRemarksWithUser
       });
       // Reload from Firestore
       const updatedRecords = await othersService.getRecords();
@@ -679,6 +677,7 @@ export default function OthersPage() {
               <Table>
                 <TableHeader>
                   <TableRow className="bg-gray-50">
+                    <TableHead className="text-center">Received By</TableHead>
                     <TableHead className="text-center">Tracking ID</TableHead>
                     <TableHead className="text-center">Date/Time IN</TableHead>
                     <TableHead className="text-center">Date/Time OUT</TableHead>
@@ -694,9 +693,10 @@ export default function OthersPage() {
                   {records.length > 0 ? (
                     records.map((record) => (
                       <TableRow key={record.id} className="hover:bg-gray-50">
+                        <TableCell className="wrap-break-word whitespace-normal text-center text-xs">{record.receivedBy || '-'}</TableCell>
                         <TableCell className="font-bold italic wrap-break-word whitespace-normal text-center text-xs text-indigo-600">{record.trackingId}</TableCell>
                         <TableCell className="wrap-break-word whitespace-normal text-center text-xs">{new Date(record.dateTimeIn).toLocaleString()}</TableCell>
-                        <TableCell className="wrap-break-word whitespace-normal text-center text-xs text-red-600">{record.dateTimeOut ? new Date(record.dateTimeOut).toLocaleString() : '-'}</TableCell>
+                        <TableCell className={`wrap-break-word whitespace-normal text-center text-xs ${record.status === 'Completed' ? 'text-green-600 font-medium' : 'text-red-600'}`}>{record.dateTimeOut ? new Date(record.dateTimeOut).toLocaleString() : '-'}</TableCell>
                         <TableCell className="wrap-break-word whitespace-normal text-center text-xs uppercase">{record.fullName}</TableCell>
                         <TableCell className="wrap-break-word whitespace-normal text-center text-xs">{record.designationOffice}</TableCell>
                         <TableCell className="wrap-break-word whitespace-normal text-center text-xs">{record.purpose}</TableCell>
@@ -710,7 +710,7 @@ export default function OthersPage() {
                             {record.status}
                           </span>
                         </TableCell>
-                        <TableCell className={`wrap-break-word whitespace-normal text-center text-xs ${record.status === 'Rejected' ? 'text-red-600 font-medium' : ''}`}>{record.status === 'Completed' ? (record.timeOutRemarks || record.remarks || '-') : (record.remarks || '-')}</TableCell>
+                        <TableCell className={`wrap-break-word whitespace-normal text-center text-xs ${record.status === 'Completed' ? 'text-green-600 font-medium' : record.status === 'Rejected' ? 'text-red-600 font-medium' : ''}`}>{record.status === 'Completed' ? (record.timeOutRemarks || record.remarks || '-') : (record.remarks || '-')}</TableCell>
                         <TableCell className="py-1 px-1 text-center wrap-break-word whitespace-normal">
                           <ActionButtons
                             onView={() => handleViewRecord(record.id)}

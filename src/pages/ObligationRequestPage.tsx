@@ -53,13 +53,12 @@ import TimeOutModal from '@/components/TimeOutModal';
 interface ObligationRequest {
   id: string;
   trackingId: string;
+  receivedBy: string;
   dateTimeIn: string;
   dateTimeOut?: string;
   fullName: string;
-  designation: string;
-  obligationType: string;
+  type: string;
   amount: number;
-  particulars: string;
   status: string;
   remarks: string;
   timeOutRemarks?: string;
@@ -178,6 +177,7 @@ export default function ObligationRequestPage() {
     try {
       const newRequest = {
         trackingId: nextTrackingId,
+        receivedBy: user?.name || '',
         ...formData,
         amount: parseFloat(formData.amount),
         status: 'Pending',
@@ -282,7 +282,7 @@ export default function ObligationRequestPage() {
     try {
       const now = new Date();
       const dateTimeStr = now.toLocaleString();
-      const remarksWithDateTime = `[${dateTimeStr}] ${rejectData.remarks}`;
+      const remarksWithDateTime = `[${dateTimeStr}] [${user?.name || 'Unknown'}] ${rejectData.remarks}`;
       
       await obligationRequestService.updateObligationRequest(requestToDelete, { status: 'Rejected', remarks: remarksWithDateTime });
       const updatedRequests = obligationRequests.map(r => r.id === requestToDelete ? { ...r, status: 'Rejected', remarks: remarksWithDateTime } : r);
@@ -343,9 +343,10 @@ export default function ObligationRequestPage() {
 
     setIsLoading(true);
     try {
+      const timeOutRemarksWithUser = `[${user?.name || 'Unknown'}] ${timeOutData.timeOutRemarks}`;
       const result = await obligationRequestService.updateObligationRequest(requestToTimeOut, {
         dateTimeOut: timeOutData.dateTimeOut,
-        timeOutRemarks: timeOutData.timeOutRemarks,
+        timeOutRemarks: timeOutRemarksWithUser,
         status: 'Completed'
       });
 
@@ -593,6 +594,7 @@ export default function ObligationRequestPage() {
               <Table>
                 <TableHeader>
                   <TableRow className="bg-gray-50">
+                    <TableHead className="text-center">Received By</TableHead>
                     <TableHead className="text-center">Tracking ID</TableHead>
                     <TableHead className="text-center">Date/Time IN</TableHead>
                     <TableHead className="text-center">Date/Time OUT</TableHead>
@@ -614,13 +616,16 @@ export default function ObligationRequestPage() {
                   ) : (
                     obligationRequests.map((request) => (
                       <TableRow key={request.id} className="hover:bg-gray-50">
+                        <TableCell className="text-center text-xs">
+                          {request.receivedBy || '-'}
+                        </TableCell>
                         <TableCell className="text-center font-semibold text-indigo-600 text-xs">
                           {request.trackingId}
                         </TableCell>
                         <TableCell className="text-center text-xs">
                           {new Date(request.dateTimeIn).toLocaleString()}
                         </TableCell>
-                        <TableCell className="text-center text-xs">
+                        <TableCell className={`text-center text-xs ${request.status === 'Completed' ? 'text-green-600 font-medium' : ''}`}>
                           {request.dateTimeOut ? new Date(request.dateTimeOut).toLocaleString() : '-'}
                         </TableCell>
                         <TableCell className="text-center text-xs">{request.fullName}</TableCell>
@@ -643,10 +648,10 @@ export default function ObligationRequestPage() {
                         </TableCell>
                         <TableCell
                           className={`text-center text-xs ${
-                            request.status === 'Rejected' ? 'text-red-600 font-medium' : ''
+                            request.status === 'Completed' ? 'text-green-600 font-medium' : request.status === 'Rejected' ? 'text-red-600 font-medium' : ''
                           }`}
                         >
-                          {request.remarks || '-'}
+                          {request.status === 'Completed' ? (request.timeOutRemarks || request.remarks || '-') : (request.remarks || '-')}
                         </TableCell>
                         <TableCell className="text-center">
                           <ActionButtons

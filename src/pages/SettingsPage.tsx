@@ -47,7 +47,7 @@ import { Sidebar } from '@/components/Sidebar';
 
 export default function SettingsPage() {
   const navigate = useNavigate();
-  const { addUser, getAllUsers, user, logout } = useAuth();
+  const { addUser, getAllUsers, deleteUser, updateUser, user, logout } = useAuth();
   const [users, setUsers] = useState(getAllUsers());
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -90,6 +90,11 @@ export default function SettingsPage() {
     loadDesignations();
   }, []);
 
+  // Refresh users list when user changes
+  useEffect(() => {
+    setUsers(getAllUsers());
+  }, [user, getAllUsers]);
+
   const recordTypes = [
     'Leave',
     'Letter',
@@ -114,6 +119,11 @@ export default function SettingsPage() {
     password: '',
     confirmPassword: '',
     role: 'user' as 'admin' | 'user',
+  });
+  const [editingUserId, setEditingUserId] = useState<string | null>(null);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [profileData, setProfileData] = useState({
+    name: user?.name || '',
   });
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -185,11 +195,103 @@ export default function SettingsPage() {
     }
   };
 
+  const handleEditUser = (userToEdit: any) => {
+    setFormData({
+      username: userToEdit.username,
+      name: userToEdit.name,
+      password: '',
+      confirmPassword: '',
+      role: userToEdit.role,
+    });
+    setEditingUserId(userToEdit.id);
+    setIsEditDialogOpen(true);
+  };
+
+  const handleToggleAdminRole = async (userId: string, currentRole: 'admin' | 'user', userName: string) => {
+    const newRole = currentRole === 'admin' ? 'user' : 'admin';
+    const action = newRole === 'admin' ? 'grant' : 'revoke';
+    
+    setIsLoading(true);
+    try {
+      await updateUser(userId, { role: newRole as 'admin' | 'user' });
+      const updatedUsers = users.map(u => 
+        u.id === userId 
+          ? { ...u, role: newRole as 'admin' | 'user' }
+          : u
+      );
+      setUsers(updatedUsers);
+      setSuccess(`Admin access ${action}ed for ${userName}!`);
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : `Failed to ${action} admin access`);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleUpdateUser = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setSuccess('');
+
+    if (!formData.name.trim()) {
+      setError('Name is required');
+      return;
+    }
+
+    if (formData.password && formData.password.length < 6) {
+      setError('Password must be at least 6 characters');
+      return;
+    }
+
+    if (formData.password && formData.password !== formData.confirmPassword) {
+      setError('Passwords do not match');
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const updatedUsers = users.map(u => 
+        u.id === editingUserId 
+          ? {
+              ...u,
+              name: formData.name,
+              role: formData.role,
+              ...(formData.password && { password: formData.password })
+            }
+          : u
+      );
+      
+      // Update in-memory storage
+      const allUsers = getAllUsers();
+      const userIndex = allUsers.findIndex(u => u.id === editingUserId);
+      if (userIndex !== -1) {
+        allUsers[userIndex] = updatedUsers[updatedUsers.findIndex(u => u.id === editingUserId)];
+      }
+      
+      setUsers(updatedUsers);
+      setSuccess('User updated successfully!');
+      setFormData({
+        username: '',
+        name: '',
+        password: '',
+        confirmPassword: '',
+        role: 'user',
+      });
+      setIsEditDialogOpen(false);
+      setEditingUserId(null);
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to update user');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const handleDeleteUser = async (userId: string) => {
     if (window.confirm('Are you sure you want to delete this user? This action cannot be undone.')) {
       setIsLoading(true);
       try {
-        const { deleteUser } = useAuth();
         await deleteUser(userId);
         setSuccess('User deleted successfully!');
         setUsers(getAllUsers());
@@ -208,6 +310,37 @@ export default function SettingsPage() {
       ...prev,
       [name]: value
     }));
+  };
+
+  const handleProfileNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setProfileData(prev => ({
+      ...prev,
+      name: e.target.value
+    }));
+  };
+
+  const handleUpdateProfile = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setSuccess('');
+
+    if (!profileData.name.trim()) {
+      setError('Name is required');
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      if (user) {
+        await updateUser(user.id, { name: profileData.name.trim() });
+        setSuccess('Profile updated successfully!');
+        setTimeout(() => setSuccess(''), 3000);
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to update profile');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleChangePassword = async (e: React.FormEvent) => {
@@ -398,10 +531,60 @@ export default function SettingsPage() {
         {/* Show different content based on user role */}
         {user?.role === 'user' ? (
           // User View - Tabs
-          <Tabs defaultValue="password" className="w-full">
-            <TabsList className="grid w-full grid-cols-1 max-w-md">
+          <Tabs defaultValue="profile" className="w-full">
+            <TabsList className="grid w-full grid-cols-2 max-w-md">
+              <TabsTrigger value="profile">Profile</TabsTrigger>
               <TabsTrigger value="password">Change Password</TabsTrigger>
             </TabsList>
+
+            {/* Profile Tab */}
+            <TabsContent value="profile" className="space-y-4">
+              <Card className="max-w-md">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-lg">Profile Information</CardTitle>
+                  <CardDescription className="text-xs">Update your profile information</CardDescription>
+                </CardHeader>
+                <CardContent className="pb-3">
+                  <form onSubmit={handleUpdateProfile} className="space-y-3">
+                    <div className="space-y-1">
+                      <Label htmlFor="profileName" className="text-xs">Full Name</Label>
+                      <Input
+                        id="profileName"
+                        type="text"
+                        placeholder="Enter your full name"
+                        value={profileData.name}
+                        onChange={handleProfileNameChange}
+                        disabled={isLoading}
+                        className="h-8 text-xs"
+                      />
+                    </div>
+
+                    <div className="flex gap-2 pt-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="flex-1 h-8 text-xs"
+                        onClick={() => {
+                          setProfileData({
+                            name: user?.name || '',
+                          });
+                        }}
+                        disabled={isLoading}
+                      >
+                        Cancel
+                      </Button>
+                      <Button
+                        type="submit"
+                        className="flex-1 h-8 text-xs bg-indigo-600 hover:bg-indigo-700"
+                        disabled={isLoading}
+                      >
+                        {isLoading ? 'Saving...' : 'Save Changes'}
+                      </Button>
+                    </div>
+                  </form>
+                </CardContent>
+              </Card>
+            </TabsContent>
 
             {/* Change Password Tab */}
             <TabsContent value="password" className="space-y-4">
@@ -486,11 +669,61 @@ export default function SettingsPage() {
         ) : (
           // Admin View - Full Settings with Tabs
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-3 max-w-2xl">
+            <TabsList className="grid w-full grid-cols-4 max-w-3xl">
+              <TabsTrigger value="profile">Profile</TabsTrigger>
               <TabsTrigger value="users">User Management</TabsTrigger>
               <TabsTrigger value="designations">Designations</TabsTrigger>
               <TabsTrigger value="system">System Settings</TabsTrigger>
             </TabsList>
+
+            {/* Profile Tab */}
+            <TabsContent value="profile" className="space-y-4">
+              <Card className="max-w-md">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-lg">Profile Information</CardTitle>
+                  <CardDescription className="text-xs">Update your profile information</CardDescription>
+                </CardHeader>
+                <CardContent className="pb-3">
+                  <form onSubmit={handleUpdateProfile} className="space-y-3">
+                    <div className="space-y-1">
+                      <Label htmlFor="adminProfileName" className="text-xs">Full Name</Label>
+                      <Input
+                        id="adminProfileName"
+                        type="text"
+                        placeholder="Enter your full name"
+                        value={profileData.name}
+                        onChange={handleProfileNameChange}
+                        disabled={isLoading}
+                        className="h-8 text-xs"
+                      />
+                    </div>
+
+                    <div className="flex gap-2 pt-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="flex-1 h-8 text-xs"
+                        onClick={() => {
+                          setProfileData({
+                            name: user?.name || '',
+                          });
+                        }}
+                        disabled={isLoading}
+                      >
+                        Cancel
+                      </Button>
+                      <Button
+                        type="submit"
+                        className="flex-1 h-8 text-xs bg-indigo-600 hover:bg-indigo-700"
+                        disabled={isLoading}
+                      >
+                        {isLoading ? 'Saving...' : 'Save Changes'}
+                      </Button>
+                    </div>
+                  </form>
+                </CardContent>
+              </Card>
+            </TabsContent>
 
             {/* User Management Tab */}
             <TabsContent value="users" className="space-y-4">
@@ -601,6 +834,111 @@ export default function SettingsPage() {
                   </form>
                 </DialogContent>
               </Dialog>
+
+              {/* Edit User Dialog */}
+              <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+                <DialogContent className="sm:max-w-md">
+                  <DialogHeader>
+                    <DialogTitle>Edit User</DialogTitle>
+                    <DialogDescription>
+                      Update user information
+                    </DialogDescription>
+                  </DialogHeader>
+
+                  <form onSubmit={handleUpdateUser} className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="edit-username">Username</Label>
+                      <Input
+                        id="edit-username"
+                        value={formData.username}
+                        disabled
+                        className="bg-gray-100"
+                      />
+                      <p className="text-xs text-gray-500">Username cannot be changed</p>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="edit-name">Full Name</Label>
+                      <Input
+                        id="edit-name"
+                        name="name"
+                        placeholder="John Doe"
+                        value={formData.name}
+                        onChange={handleInputChange}
+                        disabled={isLoading}
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="edit-password">New Password (Optional)</Label>
+                      <Input
+                        id="edit-password"
+                        name="password"
+                        type="password"
+                        placeholder="Leave blank to keep current password"
+                        value={formData.password}
+                        onChange={handleInputChange}
+                        disabled={isLoading}
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="edit-confirmPassword">Confirm New Password</Label>
+                      <Input
+                        id="edit-confirmPassword"
+                        name="confirmPassword"
+                        type="password"
+                        placeholder="Confirm new password"
+                        value={formData.confirmPassword}
+                        onChange={handleInputChange}
+                        disabled={isLoading}
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="edit-role">Role</Label>
+                      <Select value={formData.role} onValueChange={handleRoleChange}>
+                        <SelectTrigger id="edit-role">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="user">User</SelectItem>
+                          <SelectItem value="admin">Admin</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="flex gap-2 pt-4">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="flex-1"
+                        onClick={() => {
+                          setIsEditDialogOpen(false);
+                          setEditingUserId(null);
+                          setFormData({
+                            username: '',
+                            name: '',
+                            password: '',
+                            confirmPassword: '',
+                            role: 'user',
+                          });
+                        }}
+                        disabled={isLoading}
+                      >
+                        Cancel
+                      </Button>
+                      <Button
+                        type="submit"
+                        className="flex-1"
+                        disabled={isLoading}
+                      >
+                        {isLoading ? 'Updating...' : 'Update User'}
+                      </Button>
+                    </div>
+                  </form>
+                </DialogContent>
+              </Dialog>
             </div>
           </CardHeader>
           <CardContent>
@@ -612,6 +950,7 @@ export default function SettingsPage() {
                     <TableHead>Username</TableHead>
                     <TableHead>Name</TableHead>
                     <TableHead>Role</TableHead>
+                    <TableHead>Access</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -630,21 +969,52 @@ export default function SettingsPage() {
                             {user.role}
                           </span>
                         </TableCell>
-                        <TableCell className="text-right">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => handleDeleteUser(user.id)}
-                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                        <TableCell>
+                          <button
+                            onClick={() => handleToggleAdminRole(user.id, user.role, user.name)}
+                            disabled={isLoading || user.username === 'admin'}
+                            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                              user.role === 'admin'
+                                ? 'bg-indigo-600 hover:bg-indigo-700'
+                                : 'bg-gray-300 hover:bg-gray-400'
+                            } ${user.username === 'admin' ? 'cursor-not-allowed' : ''} disabled:opacity-50`}
+                            title={user.username === 'admin' ? 'Administrator access cannot be changed' : (user.role === 'admin' ? 'Click to revoke admin access' : 'Click to grant admin access')}
                           >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
+                            <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                              user.role === 'admin' ? 'translate-x-6' : 'translate-x-1'
+                            }`} />
+                          </button>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex gap-3 justify-end items-center">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleEditUser(user)}
+                              className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                              title="Edit user"
+                            >
+                              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                              </svg>
+                            </Button>
+                            
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleDeleteUser(user.id)}
+                              className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                              title="Delete user"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))
                   ) : (
                     <TableRow>
-                      <TableCell colSpan={4} className="text-center py-8 text-gray-500">
+                      <TableCell colSpan={5} className="text-center py-8 text-gray-500">
                         No users found
                       </TableCell>
                     </TableRow>

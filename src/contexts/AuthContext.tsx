@@ -28,6 +28,7 @@ interface AuthContextType {
   addUser: (email: string, password: string, name: string, role: 'admin' | 'user') => Promise<void>;
   getAllUsers: () => User[];
   deleteUser: (userId: string) => Promise<void>;
+  updateUser: (userId: string, updates: Partial<User>) => Promise<void>;
   getRecords: () => Record[];
   addRecord: (title: string, category: string, status: 'active' | 'archived' | 'pending') => Promise<void>;
   deleteRecord: (recordId: string) => Promise<void>;
@@ -38,7 +39,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 // Default users - hardcoded for reliability
 const DEFAULT_USERS: User[] = [
-  { id: '1', username: 'admin', email: 'pgocasting@gmail.com', name: 'Admin', role: 'admin', password: 'admin123' }
+  { id: '1', username: 'admin', email: 'admin@pgocasting.com', name: 'Administrator', role: 'admin', password: 'admin123' }
 ];
 
 // Default records
@@ -49,15 +50,28 @@ const DEFAULT_RECORDS: Record[] = [
 ];
 
 // In-memory storage for users and records
-let inMemoryUsers = DEFAULT_USERS;
+let inMemoryUsers = [...DEFAULT_USERS];
 let inMemoryRecords = DEFAULT_RECORDS;
 
+// Force admin user to have admin role
+inMemoryUsers = inMemoryUsers.map(u => 
+  u.username === 'admin' ? { ...u, role: 'admin' as const } : u
+);
+
 const getStoredUsers = (): User[] => {
-  return inMemoryUsers;
+  // Ensure admin user always has admin role and correct name
+  const users = inMemoryUsers.map(u => 
+    u.username === 'admin' ? { ...u, role: 'admin' as const, name: 'Administrator' } : u
+  );
+  return users;
 };
 
 const saveStoredUsers = (users: User[]): void => {
-  inMemoryUsers = users;
+  // Ensure admin user always has admin role before saving
+  const ensuredUsers = users.map(u => 
+    u.username === 'admin' ? { ...u, role: 'admin' as const } : u
+  );
+  inMemoryUsers = ensuredUsers;
 };
 
 const getStoredCurrentUser = (): User | null => {
@@ -71,7 +85,9 @@ const getStoredCurrentUser = (): User | null => {
 
 const saveStoredCurrentUser = (user: User): void => {
   try {
-    localStorage.setItem('currentUser', JSON.stringify(user));
+    // Ensure admin user always has admin role and correct name
+    const userToSave = user.username === 'admin' ? { ...user, role: 'admin' as const, name: 'Administrator' } : user;
+    localStorage.setItem('currentUser', JSON.stringify(userToSave));
   } catch {
     console.error('Failed to save current user to localStorage');
   }
@@ -104,7 +120,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           } as User));
           // Merge Firebase users with default admin user to ensure admin always exists
           const mergedUsers = [...DEFAULT_USERS, ...firebaseUsers.filter(u => u.username !== 'admin')];
-          saveStoredUsers(mergedUsers);
+          
+          // Ensure admin user always has admin role
+          const ensuredUsers = mergedUsers.map(u => 
+            u.username === 'admin' ? { ...u, role: 'admin' as const } : u
+          );
+          
+          saveStoredUsers(ensuredUsers);
         } else {
           // If no users in Firebase, use default users
           saveStoredUsers(DEFAULT_USERS);
@@ -116,9 +138,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
 
       // Load current user from localStorage
-      const currentUser = getStoredCurrentUser();
+      let currentUser = getStoredCurrentUser();
       if (currentUser) {
+        // Ensure admin user always has admin role
+        if (currentUser.username === 'admin' && currentUser.role !== 'admin') {
+          currentUser.role = 'admin';
+          saveStoredCurrentUser(currentUser);
+        }
         setUser(currentUser);
+      }
+      
+      // Also ensure all stored users have correct admin role
+      const allStoredUsers = getStoredUsers();
+      const adminUser = allStoredUsers.find(u => u.username === 'admin');
+      if (adminUser && adminUser.role !== 'admin') {
+        const correctedUsers = allStoredUsers.map(u => 
+          u.username === 'admin' ? { ...u, role: 'admin' as const } : u
+        );
+        saveStoredUsers(correctedUsers);
       }
       
       // Mark loading as complete
@@ -246,6 +283,38 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const updateUser = async (userId: string, updates: Partial<User>): Promise<void> => {
+    try {
+      // Prevent changing the admin user's role
+      if (userId === '1' && updates.role && updates.role !== 'admin') {
+        throw new Error('Cannot change the Administrator role');
+      }
+      
+      // Update in-memory storage
+      const allUsers = getStoredUsers();
+      const userIndex = allUsers.findIndex(u => u.id === userId);
+      
+      if (userIndex === -1) {
+        throw new Error('User not found');
+      }
+      
+      const updatedUser = { ...allUsers[userIndex], ...updates };
+      allUsers[userIndex] = updatedUser;
+      saveStoredUsers(allUsers);
+      
+      // If updating the current logged-in user, update the user state
+      if (user && user.id === userId) {
+        setUser(updatedUser);
+        saveStoredCurrentUser(updatedUser);
+      }
+      
+      console.log('User updated successfully:', userId);
+    } catch (error) {
+      console.error('Error updating user:', error);
+      throw error;
+    }
+  };
+
   const getAllUsers = () => {
     // Return users from in-memory storage (which is synced with Firebase)
     return getStoredUsers();
@@ -317,6 +386,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       addUser, 
       getAllUsers,
       deleteUser,
+      updateUser,
       getRecords,
       addRecord,
       deleteRecord,

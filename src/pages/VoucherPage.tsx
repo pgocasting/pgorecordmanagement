@@ -43,6 +43,7 @@ import TimeOutModal from '@/components/TimeOutModal';
 interface Voucher {
   id: string;
   trackingId: string;
+  receivedBy: string;
   dateTimeIn: string;
   dateTimeOut?: string;
   dvNo: string;
@@ -115,6 +116,7 @@ export default function VoucherPage() {
 
   const [formData, setFormData] = useState({
     dateTimeIn: '',
+    receivedBy: '',
     dvNo: '',
     payee: '',
     particulars: '',
@@ -194,11 +196,12 @@ export default function VoucherPage() {
     try {
       const newVoucher = {
         trackingId: nextTrackingId,
-        ...formData,
         amount: parseFloat(formData.amount),
         status: 'Pending',
         remarks: '',
         timeOutRemarks: '',
+        receivedBy: user?.name || '',
+        ...formData,
       };
       const result = await voucherService.addVoucher(newVoucher);
       setSuccess('Voucher added successfully');
@@ -322,7 +325,7 @@ export default function VoucherPage() {
     try {
       const now = new Date();
       const dateTimeStr = now.toLocaleString();
-      const remarksWithDateTime = `[${dateTimeStr}] ${rejectData.remarks}`;
+      const remarksWithDateTime = `[${dateTimeStr}] [${user?.name || 'Unknown'}] ${rejectData.remarks}`;
       
       await voucherService.updateVoucher(voucherToDelete, { status: 'Rejected', remarks: remarksWithDateTime });
       const updatedVouchers = vouchers.map(v => v.id === voucherToDelete ? { ...v, status: 'Rejected', remarks: remarksWithDateTime } : v);
@@ -366,9 +369,10 @@ export default function VoucherPage() {
 
     setIsLoading(true);
     try {
+      const timeOutRemarksWithUser = `[${user?.name || 'Unknown'}] ${timeOutData.timeOutRemarks}`;
       await voucherService.updateVoucher(voucherToTimeOut, {
         dateTimeOut: timeOutData.dateTimeOut,
-        timeOutRemarks: timeOutData.timeOutRemarks,
+        timeOutRemarks: timeOutRemarksWithUser,
         status: 'Completed'
       });
 
@@ -624,6 +628,7 @@ export default function VoucherPage() {
                 <Table>
                   <TableHeader>
                     <TableRow className="bg-gray-50">
+                      <TableHead className="text-center">Received By</TableHead>
                       <TableHead className="text-center">Tracking ID</TableHead>
                       <TableHead className="text-center">Date/Time IN</TableHead>
                       <TableHead className="text-center">Date/Time OUT</TableHead>
@@ -640,9 +645,10 @@ export default function VoucherPage() {
                     {vouchers.length > 0 ? (
                       vouchers.map((voucher) => (
                         <TableRow key={voucher.id} className="hover:bg-gray-50">
+                          <TableCell className="wrap-break-word whitespace-normal text-center text-xs">{voucher.receivedBy || '-'}</TableCell>
                           <TableCell className="font-bold italic wrap-break-word whitespace-normal text-center text-xs text-indigo-600">{voucher.trackingId}</TableCell>
                           <TableCell className="wrap-break-word whitespace-normal text-center text-xs">{new Date(voucher.dateTimeIn).toLocaleString()}</TableCell>
-                          <TableCell className="wrap-break-word whitespace-normal text-center text-xs text-red-600">{voucher.dateTimeOut ? new Date(voucher.dateTimeOut).toLocaleString() : '-'}</TableCell>
+                          <TableCell className={`wrap-break-word whitespace-normal text-center text-xs ${voucher.status === 'Completed' ? 'text-green-600 font-medium' : 'text-red-600'}`}>{voucher.dateTimeOut ? new Date(voucher.dateTimeOut).toLocaleString() : '-'}</TableCell>
                           <TableCell className="wrap-break-word whitespace-normal text-center text-xs">{voucher.dvNo}</TableCell>
                           <TableCell className="wrap-break-word whitespace-normal text-center text-xs">{voucher.payee}</TableCell>
                           <TableCell className="wrap-break-word whitespace-normal text-center text-xs">{formatCurrency(voucher.amount)}</TableCell>
@@ -657,7 +663,7 @@ export default function VoucherPage() {
                               {voucher.status}
                             </span>
                           </TableCell>
-                          <TableCell className={`wrap-break-word whitespace-normal text-center text-xs ${voucher.status === 'Rejected' ? 'text-red-600 font-medium' : ''}`}>{voucher.status === 'Completed' ? (voucher.timeOutRemarks || voucher.remarks || '-') : (voucher.remarks || '-')}</TableCell>
+                          <TableCell className={`wrap-break-word whitespace-normal text-center text-xs ${voucher.status === 'Completed' ? 'text-green-600 font-medium' : voucher.status === 'Rejected' ? 'text-red-600 font-medium' : ''}`}>{voucher.status === 'Completed' ? (voucher.timeOutRemarks || voucher.remarks || '-') : (voucher.remarks || '-')}</TableCell>
                           <TableCell className="text-center">
                             <ActionButtons
                               onView={() => handleViewVoucher(voucher.id)}

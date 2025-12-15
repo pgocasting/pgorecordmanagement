@@ -52,6 +52,7 @@ import TimeOutModal from '@/components/TimeOutModal';
 interface AdminToPGO {
   id: string;
   trackingId: string;
+  receivedBy: string;
   dateTimeIn: string;
   dateTimeOut?: string;
   fullName: string;
@@ -189,9 +190,9 @@ export default function AdminToPGOPage() {
 
     setIsLoading(true);
     try {
-      const newRecord: AdminToPGO = {
-        id: Date.now().toString(),
+      const newRecord = {
         trackingId: nextTrackingId,
+        receivedBy: user?.name || '',
         ...formData,
         status: 'Pending',
         remarks: '',
@@ -291,7 +292,7 @@ export default function AdminToPGOPage() {
     try {
       const now = new Date();
       const dateTimeStr = now.toLocaleString();
-      const remarksWithDateTime = `[${dateTimeStr}] ${rejectData.remarks}`;
+      const remarksWithDateTime = `[${dateTimeStr}] [${user?.name || 'Unknown'}] ${rejectData.remarks}`;
       
       await adminToPGOService.updateRecord(recordToDelete, { status: 'Rejected', remarks: remarksWithDateTime });
       const updatedRecords = records.map(r => r.id === recordToDelete ? { ...r, status: 'Rejected', remarks: remarksWithDateTime } : r);
@@ -354,9 +355,10 @@ export default function AdminToPGOPage() {
       }
 
       // Update in Firestore
+      const timeOutRemarksWithUser = `[${user?.name || 'Unknown'}] ${timeOutData.timeOutRemarks}`;
       await adminToPGOService.updateRecord(recordToTimeOut, {
         dateTimeOut: timeOutData.dateTimeOut,
-        timeOutRemarks: timeOutData.timeOutRemarks,
+        timeOutRemarks: timeOutRemarksWithUser,
         status: 'Completed'
       });
 
@@ -567,6 +569,7 @@ export default function AdminToPGOPage() {
               <Table>
                 <TableHeader>
                   <TableRow className="bg-gray-50">
+                    <TableHead className="font-semibold py-1 px-1 text-center text-xs">Received By</TableHead>
                     <TableHead className="font-semibold py-1 px-1 text-center text-xs">Tracking ID</TableHead>
                     <TableHead className="font-semibold py-1 px-1 text-center text-xs">Date/Time IN</TableHead>
                     <TableHead className="font-semibold py-1 px-1 text-center text-xs">Date/Time OUT</TableHead>
@@ -588,9 +591,10 @@ export default function AdminToPGOPage() {
                   ) : (
                     records.map((record) => (
                       <TableRow key={record.id} className="hover:bg-gray-50">
+                        <TableCell className="text-xs py-1 px-1 text-center wrap-break-word whitespace-normal">{record.receivedBy || '-'}</TableCell>
                         <TableCell className="text-xs py-1 px-1 text-center font-bold italic text-indigo-600 wrap-break-word whitespace-normal">{record.trackingId}</TableCell>
                         <TableCell className="text-xs py-1 px-1 text-center wrap-break-word whitespace-normal">{new Date(record.dateTimeIn).toLocaleString()}</TableCell>
-                        <TableCell className="text-xs py-1 px-1 text-center wrap-break-word whitespace-normal text-red-600">{record.dateTimeOut ? new Date(record.dateTimeOut).toLocaleString() : '-'}</TableCell>
+                        <TableCell className={`text-xs py-1 px-1 text-center wrap-break-word whitespace-normal ${record.status === 'Completed' ? 'text-green-600 font-medium' : 'text-red-600'}`}>{record.dateTimeOut ? new Date(record.dateTimeOut).toLocaleString() : '-'}</TableCell>
                         <TableCell className="text-xs py-1 px-1 text-center wrap-break-word whitespace-normal">{record.fullName}</TableCell>
                         <TableCell className="text-xs py-1 px-1 text-center wrap-break-word whitespace-normal">{record.officeAddress}</TableCell>
                         <TableCell className="text-xs py-1 px-1 text-center wrap-break-word whitespace-normal">{record.particulars}</TableCell>
@@ -611,7 +615,7 @@ export default function AdminToPGOPage() {
                             {record.status || 'Pending'}
                           </span>
                         </TableCell>
-                        <TableCell className={`text-xs py-1 px-1 text-center wrap-break-word whitespace-normal ${record.status === 'Rejected' ? 'text-red-600 font-medium' : ''}`}>{record.status === 'Completed' ? (record.timeOutRemarks || record.remarks || '-') : (record.remarks || '-')}</TableCell>
+                        <TableCell className={`text-xs py-1 px-1 text-center wrap-break-word whitespace-normal ${record.status === 'Completed' ? 'text-green-600 font-medium' : record.status === 'Rejected' ? 'text-red-600 font-medium' : ''}`}>{record.status === 'Completed' ? (record.timeOutRemarks || record.remarks || '-') : (record.remarks || '-')}</TableCell>
                         <TableCell className="py-1 px-1 text-center wrap-break-word whitespace-normal">
                           <ActionButtons
                             onView={() => handleViewRecord(record.id)}

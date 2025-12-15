@@ -52,6 +52,7 @@ import TimeOutModal from '@/components/TimeOutModal';
 interface Letter {
   id: string;
   trackingId: string;
+  receivedBy: string;
   dateTimeIn: string;
   dateTimeOut?: string;
   fullName: string;
@@ -162,13 +163,11 @@ export default function LetterPage() {
         setLetters(letters.map(l => l.id === editingId ? { ...l, ...updateData } : l));
       } else {
         // Add new letter to Firestore
+        const nextTrackingId = generateTrackingId();
         const newLetter = {
-          trackingId: generateTrackingId(),
-          dateTimeIn: formData.dateTimeIn,
-          dateTimeOut: formData.dateTimeOut,
-          fullName: formData.fullName,
-          designationOffice: formData.designationOffice,
-          particulars: formData.particulars,
+          trackingId: nextTrackingId,
+          receivedBy: user?.name || '',
+          ...formData,
           status: 'Pending',
           remarks: '',
           timeOutRemarks: '',
@@ -221,7 +220,7 @@ export default function LetterPage() {
       try {
         const now = new Date();
         const dateTimeStr = now.toLocaleString();
-        const remarksWithDateTime = `[${dateTimeStr}] ${rejectData.remarks}`;
+        const remarksWithDateTime = `[${dateTimeStr}] [${user?.name || 'Unknown'}] ${rejectData.remarks}`;
         
         await letterService.updateLetter(letterToDelete, { status: 'Rejected', remarks: remarksWithDateTime });
         const updatedLetters = letters.map(l => l.id === letterToDelete ? { ...l, status: 'Rejected', remarks: remarksWithDateTime } : l);
@@ -285,9 +284,10 @@ export default function LetterPage() {
         throw new Error('Letter record not found. It may have been deleted or the data is out of sync.');
       }
 
+      const timeOutRemarksWithUser = `[${user?.name || 'Unknown'}] ${timeOutRemarks}`;
       await letterService.updateLetter(letterToTimeOut, {
         dateTimeOut: timeOutDateTime,
-        timeOutRemarks: timeOutRemarks,
+        timeOutRemarks: timeOutRemarksWithUser,
         status: 'Completed'
       });
       // Reload letters from Firestore
@@ -510,6 +510,7 @@ export default function LetterPage() {
               <Table>
                 <TableHeader>
                   <TableRow className="bg-gray-50">
+                    <TableHead className="text-center">Received By</TableHead>
                     <TableHead className="text-center">Tracking ID</TableHead>
                     <TableHead className="text-center">Date/Time IN</TableHead>
                     <TableHead className="text-center">Date/Time OUT</TableHead>
@@ -525,9 +526,10 @@ export default function LetterPage() {
                   {letters.length > 0 ? (
                     letters.map((letter) => (
                       <TableRow key={letter.id} className="hover:bg-gray-50">
+                        <TableCell className="wrap-break-word whitespace-normal text-center text-xs">{letter.receivedBy || '-'}</TableCell>
                         <TableCell className="font-bold italic wrap-break-word whitespace-normal text-center text-xs text-indigo-600">{letter.trackingId}</TableCell>
                         <TableCell className="wrap-break-word whitespace-normal text-center text-xs">{new Date(letter.dateTimeIn).toLocaleString()}</TableCell>
-                        <TableCell className="wrap-break-word whitespace-normal text-center text-xs text-red-600">{letter.dateTimeOut ? new Date(letter.dateTimeOut).toLocaleString() : '-'}</TableCell>
+                        <TableCell className={`wrap-break-word whitespace-normal text-center text-xs ${letter.status === 'Completed' ? 'text-green-600 font-medium' : 'text-red-600'}`}>{letter.dateTimeOut ? new Date(letter.dateTimeOut).toLocaleString() : '-'}</TableCell>
                         <TableCell className="wrap-break-word whitespace-normal text-center text-xs uppercase">{letter.fullName}</TableCell>
                         <TableCell className="wrap-break-word whitespace-normal text-center text-xs">{letter.designationOffice}</TableCell>
                         <TableCell className="wrap-break-word whitespace-normal text-center text-xs">{letter.particulars}</TableCell>
@@ -541,7 +543,7 @@ export default function LetterPage() {
                             {letter.status}
                           </span>
                         </TableCell>
-                        <TableCell className={`wrap-break-word whitespace-normal text-center text-xs ${letter.status === 'Rejected' ? 'text-red-600 font-medium' : ''}`}>{letter.status === 'Completed' ? (letter.timeOutRemarks || letter.remarks || '-') : (letter.remarks || '-')}</TableCell>
+                        <TableCell className={`wrap-break-word whitespace-normal text-center text-xs ${letter.status === 'Completed' ? 'text-green-600 font-medium' : letter.status === 'Rejected' ? 'text-red-600 font-medium' : ''}`}>{letter.status === 'Completed' ? (letter.timeOutRemarks || letter.remarks || '-') : (letter.remarks || '-')}</TableCell>
                         <TableCell className="text-center">
                           <ActionButtons
                             onView={() => handleView(letter)}
