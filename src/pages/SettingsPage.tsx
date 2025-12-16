@@ -758,16 +758,16 @@ export default function SettingsPage() {
             {/* User Management Tab */}
             <TabsContent value="users" className="space-y-4">
               <Card>
-                <CardHeader className="pb-3">
-                  <div className="flex items-center justify-between gap-2">
+                <CardHeader>
+                  <div className="flex items-center justify-between">
                     <div>
-                      <CardTitle className="text-lg">User Management</CardTitle>
-                      <CardDescription className="text-xs">Add and manage system users</CardDescription>
+                      <CardTitle>User Management</CardTitle>
+                      <CardDescription>Add and manage system users</CardDescription>
                     </div>
                     <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                       <DialogTrigger asChild>
-                        <Button className="gap-2 h-8 text-xs">
-                          <Plus className="h-3 w-3" />
+                        <Button className="gap-2">
+                          <Plus className="h-4 w-4" />
                           Add User
                         </Button>
                       </DialogTrigger>

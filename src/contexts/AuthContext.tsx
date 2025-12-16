@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { db } from '@/config/firebase';
-import { collection, addDoc, getDocs, deleteDoc, doc, query, where } from 'firebase/firestore';
+import { collection, addDoc, getDocs, deleteDoc, doc, query, where, updateDoc } from 'firebase/firestore';
 
 interface User {
   id: string;
@@ -301,6 +301,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const updatedUser = { ...allUsers[userIndex], ...updates };
       allUsers[userIndex] = updatedUser;
       saveStoredUsers(allUsers);
+      
+      // Update in Firebase
+      try {
+        await updateDoc(doc(db, 'users', userId), updates);
+        console.log('User updated in Firebase:', userId);
+      } catch (firebaseError) {
+        console.warn('Failed to update user in Firebase, but in-memory storage updated:', firebaseError);
+      }
       
       // If updating the current logged-in user, update the user state
       if (user && user.id === userId) {
