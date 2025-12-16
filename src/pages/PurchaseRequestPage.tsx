@@ -45,7 +45,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import { Plus, Menu, LogOut } from 'lucide-react';
+import { Plus, Menu, LogOut, Search } from 'lucide-react';
 import { ActionButtons } from '@/components/ActionButtons';
 import SuccessModal from '@/components/SuccessModal';
 import TimeOutModal from '@/components/TimeOutModal';
@@ -85,6 +85,7 @@ export default function PurchaseRequestPage() {
   const navigate = useNavigate();
   const { logout, user } = useAuth();
   const [purchaseRequests, setPurchaseRequests] = useState<PurchaseRequest[]>([]);
+  const [searchTerm, setSearchTerm] = useState('');
   const [success, setSuccess] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -145,6 +146,12 @@ export default function PurchaseRequestPage() {
     };
     loadRequests();
   }, []);
+
+  const filteredPurchaseRequests = purchaseRequests.filter(request =>
+    request.trackingId.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    request.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    request.receivedBy?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   const nextTrackingId = useMemo(() => {
     const now = new Date();
@@ -455,29 +462,39 @@ export default function PurchaseRequestPage() {
                 <h2 className="text-xl font-bold text-gray-900">Purchase Requests</h2>
                 <p className="text-sm text-gray-600">Manage and view all purchase request records</p>
               </div>
-              <Dialog open={isDialogOpen} onOpenChange={handleDialogOpenChange}>
-                <DialogTrigger asChild>
-                  <Button
-                    className="gap-2 bg-indigo-600 hover:bg-indigo-700"
-                    onClick={() => {
-                      setEditingId(null);
-                      setFormData({
-                        dateTimeIn: getCurrentDateTime(),
-                        dateTimeOut: '',
-                        fullName: '',
-                        designation: '',
-                        itemDescription: '',
-                        quantity: '',
-                        estimatedCost: '',
-                        purpose: '',
-                        remarks: '',
-                      });
-                    }}
-                  >
-                    <Plus className="h-4 w-4" />
-                    Add Purchase Request
-                  </Button>
-                </DialogTrigger>
+              <div className="flex items-center gap-3">
+                <div className="relative w-64">
+                  <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                  <Input
+                    placeholder="Search by tracking ID, name..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+                <Dialog open={isDialogOpen} onOpenChange={handleDialogOpenChange}>
+                  <DialogTrigger asChild>
+                    <Button
+                      className="gap-2 bg-indigo-600 hover:bg-indigo-700"
+                      onClick={() => {
+                        setEditingId(null);
+                        setFormData({
+                          dateTimeIn: getCurrentDateTime(),
+                          dateTimeOut: '',
+                          fullName: '',
+                          designation: '',
+                          itemDescription: '',
+                          quantity: '',
+                          estimatedCost: '',
+                          purpose: '',
+                          remarks: '',
+                        });
+                      }}
+                    >
+                      <Plus className="h-4 w-4" />
+                      Add Purchase Request
+                    </Button>
+                  </DialogTrigger>
                 <DialogContent className="sm:max-w-lg z-50 max-h-[90vh] overflow-y-auto">
                   <DialogHeader>
                     <DialogTitle className="text-lg font-semibold">
@@ -632,7 +649,8 @@ export default function PurchaseRequestPage() {
                     </Button>
                   </div>
                 </DialogContent>
-              </Dialog>
+                </Dialog>
+              </div>
             </div>
 
             {/* Table */}
@@ -654,14 +672,14 @@ export default function PurchaseRequestPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {purchaseRequests.length === 0 ? (
+                  {filteredPurchaseRequests.length === 0 ? (
                     <TableRow key="empty-state">
                       <TableCell colSpan={11} className="text-center py-4 text-gray-500 text-xs">
-                        No purchase requests found. Click "Add Purchase Request" to create one.
+                        {purchaseRequests.length === 0 ? 'No purchase requests found. Click "Add Purchase Request" to create one.' : 'No purchase requests match your search.'}
                       </TableCell>
                     </TableRow>
                   ) : (
-                    purchaseRequests.map((request) => (
+                    filteredPurchaseRequests.map((request) => (
                       <TableRow key={request.id} className="hover:bg-gray-50">
                         <TableCell className="text-center text-xs">
                           {request.receivedBy || '-'}

@@ -45,7 +45,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Plus, Menu, LogOut } from 'lucide-react';
+import { Plus, Menu, LogOut, Search } from 'lucide-react';
 import { Sidebar } from '@/components/Sidebar';
 import { ActionButtons } from '@/components/ActionButtons';
 import SuccessModal from '@/components/SuccessModal';
@@ -107,6 +107,7 @@ export default function OthersPage() {
   const navigate = useNavigate();
   const { logout, user } = useAuth();
   const [records, setRecords] = useState<Others[]>([]);
+  const [searchTerm, setSearchTerm] = useState('');
   const [success, setSuccess] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -176,6 +177,11 @@ export default function OthersPage() {
     return () => clearInterval(interval);
   }, []);
 
+  const filteredRecords = records.filter(record =>
+    record.trackingId.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    record.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    record.receivedBy?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   const nextTrackingId = useMemo(() => {
     const now = new Date();
@@ -474,219 +480,230 @@ export default function OthersPage() {
                 <h2 className="text-xl font-bold text-gray-900">Others</h2>
                 <p className="text-sm text-gray-600">Manage and view all other records</p>
               </div>
-              <Dialog open={isDialogOpen} onOpenChange={handleDialogOpenChange}>
-                <DialogTrigger asChild>
-                  <Button
-                    className="gap-2 bg-indigo-600 hover:bg-indigo-700"
-                    onClick={() => {
-                      setEditingId(null);
-                      setFormData({
-                        dateTimeIn: getCurrentDateTime(),
-                        dateTimeOut: '',
-                        fullName: '',
-                        designationOffice: '',
-                        inclusiveDateStart: '',
-                        inclusiveDateEnd: '',
-                        inclusiveTimeStart: '',
-                        inclusiveTimeEnd: '',
-                        purpose: '',
-                        amount: '',
-                        linkAttachments: '',
-                      });
-                    }}
-                  >
-                    <Plus className="h-4 w-4" />
-                    Add Record
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="sm:max-w-lg z-50 max-h-[90vh] overflow-y-auto overflow-x-hidden">
-                  <DialogHeader>
-                    <DialogTitle className="text-lg font-semibold">
-                      {editingId ? 'Edit Record' : 'Add New Record'}
-                    </DialogTitle>
-                    <DialogDescription>
-                      {editingId ? 'Update the record details' : 'Fill in the form to add a new record'}
-                    </DialogDescription>
-                  </DialogHeader>
-                  <div className="space-y-3">
-                    {/* Tracking ID - Display Only */}
-                    {!editingId && (
-                      <div className="space-y-1">
-                        <Label className="text-xs font-medium text-gray-700">Tracking ID</Label>
-                        <Input
-                          type="text"
-                          value={nextTrackingId}
-                          disabled
-                          className="bg-gray-100 h-8 text-xs"
-                        />
-                      </div>
-                    )}
-
-                    <div className="grid grid-cols-2 gap-3">
-                      {/* Date/Time In */}
-                      <div className="space-y-1">
-                        <Label htmlFor="dateTimeIn" className="text-xs font-medium text-gray-700">Date/Time IN *</Label>
-                        <Input
-                          id="dateTimeIn"
-                          name="dateTimeIn"
-                          type="datetime-local"
-                          value={formData.dateTimeIn}
-                          onChange={handleInputChange}
-                          className="h-8 text-xs"
-                        />
-                      </div>
-
-                      <div className="space-y-1">
-                        <Label htmlFor="fullName" className="text-xs font-medium text-gray-700">Full Name *</Label>
-                        <Input
-                          id="fullName"
-                          name="fullName"
-                          placeholder="Full Name"
-                          value={formData.fullName}
-                          onChange={handleInputChange}
-                          className="h-8 text-xs"
-                        />
-                      </div>
-                    </div>
-
-                    {editingId && user?.role === 'admin' && (
-                      <div className="space-y-1">
-                        <Label htmlFor="dateTimeOut" className="text-xs font-medium text-gray-700">Date/Time OUT</Label>
-                        <Input
-                          id="dateTimeOut"
-                          name="dateTimeOut"
-                          type="datetime-local"
-                          value={formData.dateTimeOut || ''}
-                          onChange={handleInputChange}
-                        />
-                      </div>
-                    )}
-
-                    {/* Designation / Office */}
-                    <div className="space-y-2">
-                      <Label htmlFor="designationOffice" className="text-sm font-medium text-gray-700">Designation / Office *</Label>
-                      <Select value={formData.designationOffice} onValueChange={(value) => handleSelectChange('designationOffice', value)}>
-                        <SelectTrigger 
-                          id="designationOffice" 
-                          className="w-full"
-                          title={formData.designationOffice || "Select designation"}
-                        >
-                          <SelectValue placeholder="Select designation">
-                            {formData.designationOffice ? getAcronym(formData.designationOffice) : 'Select designation'}
-                          </SelectValue>
-                        </SelectTrigger>
-                        <SelectContent>
-                          {designationOptions.map((option) => (
-                            <SelectItem key={option} value={option}>
-                              {option}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    {/* Inclusive Dates */}
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="inclusiveDateStart" className="text-sm font-medium text-gray-700">Inclusive Date Start *</Label>
-                        <Input
-                          id="inclusiveDateStart"
-                          name="inclusiveDateStart"
-                          type="date"
-                          value={formData.inclusiveDateStart}
-                          onChange={handleInputChange}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="inclusiveDateEnd" className="text-sm font-medium text-gray-700">Inclusive Date End *</Label>
-                        <Input
-                          id="inclusiveDateEnd"
-                          name="inclusiveDateEnd"
-                          type="date"
-                          value={formData.inclusiveDateEnd}
-                          onChange={handleInputChange}
-                        />
-                      </div>
-                    </div>
-
-                    {/* Inclusive Time */}
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="inclusiveTimeStart" className="text-sm font-medium text-gray-700">Inclusive Time Start</Label>
-                        <Input
-                          id="inclusiveTimeStart"
-                          name="inclusiveTimeStart"
-                          type="time"
-                          value={formData.inclusiveTimeStart}
-                          onChange={handleInputChange}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="inclusiveTimeEnd" className="text-sm font-medium text-gray-700">Inclusive Time End</Label>
-                        <Input
-                          id="inclusiveTimeEnd"
-                          name="inclusiveTimeEnd"
-                          type="time"
-                          value={formData.inclusiveTimeEnd}
-                          onChange={handleInputChange}
-                        />
-                      </div>
-                    </div>
-
-                    {/* Purpose */}
-                    <div className="space-y-2">
-                      <Label htmlFor="purpose" className="text-sm font-medium text-gray-700">Purpose</Label>
-                      <Textarea
-                        id="purpose"
-                        name="purpose"
-                        value={formData.purpose}
-                        onChange={handleInputChange}
-                        placeholder="Enter purpose"
-                        rows={3}
-                      />
-                    </div>
-
-                    {editingId && (
-                      <>
-                        {/* Amount - Editable in Edit Mode */}
-                        <div className="space-y-2">
-                          <Label htmlFor="amount" className="text-sm font-medium text-gray-700">Amount</Label>
-                          <Input
-                            id="amount"
-                            name="amount"
-                            type="number"
-                            value={formData.amount}
-                            onChange={handleInputChange}
-                            placeholder="Enter amount"
-                          />
-                        </div>
-
-                        {/* Link/Attachments - Editable in Edit Mode */}
-                        <div className="space-y-2">
-                          <Label htmlFor="linkAttachments" className="text-sm font-medium text-gray-700">Link / Attachments</Label>
-                          <Input
-                            id="linkAttachments"
-                            name="linkAttachments"
-                            type="text"
-                            value={formData.linkAttachments}
-                            onChange={handleInputChange}
-                            placeholder="Enter link or attachment URL"
-                          />
-                        </div>
-                      </>
-                    )}
-
-                    {/* Add/Update Button - Full Width */}
+              <div className="flex items-center gap-3">
+                <div className="relative w-64">
+                  <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                  <Input
+                    placeholder="Search by tracking ID, name..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+                <Dialog open={isDialogOpen} onOpenChange={handleDialogOpenChange}>
+                  <DialogTrigger asChild>
                     <Button
-                      className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 mt-6"
-                      onClick={handleAddRecord}
-                      disabled={isLoading}
+                      className="gap-2 bg-indigo-600 hover:bg-indigo-700"
+                      onClick={() => {
+                        setEditingId(null);
+                        setFormData({
+                          dateTimeIn: getCurrentDateTime(),
+                          dateTimeOut: '',
+                          fullName: '',
+                          designationOffice: '',
+                          inclusiveDateStart: '',
+                          inclusiveDateEnd: '',
+                          inclusiveTimeStart: '',
+                          inclusiveTimeEnd: '',
+                          purpose: '',
+                          amount: '',
+                          linkAttachments: '',
+                        });
+                      }}
                     >
-                      {isLoading ? 'Saving...' : editingId ? 'Update Record' : 'Add Record'}
+                      <Plus className="h-4 w-4" />
+                      Add Record
                     </Button>
-                  </div>
-                </DialogContent>
-              </Dialog>
+                  </DialogTrigger>
+                  <DialogContent className="sm:max-w-lg z-50 max-h-[90vh] overflow-y-auto overflow-x-hidden">
+                    <DialogHeader>
+                      <DialogTitle className="text-lg font-semibold">
+                        {editingId ? 'Edit Record' : 'Add New Record'}
+                      </DialogTitle>
+                      <DialogDescription>
+                        {editingId ? 'Update the record details' : 'Fill in the form to add a new record'}
+                      </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-3">
+                      {/* Tracking ID - Display Only */}
+                      {!editingId && (
+                        <div className="space-y-1">
+                          <Label className="text-xs font-medium text-gray-700">Tracking ID</Label>
+                          <Input
+                            type="text"
+                            value={nextTrackingId}
+                            disabled
+                            className="bg-gray-100 h-8 text-xs"
+                          />
+                        </div>
+                      )}
+
+                      <div className="grid grid-cols-2 gap-3">
+                        {/* Date/Time In */}
+                        <div className="space-y-1">
+                          <Label htmlFor="dateTimeIn" className="text-xs font-medium text-gray-700">Date/Time IN *</Label>
+                          <Input
+                            id="dateTimeIn"
+                            name="dateTimeIn"
+                            type="datetime-local"
+                            value={formData.dateTimeIn}
+                            onChange={handleInputChange}
+                            className="h-8 text-xs"
+                          />
+                        </div>
+
+                        <div className="space-y-1">
+                          <Label htmlFor="fullName" className="text-xs font-medium text-gray-700">Full Name *</Label>
+                          <Input
+                            id="fullName"
+                            name="fullName"
+                            placeholder="Full Name"
+                            value={formData.fullName}
+                            onChange={handleInputChange}
+                            className="h-8 text-xs"
+                          />
+                        </div>
+                      </div>
+
+                      {editingId && user?.role === 'admin' && (
+                        <div className="space-y-1">
+                          <Label htmlFor="dateTimeOut" className="text-xs font-medium text-gray-700">Date/Time OUT</Label>
+                          <Input
+                            id="dateTimeOut"
+                            name="dateTimeOut"
+                            type="datetime-local"
+                            value={formData.dateTimeOut || ''}
+                            onChange={handleInputChange}
+                          />
+                        </div>
+                      )}
+
+                      {/* Designation / Office */}
+                      <div className="space-y-2">
+                        <Label htmlFor="designationOffice" className="text-sm font-medium text-gray-700">Designation / Office *</Label>
+                        <Select value={formData.designationOffice} onValueChange={(value) => handleSelectChange('designationOffice', value)}>
+                          <SelectTrigger 
+                            id="designationOffice" 
+                            className="w-full"
+                            title={formData.designationOffice || "Select designation"}
+                          >
+                            <SelectValue placeholder="Select designation">
+                              {formData.designationOffice ? getAcronym(formData.designationOffice) : 'Select designation'}
+                            </SelectValue>
+                          </SelectTrigger>
+                          <SelectContent>
+                            {designationOptions.map((option) => (
+                              <SelectItem key={option} value={option}>
+                                {option}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      {/* Inclusive Dates */}
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="inclusiveDateStart" className="text-sm font-medium text-gray-700">Inclusive Date Start *</Label>
+                          <Input
+                            id="inclusiveDateStart"
+                            name="inclusiveDateStart"
+                            type="date"
+                            value={formData.inclusiveDateStart}
+                            onChange={handleInputChange}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="inclusiveDateEnd" className="text-sm font-medium text-gray-700">Inclusive Date End *</Label>
+                          <Input
+                            id="inclusiveDateEnd"
+                            name="inclusiveDateEnd"
+                            type="date"
+                            value={formData.inclusiveDateEnd}
+                            onChange={handleInputChange}
+                          />
+                        </div>
+                      </div>
+
+                      {/* Inclusive Time */}
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="inclusiveTimeStart" className="text-sm font-medium text-gray-700">Inclusive Time Start</Label>
+                          <Input
+                            id="inclusiveTimeStart"
+                            name="inclusiveTimeStart"
+                            type="time"
+                            value={formData.inclusiveTimeStart}
+                            onChange={handleInputChange}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="inclusiveTimeEnd" className="text-sm font-medium text-gray-700">Inclusive Time End</Label>
+                          <Input
+                            id="inclusiveTimeEnd"
+                            name="inclusiveTimeEnd"
+                            type="time"
+                            value={formData.inclusiveTimeEnd}
+                            onChange={handleInputChange}
+                          />
+                        </div>
+                      </div>
+
+                      {/* Purpose */}
+                      <div className="space-y-2">
+                        <Label htmlFor="purpose" className="text-sm font-medium text-gray-700">Purpose</Label>
+                        <Textarea
+                          id="purpose"
+                          name="purpose"
+                          value={formData.purpose}
+                          onChange={handleInputChange}
+                          placeholder="Enter purpose"
+                          rows={3}
+                        />
+                      </div>
+
+                      {editingId && (
+                        <>
+                          {/* Amount - Editable in Edit Mode */}
+                          <div className="space-y-2">
+                            <Label htmlFor="amount" className="text-sm font-medium text-gray-700">Amount</Label>
+                            <Input
+                              id="amount"
+                              name="amount"
+                              type="number"
+                              value={formData.amount}
+                              onChange={handleInputChange}
+                              placeholder="Enter amount"
+                            />
+                          </div>
+
+                          {/* Link/Attachments - Editable in Edit Mode */}
+                          <div className="space-y-2">
+                            <Label htmlFor="linkAttachments" className="text-sm font-medium text-gray-700">Link / Attachments</Label>
+                            <Input
+                              id="linkAttachments"
+                              name="linkAttachments"
+                              type="text"
+                              value={formData.linkAttachments}
+                              onChange={handleInputChange}
+                              placeholder="Enter link or attachment URL"
+                            />
+                          </div>
+                        </>
+                      )}
+
+                      {/* Add/Update Button - Full Width */}
+                      <Button
+                        className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 mt-6"
+                        onClick={handleAddRecord}
+                        disabled={isLoading}
+                      >
+                        {isLoading ? 'Saving...' : editingId ? 'Update Record' : 'Add Record'}
+                      </Button>
+                    </div>
+                  </DialogContent>
+                </Dialog>
+              </div>
             </div>
 
             {/* Table */}
@@ -708,8 +725,14 @@ export default function OthersPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {records.length > 0 ? (
-                    records.map((record) => (
+                  {filteredRecords.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={10} className="text-center py-8 text-gray-500 text-xs wrap-break-word whitespace-normal">
+                        {records.length === 0 ? 'No records found. Click "Add Record" to create one.' : 'No records match your search.'}
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    filteredRecords.map((record) => (
                       <TableRow key={record.id} className="hover:bg-gray-50">
                         <TableCell className="wrap-break-word whitespace-normal text-center text-xs">{record.receivedBy || '-'}</TableCell>
                         <TableCell className="font-bold italic wrap-break-word whitespace-normal text-center text-xs text-indigo-600">{record.trackingId}</TableCell>
@@ -751,12 +774,6 @@ export default function OthersPage() {
                         </TableCell>
                       </TableRow>
                     ))
-                  ) : (
-                    <TableRow>
-                      <TableCell colSpan={10} className="text-center py-8 text-gray-500 wrap-break-word whitespace-normal">
-                        No records found. Add one to get started.
-                      </TableCell>
-                    </TableRow>
                   )}
                   </TableBody>
                 </Table>

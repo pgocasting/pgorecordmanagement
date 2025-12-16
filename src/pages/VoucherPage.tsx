@@ -34,7 +34,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Plus, Menu, LogOut } from 'lucide-react';
+import { Plus, Menu, LogOut, Search } from 'lucide-react';
 import { Sidebar } from '@/components/Sidebar';
 import { ActionButtons } from '@/components/ActionButtons';
 import SuccessModal from '@/components/SuccessModal';
@@ -93,6 +93,7 @@ export default function VoucherPage() {
   const navigate = useNavigate();
   const { logout, user } = useAuth();
   const [vouchers, setVouchers] = useState<Voucher[]>([]);
+  const [searchTerm, setSearchTerm] = useState('');
   const [success, setSuccess] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -181,6 +182,15 @@ export default function VoucherPage() {
       })
       .reduce((sum, voucher) => sum + (voucher.amount || 0), 0);
   }, [vouchers]);
+
+  const filteredVouchers = useMemo(() => {
+    return vouchers.filter(voucher =>
+      voucher.trackingId.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      voucher.payee.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      voucher.dvNo.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (voucher.receivedBy && voucher.receivedBy.toLowerCase().includes(searchTerm.toLowerCase()))
+    );
+  }, [vouchers, searchTerm]);
 
   const handleLogout = () => {
     logout();
@@ -475,185 +485,196 @@ export default function VoucherPage() {
                 <h2 className="text-xl font-bold text-gray-900">Vouchers</h2>
                 <p className="text-sm text-gray-600">Manage and view all voucher records</p>
               </div>
-              <Dialog open={isDialogOpen} onOpenChange={handleDialogOpenChange}>
-                <DialogTrigger asChild>
-                  <Button
-                    className="gap-2 bg-indigo-600 hover:bg-indigo-700"
-                    onClick={() => {
-                      setEditingId(null);
-                      setFormData({
-                        dateTimeIn: getCurrentDateTime(),
-                        receivedBy: '',
-                        dvNo: '',
-                        payee: '',
-                        particulars: '',
-                        designationOffice: '',
-                        amount: '',
-                        voucherType: '',
-                        funds: '',
-                        remarks: '',
-                      });
-                    }}
-                  >
-                    <Plus className="h-4 w-4" />
-                    Add Voucher
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="sm:max-w-lg z-50 max-h-[90vh] overflow-y-auto overflow-x-hidden">
-                  <DialogHeader>
-                    <DialogTitle className="text-lg font-semibold">
-                      {editingId ? 'Edit Voucher' : 'Add New Voucher'}
-                    </DialogTitle>
-                    <DialogDescription>
-                      {editingId ? 'Update the voucher details' : 'Fill in the form to add a new voucher'}
-                    </DialogDescription>
-                  </DialogHeader>
-                  <div className="space-y-3">
-                    {!editingId && (
-                      <div className="space-y-1">
-                        <Label className="text-xs font-medium text-gray-700">Tracking ID</Label>
-                        <Input
-                          type="text"
-                          value={nextTrackingId}
-                          disabled
-                          className="bg-gray-100 h-8 text-xs"
-                        />
-                      </div>
-                    )}
+              <div className="flex items-center gap-3">
+                <div className="relative w-64">
+                  <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                  <Input
+                    placeholder="Search by tracking ID, payee, DV No..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+                <Dialog open={isDialogOpen} onOpenChange={handleDialogOpenChange}>
+                  <DialogTrigger asChild>
+                    <Button
+                      className="gap-2 bg-indigo-600 hover:bg-indigo-700"
+                      onClick={() => {
+                        setEditingId(null);
+                        setFormData({
+                          dateTimeIn: getCurrentDateTime(),
+                          receivedBy: '',
+                          dvNo: '',
+                          payee: '',
+                          particulars: '',
+                          designationOffice: '',
+                          amount: '',
+                          voucherType: '',
+                          funds: '',
+                          remarks: '',
+                        });
+                      }}
+                    >
+                      <Plus className="h-4 w-4" />
+                      Add Voucher
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="sm:max-w-lg z-50 max-h-[90vh] overflow-y-auto overflow-x-hidden">
+                    <DialogHeader>
+                      <DialogTitle className="text-lg font-semibold">
+                        {editingId ? 'Edit Voucher' : 'Add New Voucher'}
+                      </DialogTitle>
+                      <DialogDescription>
+                        {editingId ? 'Update the voucher details' : 'Fill in the form to add a new voucher'}
+                      </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-3">
+                      {!editingId && (
+                        <div className="space-y-1">
+                          <Label className="text-xs font-medium text-gray-700">Tracking ID</Label>
+                          <Input
+                            type="text"
+                            value={nextTrackingId}
+                            disabled
+                            className="bg-gray-100 h-8 text-xs"
+                          />
+                        </div>
+                      )}
 
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="space-y-1">
-                        <Label htmlFor="dateTimeIn" className="text-xs font-medium text-gray-700">Date/Time IN *</Label>
-                        <Input
-                          id="dateTimeIn"
-                          name="dateTimeIn"
-                          type="datetime-local"
-                          value={formData.dateTimeIn}
-                          onChange={handleInputChange}
-                          className="h-8 text-xs"
-                        />
-                      </div>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-1">
+                          <Label htmlFor="dateTimeIn" className="text-xs font-medium text-gray-700">Date/Time IN *</Label>
+                          <Input
+                            id="dateTimeIn"
+                            name="dateTimeIn"
+                            type="datetime-local"
+                            value={formData.dateTimeIn}
+                            onChange={handleInputChange}
+                            className="h-8 text-xs"
+                          />
+                        </div>
 
-                      <div className="space-y-1">
-                        <Label htmlFor="dvNo" className="text-xs font-medium text-gray-700">DV No. *</Label>
-                        <Input
-                          id="dvNo"
-                          name="dvNo"
-                          value={formData.dvNo}
-                          onChange={handleInputChange}
-                          placeholder="DV No."
-                          className="h-8 text-xs"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="space-y-1">
-                        <Label htmlFor="payee" className="text-xs font-medium text-gray-700">Payee *</Label>
-                        <Input
-                          id="payee"
-                          name="payee"
-                          value={formData.payee}
-                          onChange={handleInputChange}
-                          placeholder="Payee"
-                          className="h-8 text-xs"
-                        />
+                        <div className="space-y-1">
+                          <Label htmlFor="dvNo" className="text-xs font-medium text-gray-700">DV No. *</Label>
+                          <Input
+                            id="dvNo"
+                            name="dvNo"
+                            value={formData.dvNo}
+                            onChange={handleInputChange}
+                            placeholder="DV No."
+                            className="h-8 text-xs"
+                          />
+                        </div>
                       </div>
 
-                      <div className="space-y-1">
-                        <Label htmlFor="amount" className="text-xs font-medium text-gray-700">Amount *</Label>
-                        <Input
-                          id="amount"
-                          name="amount"
-                          type="number"
-                          value={formData.amount}
-                          onChange={handleInputChange}
-                          placeholder="Amount"
-                          className="h-8 text-xs"
-                        />
-                      </div>
-                    </div>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-1">
+                          <Label htmlFor="payee" className="text-xs font-medium text-gray-700">Payee *</Label>
+                          <Input
+                            id="payee"
+                            name="payee"
+                            value={formData.payee}
+                            onChange={handleInputChange}
+                            placeholder="Payee"
+                            className="h-8 text-xs"
+                          />
+                        </div>
 
-                    <div className="space-y-1">
-                      <Label htmlFor="particulars" className="text-xs font-medium text-gray-700">Particulars *</Label>
-                      <Textarea
-                        id="particulars"
-                        name="particulars"
-                        value={formData.particulars}
-                        onChange={handleInputChange}
-                        placeholder="Enter particulars"
-                        rows={2}
-                        className="text-xs"
-                      />
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="space-y-1">
-                        <Label htmlFor="designationOffice" className="text-xs font-medium text-gray-700">Designation / Office *</Label>
-                        <Select value={formData.designationOffice} onValueChange={(value) => handleSelectChange('designationOffice', value)}>
-                          <SelectTrigger id="designationOffice" className="w-full h-8 text-xs">
-                            <SelectValue placeholder="Select" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {designationOptions.map((option) => (
-                              <SelectItem key={option} value={option}>
-                                {option}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                        <div className="space-y-1">
+                          <Label htmlFor="amount" className="text-xs font-medium text-gray-700">Amount *</Label>
+                          <Input
+                            id="amount"
+                            name="amount"
+                            type="number"
+                            value={formData.amount}
+                            onChange={handleInputChange}
+                            placeholder="Amount"
+                            className="h-8 text-xs"
+                          />
+                        </div>
                       </div>
 
                       <div className="space-y-1">
-                        <Label htmlFor="voucherType" className="text-xs font-medium text-gray-700">Voucher Type *</Label>
-                        <Input
-                          id="voucherType"
-                          name="voucherType"
-                          value={formData.voucherType}
-                          onChange={handleInputChange}
-                          placeholder="Type"
-                          className="h-8 text-xs"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="space-y-1">
-                      <Label htmlFor="funds" className="text-xs font-medium text-gray-700">Funds *</Label>
-                      <Input
-                        id="funds"
-                        name="funds"
-                        value={formData.funds}
-                        onChange={handleInputChange}
-                        placeholder="Enter funds"
-                        className="h-8 text-xs"
-                      />
-                    </div>
-
-                    {editingId && (
-                      <div className="space-y-1">
-                        <Label htmlFor="remarks" className="text-xs font-medium text-gray-700">Remarks</Label>
+                        <Label htmlFor="particulars" className="text-xs font-medium text-gray-700">Particulars *</Label>
                         <Textarea
-                          id="remarks"
-                          name="remarks"
-                          value={formData.remarks}
+                          id="particulars"
+                          name="particulars"
+                          value={formData.particulars}
                           onChange={handleInputChange}
-                          placeholder="Enter remarks"
+                          placeholder="Enter particulars"
                           rows={2}
                           className="text-xs"
                         />
                       </div>
-                    )}
 
-                    <Button
-                      className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 mt-2 h-9 text-sm"
-                      onClick={handleAddVoucher}
-                      disabled={isLoading}
-                    >
-                      {isLoading ? 'Saving...' : editingId ? 'Update Voucher' : 'Add Voucher'}
-                    </Button>
-                  </div>
-                </DialogContent>
-              </Dialog>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-1">
+                          <Label htmlFor="designationOffice" className="text-xs font-medium text-gray-700">Designation / Office *</Label>
+                          <Select value={formData.designationOffice} onValueChange={(value) => handleSelectChange('designationOffice', value)}>
+                            <SelectTrigger id="designationOffice" className="w-full h-8 text-xs">
+                              <SelectValue placeholder="Select" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {designationOptions.map((option) => (
+                                <SelectItem key={option} value={option}>
+                                  {option}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        <div className="space-y-1">
+                          <Label htmlFor="voucherType" className="text-xs font-medium text-gray-700">Voucher Type *</Label>
+                          <Input
+                            id="voucherType"
+                            name="voucherType"
+                            value={formData.voucherType}
+                            onChange={handleInputChange}
+                            placeholder="Type"
+                            className="h-8 text-xs"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="space-y-1">
+                        <Label htmlFor="funds" className="text-xs font-medium text-gray-700">Funds *</Label>
+                        <Input
+                          id="funds"
+                          name="funds"
+                          value={formData.funds}
+                          onChange={handleInputChange}
+                          placeholder="Enter funds"
+                          className="h-8 text-xs"
+                        />
+                      </div>
+
+                      {editingId && (
+                        <div className="space-y-1">
+                          <Label htmlFor="remarks" className="text-xs font-medium text-gray-700">Remarks</Label>
+                          <Textarea
+                            id="remarks"
+                            name="remarks"
+                            value={formData.remarks}
+                            onChange={handleInputChange}
+                            placeholder="Enter remarks"
+                            rows={2}
+                            className="text-xs"
+                          />
+                        </div>
+                      )}
+
+                      <Button
+                        className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 mt-2 h-9 text-sm"
+                        onClick={handleAddVoucher}
+                        disabled={isLoading}
+                      >
+                        {isLoading ? 'Saving...' : editingId ? 'Update Voucher' : 'Add Voucher'}
+                      </Button>
+                    </div>
+                  </DialogContent>
+                </Dialog>
+              </div>
             </div>
 
             {/* Table */}
@@ -676,8 +697,8 @@ export default function VoucherPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {vouchers.length > 0 ? (
-                      vouchers.map((voucher) => (
+                    {filteredVouchers.length > 0 ? (
+                      filteredVouchers.map((voucher) => (
                         <TableRow key={voucher.id} className="hover:bg-gray-50">
                           <TableCell className="wrap-break-word whitespace-normal text-center text-xs">{voucher.receivedBy || '-'}</TableCell>
                           <TableCell className="font-bold italic wrap-break-word whitespace-normal text-center text-xs text-indigo-600">{voucher.trackingId}</TableCell>

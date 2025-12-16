@@ -44,7 +44,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Plus, Menu, LogOut } from 'lucide-react';
+import { Plus, Menu, LogOut, Search } from 'lucide-react';
 import { Sidebar } from '@/components/Sidebar';
 import SuccessModal from '@/components/SuccessModal';
 import TimeOutModal from '@/components/TimeOutModal';
@@ -84,6 +84,7 @@ export default function LeavePage() {
   const navigate = useNavigate();
   const { logout, user } = useAuth();
   const [leaves, setLeaves] = useState<Leave[]>([]);
+  const [searchTerm, setSearchTerm] = useState('');
   const [success, setSuccess] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -181,6 +182,11 @@ export default function LeavePage() {
     return () => clearInterval(interval);
   }, []);
 
+  const filteredLeaves = leaves.filter(leave =>
+    leave.trackingId.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    leave.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    leave.receivedBy?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   const generateTrackingId = (): string => {
     const now = new Date();
@@ -479,29 +485,39 @@ export default function LeavePage() {
                 <h2 className="text-xl font-bold text-gray-900">Leaves</h2>
                 <p className="text-sm text-gray-600">Manage and view all leave records</p>
               </div>
-              <Dialog open={isDialogOpen} onOpenChange={handleDialogOpenChange}>
-                <DialogTrigger asChild>
-                  <Button 
-                    className="gap-2 bg-indigo-600 hover:bg-indigo-700"
-                    onClick={() => {
-                      setEditingId(null);
-                      setFormData({
-                        dateTimeIn: getCurrentDateTime(),
-                        dateTimeOut: '',
-                        fullName: '',
-                        designation: '',
-                        leaveType: '',
-                        inclusiveDateStart: '',
-                        inclusiveDateEnd: '',
-                        purpose: '',
-                        status: 'Pending',
-                      });
-                    }}
-                  >
-                    <Plus className="h-4 w-4" />
-                    Add Leave
-                  </Button>
-                </DialogTrigger>
+              <div className="flex items-center gap-3">
+                <div className="relative w-64">
+                  <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                  <Input
+                    placeholder="Search by tracking ID, name..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+                <Dialog open={isDialogOpen} onOpenChange={handleDialogOpenChange}>
+                  <DialogTrigger asChild>
+                    <Button 
+                      className="gap-2 bg-indigo-600 hover:bg-indigo-700"
+                      onClick={() => {
+                        setEditingId(null);
+                        setFormData({
+                          dateTimeIn: getCurrentDateTime(),
+                          dateTimeOut: '',
+                          fullName: '',
+                          designation: '',
+                          leaveType: '',
+                          inclusiveDateStart: '',
+                          inclusiveDateEnd: '',
+                          purpose: '',
+                          status: 'Pending',
+                        });
+                      }}
+                    >
+                      <Plus className="h-4 w-4" />
+                      Add Leave
+                    </Button>
+                  </DialogTrigger>
                 <DialogContent className="sm:max-w-lg z-50 max-h-[90vh] overflow-y-auto overflow-x-hidden">
                   <DialogHeader>
                     <DialogTitle className="text-lg font-semibold">{editingId ? 'Edit Leave' : 'Add New Leave'}</DialogTitle>
@@ -653,7 +669,8 @@ export default function LeavePage() {
                     </Button>
                   </div>
                 </DialogContent>
-              </Dialog>
+                </Dialog>
+              </div>
             </div>
 
             {/* Table */}
@@ -677,14 +694,14 @@ export default function LeavePage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {leaves.length === 0 ? (
+                  {filteredLeaves.length === 0 ? (
                     <TableRow key="empty-state">
-                      <TableCell colSpan={11} className="text-center py-4 text-gray-500 text-xs">
-                        No leaves found. Click "Add Leave" to create one.
+                      <TableCell colSpan={12} className="text-center py-4 text-gray-500 text-xs">
+                        {leaves.length === 0 ? 'No leaves found. Click "Add Leave" to create one.' : 'No leaves match your search.'}
                       </TableCell>
                     </TableRow>
                   ) : (
-                    leaves.map((item) => (
+                    filteredLeaves.map((item) => (
                       <TableRow key={item.id} className="hover:bg-gray-50">
                         <TableCell className="text-xs py-1 px-1 text-center wrap-break-word whitespace-normal">{item.receivedBy || '-'}</TableCell>
                         <TableCell className="text-xs py-1 px-1 text-center font-bold italic text-indigo-600 wrap-break-word whitespace-normal">{item.trackingId}</TableCell>

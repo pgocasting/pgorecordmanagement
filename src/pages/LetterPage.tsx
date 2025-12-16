@@ -43,7 +43,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Plus, Menu, LogOut } from 'lucide-react';
+import { Plus, Menu, LogOut, Search } from 'lucide-react';
 import { ActionButtons } from '@/components/ActionButtons';
 import { Sidebar } from '@/components/Sidebar';
 import SuccessModal from '@/components/SuccessModal';
@@ -81,6 +81,7 @@ export default function LetterPage() {
   const navigate = useNavigate();
   const { logout, user } = useAuth();
   const [letters, setLetters] = useState<Letter[]>([]);
+  const [searchTerm, setSearchTerm] = useState('');
   const [success, setSuccess] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -142,6 +143,12 @@ export default function LetterPage() {
     const interval = setInterval(loadLetters, 30000);
     return () => clearInterval(interval);
   }, []);
+
+  const filteredLetters = letters.filter(letter =>
+    letter.trackingId.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    letter.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    letter.receivedBy?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   const generateTrackingId = (): string => {
     const now = new Date();
@@ -386,25 +393,35 @@ export default function LetterPage() {
                 <h2 className="text-xl font-bold text-gray-900">Letters</h2>
                 <p className="text-sm text-gray-600">Manage and view all letter records</p>
               </div>
-              <Dialog open={isDialogOpen} onOpenChange={handleDialogOpenChange}>
-                <DialogTrigger asChild>
-                  <Button
-                    className="gap-2 bg-indigo-600 hover:bg-indigo-700"
-                    onClick={() => {
-                      setEditingId(null);
-                      setFormData({
-                        dateTimeIn: getCurrentDateTime(),
-                        dateTimeOut: '',
-                        fullName: '',
-                        designationOffice: '',
-                        particulars: '',
-                      });
-                    }}
-                  >
-                    <Plus className="h-4 w-4" />
-                    Add Letter
-                  </Button>
-                </DialogTrigger>
+              <div className="flex items-center gap-3">
+                <div className="relative w-64">
+                  <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                  <Input
+                    placeholder="Search by tracking ID, name..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+                <Dialog open={isDialogOpen} onOpenChange={handleDialogOpenChange}>
+                  <DialogTrigger asChild>
+                    <Button
+                      className="gap-2 bg-indigo-600 hover:bg-indigo-700"
+                      onClick={() => {
+                        setEditingId(null);
+                        setFormData({
+                          dateTimeIn: getCurrentDateTime(),
+                          dateTimeOut: '',
+                          fullName: '',
+                          designationOffice: '',
+                          particulars: '',
+                        });
+                      }}
+                    >
+                      <Plus className="h-4 w-4" />
+                      Add Letter
+                    </Button>
+                  </DialogTrigger>
                 <DialogContent className="sm:max-w-lg z-50 max-h-[90vh] overflow-y-auto overflow-x-hidden">
                   <DialogHeader>
                     <DialogTitle className="text-lg font-semibold">
@@ -514,7 +531,8 @@ export default function LetterPage() {
                     </Button>
                   </div>
                 </DialogContent>
-              </Dialog>
+                </Dialog>
+              </div>
             </div>
 
             {/* Table */}
@@ -536,8 +554,8 @@ export default function LetterPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {letters.length > 0 ? (
-                    letters.map((letter) => (
+                  {filteredLetters.length > 0 ? (
+                    filteredLetters.map((letter) => (
                       <TableRow key={letter.id} className="hover:bg-gray-50">
                         <TableCell className="wrap-break-word whitespace-normal text-center text-xs">{letter.receivedBy || '-'}</TableCell>
                         <TableCell className="font-bold italic wrap-break-word whitespace-normal text-center text-xs text-indigo-600">{letter.trackingId}</TableCell>

@@ -43,7 +43,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Plus, Menu, LogOut } from 'lucide-react';
+import { Plus, Menu, LogOut, Search } from 'lucide-react';
 import { Sidebar } from '@/components/Sidebar';
 import { ActionButtons } from '@/components/ActionButtons';
 import SuccessModal from '@/components/SuccessModal';
@@ -81,6 +81,7 @@ export default function AdminToPGOPage() {
   const navigate = useNavigate();
   const { logout, user } = useAuth();
   const [records, setRecords] = useState<AdminToPGO[]>([]);
+  const [searchTerm, setSearchTerm] = useState('');
   const [success, setSuccess] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -157,6 +158,11 @@ export default function AdminToPGOPage() {
     return () => clearInterval(interval);
   }, []);
 
+  const filteredRecords = records.filter(record =>
+    record.trackingId.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    record.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    record.receivedBy?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   const nextTrackingId = useMemo(() => {
     const now = new Date();
@@ -449,11 +455,21 @@ export default function AdminToPGOPage() {
                 <h2 className="text-xl font-bold text-gray-900">Admin to PGO</h2>
                 <p className="text-sm text-gray-600">Manage and view all admin to PGO records</p>
               </div>
-              <Dialog open={isDialogOpen} onOpenChange={handleDialogOpenChange}>
-                <DialogTrigger asChild>
-                  <Button 
-                    className="gap-2 bg-indigo-600 hover:bg-indigo-700"
-                    onClick={() => {
+              <div className="flex items-center gap-3">
+                <div className="relative w-64">
+                  <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                  <Input
+                    placeholder="Search by tracking ID, name..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+                <Dialog open={isDialogOpen} onOpenChange={handleDialogOpenChange}>
+                  <DialogTrigger asChild>
+                    <Button 
+                      className="gap-2 bg-indigo-600 hover:bg-indigo-700"
+                      onClick={() => {
                       setEditingId(null);
                       setFormData({
                         dateTimeIn: getCurrentDateTime(),
@@ -572,7 +588,8 @@ export default function AdminToPGOPage() {
                     </Button>
                   </div>
                 </DialogContent>
-              </Dialog>
+                </Dialog>
+              </div>
             </div>
 
             {/* Table */}
@@ -594,14 +611,14 @@ export default function AdminToPGOPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {records.length === 0 ? (
+                  {filteredRecords.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={9} className="text-center py-4 text-gray-500 text-xs">
-                        No records found. Click "Add Record" to create one.
+                      <TableCell colSpan={9} className="text-center py-4 text-gray-500 text-xs wrap-break-word whitespace-normal">
+                        {records.length === 0 ? 'No records found. Click "Add Record" to create one.' : 'No records match your search.'}
                       </TableCell>
                     </TableRow>
                   ) : (
-                    records.map((record) => (
+                    filteredRecords.map((record) => (
                       <TableRow key={record.id} className="hover:bg-gray-50">
                         <TableCell className="text-xs py-1 px-1 text-center wrap-break-word whitespace-normal">{record.receivedBy || '-'}</TableCell>
                         <TableCell className="text-xs py-1 px-1 text-center font-bold italic text-indigo-600 wrap-break-word whitespace-normal">{record.trackingId}</TableCell>

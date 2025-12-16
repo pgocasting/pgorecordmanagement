@@ -345,9 +345,6 @@ export default function DashboardPage() {
                   {records.filter(r => r.status === 'pending').length}
                 </div>
                 <p className="text-xs text-gray-500 mt-1">Awaiting completion</p>
-                <div className="text-lg font-semibold text-yellow-600 mt-2">
-                  ₱{records.filter(r => r.status === 'pending').reduce((sum, r) => sum + (r.amount || 0), 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                </div>
               </CardContent>
             </Card>
             <Card>
@@ -359,9 +356,6 @@ export default function DashboardPage() {
                   {records.filter(r => r.status === 'completed').length}
                 </div>
                 <p className="text-xs text-gray-500 mt-1">Finished items</p>
-                <div className="text-lg font-semibold text-green-600 mt-2">
-                  ₱{records.filter(r => r.status === 'completed').reduce((sum, r) => sum + (r.amount || 0), 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                </div>
               </CardContent>
             </Card>
             <Card>
@@ -373,9 +367,6 @@ export default function DashboardPage() {
                   {records.filter(r => r.status === 'rejected').length}
                 </div>
                 <p className="text-xs text-gray-500 mt-1">Rejected items</p>
-                <div className="text-lg font-semibold text-red-600 mt-2">
-                  ₱{records.filter(r => r.status === 'rejected').reduce((sum, r) => sum + (r.amount || 0), 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                </div>
               </CardContent>
             </Card>
           </div>
@@ -447,7 +438,6 @@ export default function DashboardPage() {
                       <TableHead className="text-center text-xs">Category</TableHead>
                       <TableHead className="text-center text-xs">Date/Time IN</TableHead>
                       <TableHead className="text-center text-xs">Name/Reference</TableHead>
-                      <TableHead className="text-center text-xs">Amount</TableHead>
                       <TableHead className="text-center text-xs">Status</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -468,9 +458,6 @@ export default function DashboardPage() {
                           <TableCell className="text-center text-xs">
                             {record.title}
                           </TableCell>
-                          <TableCell className="text-center text-xs font-semibold">
-                            {record.amount ? `₱${record.amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '-'}
-                          </TableCell>
                           <TableCell className="text-center">
                             <span className={`px-3 py-1 rounded-full text-xs font-medium capitalize ${getStatusColor(record.status)}`}>
                               {record.status}
@@ -480,7 +467,7 @@ export default function DashboardPage() {
                       ))
                     ) : (
                       <TableRow>
-                        <TableCell colSpan={7} className="text-center py-8 text-gray-500">
+                        <TableCell colSpan={6} className="text-center py-8 text-gray-500">
                           No records found
                         </TableCell>
                       </TableRow>

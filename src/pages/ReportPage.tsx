@@ -63,6 +63,13 @@ export default function ReportPage() {
   const navigate = useNavigate();
   const { logout, user } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  // Redirect non-admin users away from reports
+  useEffect(() => {
+    if (user && user.role !== 'admin') {
+      navigate('/dashboard');
+    }
+  }, [user, navigate]);
   const [reportType, setReportType] = useState<'daily' | 'weekly' | 'monthly' | 'quarterly' | 'yearly'>('monthly');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [reportData, setReportData] = useState<ReportRecord[]>([]);

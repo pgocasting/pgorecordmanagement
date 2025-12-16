@@ -1,7 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
-import { Home, FileText, BarChart3, Settings } from 'lucide-react';
+import { Home, FileText, BarChart3, Settings, Printer } from 'lucide-react';
 
 interface SidebarProps {
   onNavigate?: () => void;
@@ -19,6 +19,7 @@ const recordTypeRoutes: { [key: string]: string } = {
   'Travel Order': '/travel-order',
   'Voucher': '/voucher',
   'Others': '/others',
+  'Receiving Copy': '/receiving-copy',
 };
 
 export function Sidebar({ onNavigate, recordTypes = [] }: SidebarProps) {
@@ -63,12 +64,22 @@ export function Sidebar({ onNavigate, recordTypes = [] }: SidebarProps) {
           <span className="text-sm font-medium">Dashboard</span>
         </button>
 
+        {user?.role === 'admin' && (
+          <button
+            onClick={() => handleNavigate('/reports')}
+            className="w-full flex items-center gap-3 px-4 py-2 text-gray-700 rounded-lg hover:bg-indigo-50 hover:text-indigo-600 transition-colors text-left"
+          >
+            <BarChart3 className="h-5 w-5" />
+            <span className="text-sm font-medium">Reports</span>
+          </button>
+        )}
+
         <button
-          onClick={() => handleNavigate('/reports')}
+          onClick={() => handleNavigate('/receiving-copy')}
           className="w-full flex items-center gap-3 px-4 py-2 text-gray-700 rounded-lg hover:bg-indigo-50 hover:text-indigo-600 transition-colors text-left"
         >
-          <BarChart3 className="h-5 w-5" />
-          <span className="text-sm font-medium">Reports</span>
+          <Printer className="h-5 w-5" />
+          <span className="text-sm font-medium">Receiving Copy</span>
         </button>
 
         {/* Records Section */}

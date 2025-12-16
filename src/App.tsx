@@ -14,6 +14,7 @@ import OthersPage from './pages/OthersPage';
 import ReportPage from './pages/ReportPage';
 import ObligationRequestPage from './pages/ObligationRequestPage';
 import PurchaseRequestPage from './pages/PurchaseRequestPage';
+import ReceivingCopyPage from './pages/ReceivingCopyPage';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuth();
@@ -140,6 +141,14 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <PurchaseRequestPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/receiving-copy"
+        element={
+          <ProtectedRoute>
+            <ReceivingCopyPage />
           </ProtectedRoute>
         }
       />

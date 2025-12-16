@@ -44,7 +44,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Plus, Menu, LogOut } from 'lucide-react';
+import { Plus, Menu, LogOut, Search } from 'lucide-react';
 import { Sidebar } from '@/components/Sidebar';
 import { ActionButtons } from '@/components/ActionButtons';
 import SuccessModal from '@/components/SuccessModal';
@@ -87,6 +87,7 @@ export default function TravelOrderPage() {
   const navigate = useNavigate();
   const { logout, user } = useAuth();
   const [travelOrders, setTravelOrders] = useState<TravelOrder[]>([]);
+  const [searchTerm, setSearchTerm] = useState('');
   const [success, setSuccess] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -168,6 +169,11 @@ export default function TravelOrderPage() {
     return () => clearInterval(interval);
   }, []);
 
+  const filteredTravelOrders = travelOrders.filter(order =>
+    order.trackingId.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    order.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    order.receivedBy?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   const generateTrackingId = (): string => {
     const now = new Date();
@@ -471,11 +477,21 @@ export default function TravelOrderPage() {
                 <h2 className="text-xl font-bold text-gray-900">Travel Orders</h2>
                 <p className="text-sm text-gray-600">Manage and view all travel order records</p>
               </div>
-              <Dialog open={isDialogOpen} onOpenChange={handleDialogOpenChange}>
-                <DialogTrigger asChild>
-                  <Button 
-                    className="gap-2 bg-indigo-600 hover:bg-indigo-700"
-                    onClick={() => {
+              <div className="flex items-center gap-3">
+                <div className="relative w-64">
+                  <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                  <Input
+                    placeholder="Search by tracking ID, name..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+                <Dialog open={isDialogOpen} onOpenChange={handleDialogOpenChange}>
+                  <DialogTrigger asChild>
+                    <Button 
+                      className="gap-2 bg-indigo-600 hover:bg-indigo-700"
+                      onClick={() => {
                       setEditingId(null);
                       setFormData({
                         dateTimeIn: getCurrentDateTime(),
@@ -659,7 +675,8 @@ export default function TravelOrderPage() {
                     </Button>
                   </div>
                 </DialogContent>
-              </Dialog>
+                </Dialog>
+              </div>
             </div>
 
             {/* Table */}
@@ -682,14 +699,14 @@ export default function TravelOrderPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {travelOrders.length === 0 ? (
+                  {filteredTravelOrders.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={10} className="text-center py-4 text-gray-500 text-xs wrap-break-word whitespace-normal">
-                        No travel orders found. Click "Add Travel Order" to create one.
+                      <TableCell colSpan={12} className="text-center py-4 text-gray-500 text-xs wrap-break-word whitespace-normal">
+                        {travelOrders.length === 0 ? 'No travel orders found. Click "Add Travel Order" to create one.' : 'No travel orders match your search.'}
                       </TableCell>
                     </TableRow>
                   ) : (
-                    travelOrders.map((item) => (
+                    filteredTravelOrders.map((item) => (
                       <TableRow key={item.id} className="hover:bg-gray-50">
                         <TableCell className="text-xs py-1 px-1 text-center wrap-break-word whitespace-normal">{item.receivedBy || '-'}</TableCell>
                         <TableCell className="text-xs py-1 px-1 text-center font-bold italic text-indigo-600 wrap-break-word whitespace-normal">{item.trackingId}</TableCell>
