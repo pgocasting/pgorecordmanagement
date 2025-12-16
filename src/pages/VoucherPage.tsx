@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { voucherService } from '@/services/firebaseService';
+import { voucherService, designationService } from '@/services/firebaseService';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -113,7 +113,20 @@ export default function VoucherPage() {
   const [rejectData, setRejectData] = useState({
     remarks: '',
   });
-  const [designationOptions] = useState<string[]>(['Admin', 'Manager', 'Staff', 'Officer']);
+  const [designationOptions, setDesignationOptions] = useState<string[]>([]);
+
+  useEffect(() => {
+    const loadDesignations = async () => {
+      try {
+        const designations = await designationService.getDesignations();
+        setDesignationOptions(designations);
+      } catch (error) {
+        console.error('Error loading designations:', error);
+        setDesignationOptions(['Admin', 'Manager', 'Staff', 'Officer']);
+      }
+    };
+    loadDesignations();
+  }, []);
 
   const [formData, setFormData] = useState({
     dateTimeIn: '',
@@ -164,7 +177,7 @@ export default function VoucherPage() {
     return vouchers
       .filter(voucher => {
         const voucherDate = new Date(voucher.dateTimeIn);
-        return voucherDate.getFullYear() === currentYear && voucherDate.getMonth() === currentMonth;
+        return voucherDate.getFullYear() === currentYear && voucherDate.getMonth() === currentMonth && voucher.status !== 'Rejected';
       })
       .reduce((sum, voucher) => sum + (voucher.amount || 0), 0);
   }, [vouchers]);

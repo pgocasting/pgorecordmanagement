@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { letterService } from '@/services/firebaseService';
+import { letterService, designationService } from '@/services/firebaseService';
 
 const getCurrentDateTime = (): string => {
   const now = new Date();
@@ -108,7 +108,20 @@ export default function LetterPage() {
     particulars: '',
   });
 
-  const [designationOptions] = useState<string[]>(['Admin', 'Manager', 'Staff', 'Officer']);
+  const [designationOptions, setDesignationOptions] = useState<string[]>([]);
+
+  useEffect(() => {
+    const loadDesignations = async () => {
+      try {
+        const designations = await designationService.getDesignations();
+        setDesignationOptions(designations);
+      } catch (error) {
+        console.error('Error loading designations:', error);
+        setDesignationOptions(['Admin', 'Manager', 'Staff', 'Officer']);
+      }
+    };
+    loadDesignations();
+  }, []);
 
   // Load letters from Firestore on mount
   useEffect(() => {

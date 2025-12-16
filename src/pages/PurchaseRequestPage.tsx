@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { purchaseRequestService } from '@/services/firebaseService';
+import { purchaseRequestService, designationService } from '@/services/firebaseService';
 
 const getCurrentDateTime = (): string => {
   const now = new Date();
@@ -105,7 +105,7 @@ export default function PurchaseRequestPage() {
   const [rejectData, setRejectData] = useState({
     remarks: '',
   });
-  const [designationOptions] = useState<string[]>(['Admin', 'Manager', 'Staff', 'Officer']);
+  const [designationOptions, setDesignationOptions] = useState<string[]>([]);
 
   const [formData, setFormData] = useState({
     dateTimeIn: '',
@@ -118,6 +118,19 @@ export default function PurchaseRequestPage() {
     purpose: '',
     remarks: '',
   });
+
+  useEffect(() => {
+    const loadDesignations = async () => {
+      try {
+        const designations = await designationService.getDesignations();
+        setDesignationOptions(designations);
+      } catch (error) {
+        console.error('Error loading designations:', error);
+        setDesignationOptions(['Admin', 'Manager', 'Staff', 'Officer']);
+      }
+    };
+    loadDesignations();
+  }, []);
 
   useEffect(() => {
     const loadRequests = async () => {
@@ -150,7 +163,7 @@ export default function PurchaseRequestPage() {
     return purchaseRequests
       .filter(request => {
         const requestDate = new Date(request.dateTimeIn);
-        return requestDate.getFullYear() === currentYear && requestDate.getMonth() === currentMonth;
+        return requestDate.getFullYear() === currentYear && requestDate.getMonth() === currentMonth && request.status !== 'Rejected';
       })
       .reduce((sum, request) => sum + (request.estimatedCost || 0), 0);
   }, [purchaseRequests]);

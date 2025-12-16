@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { adminToPGOService } from '@/services/firebaseService';
+import { adminToPGOService, designationService } from '@/services/firebaseService';
 
 const getCurrentDateTime = (): string => {
   const now = new Date();
@@ -100,9 +100,21 @@ export default function AdminToPGOPage() {
   const [rejectData, setRejectData] = useState({
     remarks: '',
   });
-  const [designationOptions] = useState<string[]>(['Admin', 'Manager', 'Staff', 'Officer']);
+  const [designationOptions, setDesignationOptions] = useState<string[]>([]);
 
-  // Form states
+  useEffect(() => {
+    const loadDesignations = async () => {
+      try {
+        const designations = await designationService.getDesignations();
+        setDesignationOptions(designations);
+      } catch (error) {
+        console.error('Error loading designations:', error);
+        setDesignationOptions(['Admin', 'Manager', 'Staff', 'Officer']);
+      }
+    };
+    loadDesignations();
+  }, []);
+
   const [formData, setFormData] = useState({
     dateTimeIn: '',
     dateTimeOut: '',

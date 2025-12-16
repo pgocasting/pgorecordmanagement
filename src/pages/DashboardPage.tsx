@@ -40,6 +40,8 @@ interface Record {
   date: string;
   status: 'active' | 'archived' | 'pending' | 'completed' | 'rejected';
   category: string;
+  amount?: number;
+  receivedBy?: string;
 }
 
 const extractName = (fullNameField: string): string => {
@@ -93,7 +95,9 @@ export default function DashboardPage() {
               title: v.payee,
               date: new Date(v.dateTimeIn).toLocaleString(),
               status: v.status === 'Completed' ? 'completed' : v.status === 'Rejected' ? 'rejected' : 'pending',
-              category: 'Voucher'
+              category: 'Voucher',
+              amount: v.amount || 0,
+              receivedBy: v.receivedBy || '-'
             });
           }
         });
@@ -205,7 +209,9 @@ export default function DashboardPage() {
               title: extractName(or.fullName),
               date: new Date(or.dateTimeIn).toLocaleString(),
               status: or.status === 'Completed' ? 'completed' : or.status === 'Rejected' ? 'rejected' : 'pending',
-              category: 'Obligation Request'
+              category: 'Obligation Request',
+              amount: or.amount || 0,
+              receivedBy: or.receivedBy || '-'
             });
           }
         });
@@ -219,7 +225,9 @@ export default function DashboardPage() {
               title: extractName(pr.fullName),
               date: new Date(pr.dateTimeIn).toLocaleString(),
               status: pr.status === 'Completed' ? 'completed' : pr.status === 'Rejected' ? 'rejected' : 'pending',
-              category: 'Purchase Request'
+              category: 'Purchase Request',
+              amount: pr.estimatedCost || 0,
+              receivedBy: pr.receivedBy || '-'
             });
           }
         });
@@ -309,18 +317,7 @@ export default function DashboardPage() {
           )}
 
           {/* Stats Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-medium text-gray-600">Total Records</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-bold">
-                  {records.length}
-                </div>
-                <p className="text-xs text-gray-500 mt-1">All records</p>
-              </CardContent>
-            </Card>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
             <Card>
               <CardHeader className="pb-3">
                 <CardTitle className="text-sm font-medium text-gray-600">Pending Records</CardTitle>
@@ -330,6 +327,9 @@ export default function DashboardPage() {
                   {records.filter(r => r.status === 'pending').length}
                 </div>
                 <p className="text-xs text-gray-500 mt-1">Awaiting completion</p>
+                <div className="text-lg font-semibold text-yellow-600 mt-2">
+                  ₱{records.filter(r => r.status === 'pending').reduce((sum, r) => sum + (r.amount || 0), 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </div>
               </CardContent>
             </Card>
             <Card>
@@ -341,6 +341,9 @@ export default function DashboardPage() {
                   {records.filter(r => r.status === 'completed').length}
                 </div>
                 <p className="text-xs text-gray-500 mt-1">Finished items</p>
+                <div className="text-lg font-semibold text-green-600 mt-2">
+                  ₱{records.filter(r => r.status === 'completed').reduce((sum, r) => sum + (r.amount || 0), 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </div>
               </CardContent>
             </Card>
             <Card>
@@ -352,6 +355,9 @@ export default function DashboardPage() {
                   {records.filter(r => r.status === 'rejected').length}
                 </div>
                 <p className="text-xs text-gray-500 mt-1">Rejected items</p>
+                <div className="text-lg font-semibold text-red-600 mt-2">
+                  ₱{records.filter(r => r.status === 'rejected').reduce((sum, r) => sum + (r.amount || 0), 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </div>
               </CardContent>
             </Card>
           </div>
@@ -418,21 +424,35 @@ export default function DashboardPage() {
                 <Table>
                   <TableHeader>
                     <TableRow className="bg-gray-50">
-                      <TableHead className="text-center">Tracking ID</TableHead>
-                      <TableHead className="text-center">Title</TableHead>
-                      <TableHead className="text-center">Category</TableHead>
-                      <TableHead className="text-center">Date / Time IN</TableHead>
-                      <TableHead className="text-center">Status</TableHead>
+                      <TableHead className="text-center text-xs">Received By</TableHead>
+                      <TableHead className="text-center text-xs">Tracking ID</TableHead>
+                      <TableHead className="text-center text-xs">Category</TableHead>
+                      <TableHead className="text-center text-xs">Date/Time IN</TableHead>
+                      <TableHead className="text-center text-xs">Name/Reference</TableHead>
+                      <TableHead className="text-center text-xs">Amount</TableHead>
+                      <TableHead className="text-center text-xs">Status</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {filteredRecords.length > 0 ? (
                       filteredRecords.map((record) => (
                         <TableRow key={record.id} className="hover:bg-gray-50">
-                          <TableCell className="font-medium text-center text-indigo-600 uppercase">{record.trackingId}</TableCell>
-                          <TableCell className="font-medium text-center uppercase">{record.title}</TableCell>
-                          <TableCell className="text-center">{record.category}</TableCell>
-                          <TableCell className="text-center">{record.date}</TableCell>
+                          <TableCell className="text-center text-xs text-gray-600">
+                            {record.receivedBy || '-'}
+                          </TableCell>
+                          <TableCell className="text-center font-semibold text-indigo-600 text-xs">
+                            {record.trackingId}
+                          </TableCell>
+                          <TableCell className="text-center text-xs">{record.category}</TableCell>
+                          <TableCell className="text-center text-xs">
+                            {record.date}
+                          </TableCell>
+                          <TableCell className="text-center text-xs">
+                            {record.title}
+                          </TableCell>
+                          <TableCell className="text-center text-xs font-semibold">
+                            {record.amount ? `₱${record.amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '-'}
+                          </TableCell>
                           <TableCell className="text-center">
                             <span className={`px-3 py-1 rounded-full text-xs font-medium capitalize ${getStatusColor(record.status)}`}>
                               {record.status}
@@ -442,7 +462,7 @@ export default function DashboardPage() {
                       ))
                     ) : (
                       <TableRow>
-                        <TableCell colSpan={5} className="text-center py-8 text-gray-500">
+                        <TableCell colSpan={7} className="text-center py-8 text-gray-500">
                           No records found
                         </TableCell>
                       </TableRow>

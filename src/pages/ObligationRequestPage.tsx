@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { obligationRequestService } from '@/services/firebaseService';
+import { obligationRequestService, designationService } from '@/services/firebaseService';
 
 const getCurrentDateTime = (): string => {
   const now = new Date();
@@ -105,8 +105,20 @@ export default function ObligationRequestPage() {
   });
   const [viewModalOpen, setViewModalOpen] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState<ObligationRequest | null>(null);
-  const [designationOptions] = useState<string[]>(['Admin', 'Manager', 'Staff', 'Officer']);
-  const [obligationTypes] = useState<string[]>(['Loan', 'Bond', 'Guarantee', 'Other']);
+  const [designationOptions, setDesignationOptions] = useState<string[]>([]);
+
+  useEffect(() => {
+    const loadDesignations = async () => {
+      try {
+        const designations = await designationService.getDesignations();
+        setDesignationOptions(designations);
+      } catch (error) {
+        console.error('Error loading designations:', error);
+        setDesignationOptions(['Admin', 'Manager', 'Staff', 'Officer']);
+      }
+    };
+    loadDesignations();
+  }, []);
 
   const [formData, setFormData] = useState({
     dateTimeIn: '',
@@ -150,7 +162,7 @@ export default function ObligationRequestPage() {
     return obligationRequests
       .filter(request => {
         const requestDate = new Date(request.dateTimeIn);
-        return requestDate.getFullYear() === currentYear && requestDate.getMonth() === currentMonth;
+        return requestDate.getFullYear() === currentYear && requestDate.getMonth() === currentMonth && request.status !== 'Rejected';
       })
       .reduce((sum, request) => sum + (request.amount || 0), 0);
   }, [obligationRequests]);
@@ -527,18 +539,14 @@ export default function ObligationRequestPage() {
 
                       <div className="space-y-2">
                         <Label htmlFor="obligationType" className="text-sm font-medium text-gray-700">Obligation Type *</Label>
-                        <Select value={formData.obligationType} onValueChange={(value) => handleSelectChange('obligationType', value)}>
-                          <SelectTrigger id="obligationType" className="w-full">
-                            <SelectValue placeholder="Select type" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {obligationTypes.map((option) => (
-                              <SelectItem key={option} value={option}>
-                                {option}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                        <Input
+                          id="obligationType"
+                          name="obligationType"
+                          placeholder="Enter Obligation Type"
+                          value={formData.obligationType}
+                          onChange={handleInputChange}
+                          disabled={isLoading}
+                        />
                       </div>
                     </div>
 

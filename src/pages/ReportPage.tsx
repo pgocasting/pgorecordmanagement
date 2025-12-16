@@ -42,6 +42,8 @@ interface ReportStats {
   completed: number;
   approved: number;
   rejected: number;
+  totalAmount: number;
+  rejectedAmount: number;
 }
 
 const recordTypes = [
@@ -70,6 +72,8 @@ export default function ReportPage() {
     completed: 0,
     approved: 0,
     rejected: 0,
+    totalAmount: 0,
+    rejectedAmount: 0,
   });
   const [dateRange, setDateRange] = useState({ start: '', end: '' });
   const [isLoading, setIsLoading] = useState(false);
@@ -248,12 +252,27 @@ export default function ReportPage() {
       const filteredRecords = filterRecordsByDateRange(allRecords, start, end);
       setReportData(filteredRecords);
 
+      const rejectedRecords = filteredRecords.filter((r) => r.status === 'Rejected');
+      const nonRejectedRecords = filteredRecords.filter((r) => r.status !== 'Rejected');
+
+      const totalAmount = nonRejectedRecords.reduce((sum, record) => {
+        const amount = record.amount || record.estimatedCost || 0;
+        return sum + (typeof amount === 'string' ? parseFloat(amount) : amount);
+      }, 0);
+
+      const rejectedAmount = rejectedRecords.reduce((sum, record) => {
+        const amount = record.amount || record.estimatedCost || 0;
+        return sum + (typeof amount === 'string' ? parseFloat(amount) : amount);
+      }, 0);
+
       const stats: ReportStats = {
         total: filteredRecords.length,
         pending: filteredRecords.filter((r) => r.status === 'Pending').length,
         completed: filteredRecords.filter((r) => r.status === 'Completed').length,
         approved: filteredRecords.filter((r) => r.status === 'Approved').length,
-        rejected: filteredRecords.filter((r) => r.status === 'Rejected').length,
+        rejected: rejectedRecords.length,
+        totalAmount: totalAmount,
+        rejectedAmount: rejectedAmount,
       };
 
       setReportStats(stats);
@@ -403,7 +422,7 @@ export default function ReportPage() {
           </Card>
 
           {/* Statistics Section */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-2 mb-3">
+          <div className="grid grid-cols-1 md:grid-cols-6 gap-2 mb-3">
             <Card>
               <CardHeader className="pb-1">
                 <CardTitle className="text-xs font-medium text-gray-600">Total Records</CardTitle>
@@ -439,6 +458,24 @@ export default function ReportPage() {
                 <div className="text-2xl font-bold text-red-600">{reportStats.rejected}</div>
               </CardContent>
             </Card>
+
+            <Card>
+              <CardHeader className="pb-1">
+                <CardTitle className="text-xs font-medium text-gray-600">Total Amount</CardTitle>
+              </CardHeader>
+              <CardContent className="pt-1">
+                <div className="text-2xl font-bold text-blue-600">₱{(reportStats.totalAmount || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="pb-1">
+                <CardTitle className="text-xs font-medium text-gray-600">Total Amount Rejected</CardTitle>
+              </CardHeader>
+              <CardContent className="pt-1">
+                <div className="text-2xl font-bold text-red-600">₱{(reportStats.rejectedAmount || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+              </CardContent>
+            </Card>
           </div>
 
           {/* Report Table */}
@@ -456,19 +493,20 @@ export default function ReportPage() {
                       <TableHead className="text-center text-xs">Category</TableHead>
                       <TableHead className="text-center text-xs">Date/Time IN</TableHead>
                       <TableHead className="text-center text-xs">Name/Reference</TableHead>
+                      <TableHead className="text-center text-xs">Amount</TableHead>
                       <TableHead className="text-center text-xs">Status</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {isLoading ? (
                       <TableRow>
-                        <TableCell colSpan={6} className="text-center py-4">
+                        <TableCell colSpan={7} className="text-center py-4">
                           Loading report data...
                         </TableCell>
                       </TableRow>
                     ) : reportData.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={6} className="text-center py-4 text-gray-500">
+                        <TableCell colSpan={7} className="text-center py-4 text-gray-500">
                           No records found for the selected period and category.
                         </TableCell>
                       </TableRow>
@@ -487,6 +525,9 @@ export default function ReportPage() {
                           </TableCell>
                           <TableCell className="text-center text-xs">
                             {record.fullName || record.payee || record.dvNo || '-'}
+                          </TableCell>
+                          <TableCell className="text-center text-xs font-semibold">
+                            {record.amount || record.estimatedCost ? `₱${(record.amount || record.estimatedCost).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '-'}
                           </TableCell>
                           <TableCell className="text-center">
                             <span

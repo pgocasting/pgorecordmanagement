@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { leaveService } from '@/services/firebaseService';
+import { leaveService, designationService } from '@/services/firebaseService';
 
 const getCurrentDateTime = (): string => {
   const now = new Date();
@@ -105,6 +105,8 @@ export default function LeavePage() {
     remarks: '',
   });
 
+  const [designationOptions, setDesignationOptions] = useState<string[]>([]);
+
   // Form states
   const [formData, setFormData] = useState({
     dateTimeIn: '',
@@ -117,6 +119,19 @@ export default function LeavePage() {
     purpose: '',
     status: '',
   });
+
+  useEffect(() => {
+    const loadDesignations = async () => {
+      try {
+        const designations = await designationService.getDesignations();
+        setDesignationOptions(designations);
+      } catch (error) {
+        console.error('Error loading designations:', error);
+        setDesignationOptions(['Admin', 'Manager', 'Staff', 'Officer']);
+      }
+    };
+    loadDesignations();
+  }, []);
 
   const recordTypes = [
     'Leave',
@@ -141,8 +156,6 @@ export default function LeavePage() {
     'Bereavement Leave',
     'Other',
   ];
-
-  const [designationOptions] = useState<string[]>(['Admin', 'Manager', 'Staff', 'Officer']);
 
   // Load leaves from Firestore on mount
   useEffect(() => {
