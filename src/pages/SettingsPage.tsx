@@ -1033,8 +1033,9 @@ export default function SettingsPage() {
                               variant="ghost"
                               size="icon"
                               onClick={() => handleDeleteUser(user.id)}
-                              className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                              title="Delete user"
+                              disabled={user.username === 'admin'}
+                              className={`text-red-600 hover:text-red-700 hover:bg-red-50 ${user.username === 'admin' ? 'cursor-not-allowed opacity-50' : ''}`}
+                              title={user.username === 'admin' ? 'Administrator account cannot be deleted' : 'Delete user'}
                             >
                               <Trash2 className="h-4 w-4" />
                             </Button>

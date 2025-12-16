@@ -111,7 +111,8 @@ export default function DashboardPage() {
               title: extractName(l.fullName),
               date: new Date(l.dateTimeIn).toLocaleString(),
               status: l.status === 'Completed' ? 'completed' : l.status === 'Rejected' ? 'rejected' : 'pending',
-              category: 'Letter'
+              category: 'Letter',
+              receivedBy: l.receivedBy || '-'
             });
           }
         });
@@ -125,7 +126,8 @@ export default function DashboardPage() {
               title: extractName(lv.fullName),
               date: new Date(lv.dateTimeIn).toLocaleString(),
               status: lv.status === 'Completed' ? 'completed' : lv.status === 'Rejected' ? 'rejected' : 'pending',
-              category: 'Leave'
+              category: 'Leave',
+              receivedBy: lv.receivedBy || '-'
             });
           }
         });
@@ -139,7 +141,8 @@ export default function DashboardPage() {
               title: extractName(loc.fullName),
               date: new Date(loc.dateTimeIn).toLocaleString(),
               status: loc.status === 'Completed' ? 'completed' : loc.status === 'Rejected' ? 'rejected' : 'pending',
-              category: 'Locator'
+              category: 'Locator',
+              receivedBy: loc.receivedBy || '-'
             });
           }
         });
@@ -153,7 +156,8 @@ export default function DashboardPage() {
               title: extractName(a.fullName),
               date: new Date(a.dateTimeIn).toLocaleString(),
               status: a.status === 'Completed' ? 'completed' : a.status === 'Rejected' ? 'rejected' : 'pending',
-              category: 'Admin to PGO'
+              category: 'Admin to PGO',
+              receivedBy: a.receivedBy || '-'
             });
           }
         });
@@ -167,7 +171,8 @@ export default function DashboardPage() {
               title: extractName(o.fullName),
               date: new Date(o.dateTimeIn).toLocaleString(),
               status: o.status === 'Completed' ? 'completed' : o.status === 'Rejected' ? 'rejected' : 'pending',
-              category: 'Others'
+              category: 'Others',
+              receivedBy: o.receivedBy || '-'
             });
           }
         });
@@ -181,7 +186,8 @@ export default function DashboardPage() {
               title: extractName(t.fullName),
               date: new Date(t.dateTimeIn).toLocaleString(),
               status: t.status === 'Completed' ? 'completed' : t.status === 'Rejected' ? 'rejected' : 'pending',
-              category: 'Travel Order'
+              category: 'Travel Order',
+              receivedBy: t.receivedBy || '-'
             });
           }
         });
@@ -195,7 +201,8 @@ export default function DashboardPage() {
               title: extractName(ot.fullName),
               date: new Date(ot.dateTimeIn).toLocaleString(),
               status: ot.status === 'Completed' ? 'completed' : ot.status === 'Rejected' ? 'rejected' : 'pending',
-              category: 'Overtime'
+              category: 'Overtime',
+              receivedBy: ot.receivedBy || '-'
             });
           }
         });
@@ -317,7 +324,18 @@ export default function DashboardPage() {
           )}
 
           {/* Stats Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm font-medium text-gray-600">All Records</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-3xl font-bold text-blue-600">
+                  {records.length}
+                </div>
+                <p className="text-xs text-gray-500 mt-1">All records</p>
+              </CardContent>
+            </Card>
             <Card>
               <CardHeader className="pb-3">
                 <CardTitle className="text-sm font-medium text-gray-600">Pending Records</CardTitle>
