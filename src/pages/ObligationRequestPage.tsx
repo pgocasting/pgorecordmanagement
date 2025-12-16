@@ -49,6 +49,7 @@ import { Plus, Menu, LogOut } from 'lucide-react';
 import { ActionButtons } from '@/components/ActionButtons';
 import SuccessModal from '@/components/SuccessModal';
 import TimeOutModal from '@/components/TimeOutModal';
+import { MonthlyTotalCard } from '@/components/MonthlyTotalCard';
 
 interface ObligationRequest {
   id: string;
@@ -140,6 +141,19 @@ export default function ObligationRequestPage() {
     const count = String(obligationRequests.length + 1).padStart(3, '0');
     return `(OR) ${year}/${month}/${day}-${count}`;
   }, [obligationRequests.length]);
+
+  const monthlyTotal = useMemo(() => {
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    const currentMonth = now.getMonth();
+    
+    return obligationRequests
+      .filter(request => {
+        const requestDate = new Date(request.dateTimeIn);
+        return requestDate.getFullYear() === currentYear && requestDate.getMonth() === currentMonth;
+      })
+      .reduce((sum, request) => sum + (request.amount || 0), 0);
+  }, [obligationRequests]);
 
   const handleLogout = () => {
     logout();
@@ -416,6 +430,7 @@ export default function ObligationRequestPage() {
 
         {/* Content Area */}
         <div className="flex-1 overflow-auto p-6">
+          <MonthlyTotalCard total={monthlyTotal} />
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
             {/* Header */}
             <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">

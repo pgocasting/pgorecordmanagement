@@ -49,6 +49,7 @@ import { Plus, Menu, LogOut } from 'lucide-react';
 import { ActionButtons } from '@/components/ActionButtons';
 import SuccessModal from '@/components/SuccessModal';
 import TimeOutModal from '@/components/TimeOutModal';
+import { MonthlyTotalCard } from '@/components/MonthlyTotalCard';
 
 interface PurchaseRequest {
   id: string;
@@ -140,6 +141,19 @@ export default function PurchaseRequestPage() {
     const count = String(purchaseRequests.length + 1).padStart(3, '0');
     return `(PR) ${year}/${month}/${day}-${count}`;
   }, [purchaseRequests.length]);
+
+  const monthlyTotal = useMemo(() => {
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    const currentMonth = now.getMonth();
+    
+    return purchaseRequests
+      .filter(request => {
+        const requestDate = new Date(request.dateTimeIn);
+        return requestDate.getFullYear() === currentYear && requestDate.getMonth() === currentMonth;
+      })
+      .reduce((sum, request) => sum + (request.estimatedCost || 0), 0);
+  }, [purchaseRequests]);
 
   const handleLogout = () => {
     logout();
@@ -420,6 +434,7 @@ export default function PurchaseRequestPage() {
 
         {/* Content Area */}
         <div className="flex-1 overflow-auto p-6">
+          <MonthlyTotalCard total={monthlyTotal} />
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
             {/* Header */}
             <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">

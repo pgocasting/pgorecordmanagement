@@ -404,11 +404,33 @@ export default function SettingsPage() {
       setError('Designation name is required');
       return;
     }
-    if (designations.includes(newDesignation)) {
-      setError('This designation already exists');
+    
+    // Parse multiple designations from textarea (comma or line separated)
+    const rawDesignations = newDesignation
+      .split(/[,\n]/)
+      .map(d => d.trim())
+      .filter(d => d.length > 0);
+    
+    if (rawDesignations.length === 0) {
+      setError('Please enter at least one designation');
       return;
     }
-    setConfirmAction({ type: 'add', value: newDesignation });
+    
+    // Check for duplicates with existing designations
+    const duplicates = rawDesignations.filter(d => designations.includes(d));
+    if (duplicates.length > 0) {
+      setError(`These designations already exist: ${duplicates.join(', ')}`);
+      return;
+    }
+    
+    // Check for duplicates within the input
+    const uniqueDesignations = [...new Set(rawDesignations)];
+    if (uniqueDesignations.length < rawDesignations.length) {
+      setError('You have duplicate designations in your input');
+      return;
+    }
+    
+    setConfirmAction({ type: 'add', value: JSON.stringify(uniqueDesignations) });
     setConfirmDialogOpen(true);
   };
 
@@ -440,10 +462,13 @@ export default function SettingsPage() {
     setIsLoading(true);
     try {
       if (confirmAction.type === 'add' && confirmAction.value) {
-        await designationService.addDesignation(confirmAction.value);
+        const designationsToAdd = JSON.parse(confirmAction.value);
+        for (const designation of designationsToAdd) {
+          await designationService.addDesignation(designation);
+        }
         const updated = await designationService.getDesignations();
         setDesignations(updated);
-        setSuccess('Designation added successfully!');
+        setSuccess(`${designationsToAdd.length} designation(s) added successfully!`);
         setNewDesignation('');
         setDesignationDialogOpen(false);
         setEditingDesignation(null);
@@ -1057,19 +1082,31 @@ export default function SettingsPage() {
                         <DialogHeader>
                           <DialogTitle>{editingDesignation ? 'Edit Designation' : 'Add New Designation'}</DialogTitle>
                           <DialogDescription>
-                            {editingDesignation ? 'Update the designation name' : 'Add a new department, office, or designation'}
+                            {editingDesignation ? 'Update the designation name' : 'Paste one or more designations (separated by commas or new lines)'}
                           </DialogDescription>
                         </DialogHeader>
                         <div className="space-y-4">
                           <div className="space-y-2">
-                            <Label htmlFor="designationName">Designation Name</Label>
-                            <Input
-                              id="designationName"
-                              placeholder="e.g., Senior Manager, Finance Department"
-                              value={newDesignation}
-                              onChange={(e) => setNewDesignation(e.target.value)}
-                              disabled={isLoading}
-                            />
+                            <Label htmlFor="designationName">Designation Name{!editingDesignation && 's'}</Label>
+                            {editingDesignation ? (
+                              <Input
+                                id="designationName"
+                                placeholder="e.g., Senior Manager, Finance Department"
+                                value={newDesignation}
+                                onChange={(e) => setNewDesignation(e.target.value)}
+                                disabled={isLoading}
+                              />
+                            ) : (
+                              <textarea
+                                id="designationName"
+                                placeholder="Paste designations here (comma or line separated)&#10;e.g.:&#10;Office of the Provincial Governor (PGO)&#10;Office of the Provincial Agriculturist (OPA)&#10;Provincial Tourism Office (TOURISM)"
+                                value={newDesignation}
+                                onChange={(e) => setNewDesignation(e.target.value)}
+                                disabled={isLoading}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
+                                rows={6}
+                              />
+                            )}
                           </div>
                           <div className="flex gap-2 pt-4">
                             <Button

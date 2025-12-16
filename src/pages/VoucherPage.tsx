@@ -39,6 +39,7 @@ import { Sidebar } from '@/components/Sidebar';
 import { ActionButtons } from '@/components/ActionButtons';
 import SuccessModal from '@/components/SuccessModal';
 import TimeOutModal from '@/components/TimeOutModal';
+import { MonthlyTotalCard } from '@/components/MonthlyTotalCard';
 
 interface Voucher {
   id: string;
@@ -154,6 +155,19 @@ export default function VoucherPage() {
     const count = String(vouchers.length + 1).padStart(3, '0');
     return `(V) ${year}/${month}/${day}-${count}`;
   }, [vouchers.length]);
+
+  const monthlyTotal = useMemo(() => {
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    const currentMonth = now.getMonth();
+    
+    return vouchers
+      .filter(voucher => {
+        const voucherDate = new Date(voucher.dateTimeIn);
+        return voucherDate.getFullYear() === currentYear && voucherDate.getMonth() === currentMonth;
+      })
+      .reduce((sum, voucher) => sum + (voucher.amount || 0), 0);
+  }, [vouchers]);
 
   const handleLogout = () => {
     logout();
@@ -440,6 +454,7 @@ export default function VoucherPage() {
 
         {/* Content Area */}
         <div className="flex-1 overflow-auto p-6 bg-linear-to-br from-gray-100 via-gray-50 to-gray-100" style={{backgroundImage: 'linear-gradient(0deg, transparent 24%, rgba(200, 200, 200, 0.05) 25%, rgba(200, 200, 200, 0.05) 26%, transparent 27%, transparent 74%, rgba(200, 200, 200, 0.05) 75%, rgba(200, 200, 200, 0.05) 76%, transparent 77%, transparent), linear-gradient(90deg, transparent 24%, rgba(200, 200, 200, 0.05) 25%, rgba(200, 200, 200, 0.05) 26%, transparent 27%, transparent 74%, rgba(200, 200, 200, 0.05) 75%, rgba(200, 200, 200, 0.05) 76%, transparent 77%, transparent)', backgroundSize: '50px 50px'}}>
+          <MonthlyTotalCard total={monthlyTotal} />
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
             {/* Header */}
             <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
