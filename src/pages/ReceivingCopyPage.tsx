@@ -211,7 +211,7 @@ export default function ReceivingCopyPage() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const categoryAmounts = allRecords.reduce((acc, record) => {
+  const categoryAmountsUnused = allRecords.reduce((acc, record) => {
     if (record.recordType === 'Voucher' || record.recordType === 'Purchase Request' || record.recordType === 'Processing') {
       const amount = typeof record.amount === 'string' ? 
         parseFloat(record.amount.replace(/[^0-9.-]+/g, '')) || 0 : 

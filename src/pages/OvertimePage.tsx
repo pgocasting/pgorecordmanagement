@@ -69,7 +69,7 @@ interface Overtime {
   timeOutRemarks?: string;
 }
 
-const getAcronym = (text: string): string => {
+const getAcronymUnused = (text: string): string => {
   if (!text) return '';
   const acronymMatch = text.match(/\(([^)]+)\)/);
   if (acronymMatch) {
@@ -236,6 +236,7 @@ export default function OvertimePage() {
           inclusiveTimeEnd: '',
           purpose: '',
           placeOfAssignment: '',
+          remarks: '',
         });
         setIsDialogOpen(false);
         setSuccessModalOpen(true);
@@ -275,6 +276,7 @@ export default function OvertimePage() {
         inclusiveTimeEnd: '',
         purpose: '',
         placeOfAssignment: '',
+        remarks: '',
       });
       setIsDialogOpen(false);
       setSuccessModalOpen(true);
@@ -301,6 +303,7 @@ export default function OvertimePage() {
         inclusiveTimeEnd: overtime.inclusiveTimeEnd || '',
         purpose: overtime.purpose,
         placeOfAssignment: overtime.placeOfAssignment,
+        remarks: overtime.remarks || '',
       });
       setEditingId(id);
       setIsDialogOpen(true);
@@ -323,6 +326,7 @@ export default function OvertimePage() {
         inclusiveTimeEnd: '',
         purpose: '',
         placeOfAssignment: '',
+        remarks: '',
       });
     }
   };
@@ -509,6 +513,7 @@ export default function OvertimePage() {
                         inclusiveTimeEnd: '',
                         purpose: '',
                         placeOfAssignment: '',
+                        remarks: '',
                       });
                     }}
                   >

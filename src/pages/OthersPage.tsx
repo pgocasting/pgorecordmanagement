@@ -71,7 +71,7 @@ interface Others {
   linkAttachments?: string;
 }
 
-const getAcronym = (text: string): string => {
+const getAcronymUnused = (text: string): string => {
   if (!text) return '';
   const acronymMatch = text.match(/\(([^)]+)\)/);
   if (acronymMatch) {

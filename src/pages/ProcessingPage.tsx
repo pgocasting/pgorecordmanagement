@@ -99,7 +99,7 @@ export default function ProcessingPage() {
   const [rejectData, setRejectData] = useState({
     remarks: '',
   });
-  const [editConfirmOpen, setEditConfirmOpen] = useState(false);
+  const [editConfirmOpenUnused, setEditConfirmOpen] = useState(false);
   const [timeOutConfirmOpen, setTimeOutConfirmOpen] = useState(false);
   const [recordToTimeOut, setRecordToTimeOut] = useState<string | null>(null);
   const [timeOutData, setTimeOutData] = useState({
@@ -237,7 +237,7 @@ export default function ProcessingPage() {
     }
   };
 
-  const confirmEditRecord = async () => {
+  const confirmEditRecordUnused = async () => {
     if (!editingId) return;
 
     setIsLoading(true);

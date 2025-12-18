@@ -69,7 +69,7 @@ interface Locator {
   timeOutRemarks?: string;
 }
 
-const getAcronym = (text: string): string => {
+const getAcronymUnused = (text: string): string => {
   if (!text) return '';
   // Check if text has acronym in parentheses
   const acronymMatch = text.match(/\(([^)]+)\)/);
@@ -229,7 +229,6 @@ export default function LocatorPage() {
       const newLocator = {
         trackingId: generateTrackingId(),
         status: 'Pending',
-        remarks: '',
         timeOutRemarks: '',
         ...formData,
         receivedBy: formData.receivedBy || user?.name || '',
@@ -251,6 +250,7 @@ export default function LocatorPage() {
         purpose: '',
         placeOfAssignment: '',
         receivedBy: '',
+        remarks: '',
       });
       setIsDialogOpen(false);
       setSuccessModalOpen(true);
@@ -287,6 +287,7 @@ export default function LocatorPage() {
         purpose: '',
         placeOfAssignment: '',
         receivedBy: '',
+        remarks: '',
       });
       setIsDialogOpen(false);
       setEditConfirmOpen(false);
@@ -315,6 +316,7 @@ export default function LocatorPage() {
         purpose: locator.purpose,
         placeOfAssignment: locator.placeOfAssignment,
         receivedBy: locator.receivedBy || '',
+        remarks: locator.remarks || '',
       });
       setEditingId(id);
       setIsDialogOpen(true);
@@ -373,6 +375,7 @@ export default function LocatorPage() {
         purpose: '',
         placeOfAssignment: '',
         receivedBy: '',
+        remarks: '',
       });
     }
   };
@@ -515,6 +518,7 @@ export default function LocatorPage() {
                           purpose: '',
                           placeOfAssignment: '',
                           receivedBy: '',
+                          remarks: '',
                         });
                       }}
                     >

@@ -239,6 +239,7 @@ export default function TravelOrderPage() {
           purpose: '',
           placeOfAssignment: '',
           receivedBy: '',
+          remarks: '',
         });
         setIsDialogOpen(false);
         setSuccessModalOpen(true);
@@ -257,7 +258,6 @@ export default function TravelOrderPage() {
       const newTravelOrder = {
         trackingId: generateTrackingId(),
         status: 'Pending',
-        remarks: '',
         timeOutRemarks: '',
         ...formData,
         receivedBy: formData.receivedBy || user?.name || '',
@@ -279,6 +279,7 @@ export default function TravelOrderPage() {
         purpose: '',
         placeOfAssignment: '',
         receivedBy: '',
+        remarks: '',
       });
       setIsDialogOpen(false);
       setSuccessModalOpen(true);
@@ -306,6 +307,7 @@ export default function TravelOrderPage() {
         purpose: travelOrder.purpose,
         placeOfAssignment: travelOrder.placeOfAssignment,
         receivedBy: travelOrder.receivedBy || '',
+        remarks: travelOrder.remarks || '',
       });
       setEditingId(id);
       setIsDialogOpen(true);
@@ -328,6 +330,7 @@ export default function TravelOrderPage() {
         purpose: '',
         placeOfAssignment: '',
         receivedBy: '',
+        remarks: '',
       });
     }
   };
@@ -515,6 +518,7 @@ export default function TravelOrderPage() {
                         purpose: '',
                         placeOfAssignment: '',
                         receivedBy: '',
+                        remarks: '',
                       });
                     }}
                   >

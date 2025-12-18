@@ -63,7 +63,7 @@ interface Letter {
   timeOutRemarks?: string;
 }
 
-const getAcronym = (text: string): string => {
+const getAcronymUnused = (text: string): string => {
   if (!text) return '';
   // Check if text has acronym in parentheses
   const acronymMatch = text.match(/\(([^)]+)\)/);
@@ -205,6 +205,7 @@ export default function LetterPage() {
         fullName: '',
         designationOffice: '',
         particulars: '',
+        remarks: '',
       });
       setEditingId(null);
       setIsDialogOpen(false);
@@ -225,6 +226,7 @@ export default function LetterPage() {
       fullName: letter.fullName,
       designationOffice: letter.designationOffice,
       particulars: letter.particulars,
+      remarks: letter.remarks || '',
     });
     setEditingId(letter.id);
     setIsDialogOpen(true);
@@ -270,6 +272,7 @@ export default function LetterPage() {
         fullName: '',
         designationOffice: '',
         particulars: '',
+        remarks: '',
       });
     }
   };
@@ -417,6 +420,7 @@ export default function LetterPage() {
                           fullName: '',
                           designationOffice: '',
                           particulars: '',
+                          remarks: '',
                         });
                       }}
                     >

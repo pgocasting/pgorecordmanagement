@@ -60,7 +60,7 @@ interface PurchaseRequest {
   fullName: string;
   designation: string;
   itemDescription: string;
-  amount: number;
+  amount?: string | number;
   purpose: string;
   status: string;
   remarks: string;
@@ -136,7 +136,7 @@ export default function PurchaseRequestPage() {
     const loadRequests = async () => {
       try {
         const data = await purchaseRequestService.getPurchaseRequests();
-        setPurchaseRequests(data as PurchaseRequest[]);
+        setPurchaseRequests(data);
       } catch (error) {
         console.error('Error loading purchase requests:', error);
         setSuccess('Error loading purchase requests');
@@ -220,7 +220,7 @@ export default function PurchaseRequestPage() {
       };
       const result = await purchaseRequestService.addPurchaseRequest(newRequest);
       setSuccess('Purchase request added successfully');
-      setPurchaseRequests([result as PurchaseRequest, ...purchaseRequests]);
+      setPurchaseRequests([result, ...purchaseRequests]);
 
       setFormData({
         dateTimeIn: '',
@@ -396,7 +396,7 @@ export default function PurchaseRequestPage() {
       }
 
       const updatedRequests = await purchaseRequestService.getPurchaseRequests();
-      setPurchaseRequests(updatedRequests as PurchaseRequest[]);
+      setPurchaseRequests(updatedRequests);
 
       setSuccess('Time out recorded successfully');
       setTimeOutConfirmOpen(false);
@@ -484,8 +484,7 @@ export default function PurchaseRequestPage() {
                           fullName: '',
                           designation: '',
                           itemDescription: '',
-                          quantity: '',
-                          estimatedCost: '',
+                          amount: '',
                           purpose: '',
                           remarks: '',
                         });

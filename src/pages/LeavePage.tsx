@@ -66,7 +66,7 @@ interface Leave {
   timeOutRemarks?: string;
 }
 
-const getAcronym = (text: string): string => {
+const getAcronymUnused = (text: string): string => {
   if (!text) return '';
   // Check if text has acronym in parentheses
   const acronymMatch = text.match(/\(([^)]+)\)/);
@@ -260,6 +260,7 @@ export default function LeavePage() {
         inclusiveDateEnd: '',
         purpose: '',
         status: '',
+        remarks: '',
       });
       setIsDialogOpen(false);
       setSuccessModalOpen(true);
@@ -295,6 +296,7 @@ export default function LeavePage() {
         inclusiveDateEnd: '',
         purpose: '',
         status: '',
+        remarks: '',
       });
       setIsDialogOpen(false);
       setEditConfirmOpen(false);
@@ -321,6 +323,7 @@ export default function LeavePage() {
         inclusiveDateEnd: leave.inclusiveDateEnd,
         purpose: leave.purpose,
         status: leave.status || '',
+        remarks: leave.remarks || '',
       });
       setEditingId(id);
       setIsDialogOpen(true);
@@ -377,6 +380,7 @@ export default function LeavePage() {
         inclusiveDateEnd: '',
         purpose: '',
         status: '',
+        remarks: '',
       });
     }
   };
@@ -513,6 +517,7 @@ export default function LeavePage() {
                           inclusiveDateEnd: '',
                           purpose: '',
                           status: 'Pending',
+                          remarks: '',
                         });
                       }}
                     >
