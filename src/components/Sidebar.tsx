@@ -19,6 +19,7 @@ const recordTypeRoutes: { [key: string]: string } = {
   'Travel Order': '/travel-order',
   'Voucher': '/voucher',
   'Others': '/others',
+  'Processing': '/processing',
   'Receiving Copy': '/receiving-copy',
 };
 

@@ -105,6 +105,7 @@ export default function SettingsPage() {
     'Travel Order',
     'Voucher',
     'Admin to PGO',
+    'Processing',
     'Others',
   ];
 

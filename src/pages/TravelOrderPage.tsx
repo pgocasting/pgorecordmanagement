@@ -120,6 +120,7 @@ export default function TravelOrderPage() {
     purpose: '',
     placeOfAssignment: '',
     receivedBy: '',
+    remarks: '',
   });
 
   const recordTypes = [
@@ -132,6 +133,7 @@ export default function TravelOrderPage() {
     'Travel Order',
     'Voucher',
     'Admin to PGO',
+    'Processing',
     'Others',
   ];
 
@@ -364,12 +366,14 @@ export default function TravelOrderPage() {
 
     setIsLoading(true);
     try {
+      const travelOrder = travelOrders.find(t => t.id === travelOrderToDelete);
       const now = new Date();
       const dateTimeStr = now.toLocaleString();
-      const remarksWithDateTime = `[${dateTimeStr}] [${user?.name || 'Unknown'}] ${rejectData.remarks}`;
+      const newRemarks = `[${dateTimeStr}] [REJECTED by ${user?.name || 'Unknown'}] ${rejectData.remarks}`;
+      const updatedRemarks = travelOrder?.remarks ? `${travelOrder.remarks}\n${newRemarks}` : newRemarks;
       
-      await travelOrderService.updateTravelOrder(travelOrderToDelete, { status: 'Rejected', remarks: remarksWithDateTime });
-      const updatedTravelOrders = travelOrders.map(t => t.id === travelOrderToDelete ? { ...t, status: 'Rejected', remarks: remarksWithDateTime } : t);
+      await travelOrderService.updateTravelOrder(travelOrderToDelete, { status: 'Rejected', remarks: updatedRemarks });
+      const updatedTravelOrders = travelOrders.map(t => t.id === travelOrderToDelete ? { ...t, status: 'Rejected', remarks: updatedRemarks } : t);
       setTravelOrders(updatedTravelOrders);
       setSuccess('Travel order rejected successfully');
       setTravelOrderToDelete(null);
@@ -404,10 +408,16 @@ export default function TravelOrderPage() {
         throw new Error('Travel order record not found. It may have been deleted or the data is out of sync.');
       }
 
-      const timeOutRemarksWithUser = `[${user?.name || 'Unknown'}] ${timeOutData.timeOutRemarks}`;
+      const travelOrder = travelOrders.find(t => t.id === travelOrderToTimeOut);
+      const now = new Date();
+      const dateTimeStr = now.toLocaleString();
+      const newRemarks = `[${dateTimeStr}] [COMPLETED by ${user?.name || 'Unknown'}] ${timeOutData.timeOutRemarks}`;
+      const updatedRemarks = travelOrder?.remarks ? `${travelOrder.remarks}\n${newRemarks}` : newRemarks;
+      
       await travelOrderService.updateTravelOrder(travelOrderToTimeOut, {
         dateTimeOut: timeOutData.dateTimeOut,
-        timeOutRemarks: timeOutRemarksWithUser,
+        remarks: updatedRemarks,
+        timeOutRemarks: newRemarks,
         status: 'Completed'
       });
       
@@ -509,7 +519,7 @@ export default function TravelOrderPage() {
                     }}
                   >
                     <Plus className="h-4 w-4" />
-                    Add Travel Order
+                    Add Record
                   </Button>
                 </DialogTrigger>
                 <DialogContent className="sm:max-w-lg z-50 max-h-[90vh] overflow-y-auto overflow-x-hidden">
@@ -662,6 +672,17 @@ export default function TravelOrderPage() {
                         name="placeOfAssignment"
                         placeholder="Enter place of assignment"
                         value={formData.placeOfAssignment}
+                        onChange={handleInputChange}
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="remarks">Remarks</Label>
+                      <Input
+                        id="remarks"
+                        name="remarks"
+                        placeholder="Enter remarks"
+                        value={formData.remarks}
                         onChange={handleInputChange}
                       />
                     </div>

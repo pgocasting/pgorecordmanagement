@@ -126,16 +126,17 @@ export default function AdminToPGOPage() {
   });
 
   const recordTypes = [
-    'Leave',
-    'Letter',
-    'Locator',
-    'Obligation Request',
-    'Purchase Request',
-    'Request for Overtime',
-    'Travel Order',
-    'Voucher',
-    'Admin to PGO',
-    'Others',
+     'Leave',
+  'Letter',
+  'Locator',
+  'Obligation Request',
+  'Purchase Request',
+  'Request for Overtime',
+  'Travel Order',
+  'Voucher',
+  'Admin to PGO',
+  'Processing',
+  'Others',
   ];
 
   // Load records from Firestore on mount

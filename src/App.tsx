@@ -15,6 +15,7 @@ import ReportPage from './pages/ReportPage';
 import ObligationRequestPage from './pages/ObligationRequestPage';
 import PurchaseRequestPage from './pages/PurchaseRequestPage';
 import ReceivingCopyPage from './pages/ReceivingCopyPage';
+import ProcessingPage from './pages/ProcessingPage';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuth();
@@ -149,6 +150,14 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <ReceivingCopyPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/processing"
+        element={
+          <ProtectedRoute>
+            <ProcessingPage />
           </ProtectedRoute>
         }
       />

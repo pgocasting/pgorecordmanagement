@@ -60,8 +60,7 @@ interface PurchaseRequest {
   fullName: string;
   designation: string;
   itemDescription: string;
-  quantity: number;
-  estimatedCost: number;
+  amount: number;
   purpose: string;
   status: string;
   remarks: string;
@@ -78,6 +77,7 @@ const recordTypes = [
   'Travel Order',
   'Voucher',
   'Admin to PGO',
+  'Processing',
   'Others',
 ];
 
@@ -114,8 +114,7 @@ export default function PurchaseRequestPage() {
     fullName: '',
     designation: '',
     itemDescription: '',
-    quantity: '',
-    estimatedCost: '',
+    amount: '',
     purpose: '',
     remarks: '',
   });
@@ -172,7 +171,7 @@ export default function PurchaseRequestPage() {
         const requestDate = new Date(request.dateTimeIn);
         return requestDate.getFullYear() === currentYear && requestDate.getMonth() === currentMonth && request.status !== 'Rejected';
       })
-      .reduce((sum, request) => sum + (request.estimatedCost || 0), 0);
+      .reduce((sum, request) => sum + (request.amount || (request as any).estimatedCost || 0), 0);
   }, [purchaseRequests]);
 
   const handleLogout = () => {
@@ -197,8 +196,7 @@ export default function PurchaseRequestPage() {
       !formData.fullName ||
       !formData.designation ||
       !formData.itemDescription ||
-      !formData.quantity ||
-      !formData.estimatedCost ||
+      !formData.amount ||
       !formData.purpose
     ) {
       setSuccess('Please fill in all required fields');
@@ -217,8 +215,7 @@ export default function PurchaseRequestPage() {
         trackingId: nextTrackingId,
         receivedBy: user?.name || '',
         ...formData,
-        quantity: parseInt(formData.quantity),
-        estimatedCost: parseFloat(formData.estimatedCost),
+        amount: parseFloat(formData.amount),
         status: 'Pending',
       };
       const result = await purchaseRequestService.addPurchaseRequest(newRequest);
@@ -231,8 +228,7 @@ export default function PurchaseRequestPage() {
         fullName: '',
         designation: '',
         itemDescription: '',
-        quantity: '',
-        estimatedCost: '',
+        amount: '',
         purpose: '',
         remarks: '',
       });
@@ -254,8 +250,7 @@ export default function PurchaseRequestPage() {
     try {
       const updateData = {
         ...formData,
-        quantity: parseInt(formData.quantity),
-        estimatedCost: parseFloat(formData.estimatedCost),
+        amount: parseFloat(formData.amount),
       };
       await purchaseRequestService.updatePurchaseRequest(editingId, updateData);
       setSuccess('Purchase request updated successfully');
@@ -270,8 +265,7 @@ export default function PurchaseRequestPage() {
         fullName: '',
         designation: '',
         itemDescription: '',
-        quantity: '',
-        estimatedCost: '',
+        amount: '',
         purpose: '',
         remarks: '',
       });
@@ -296,8 +290,7 @@ export default function PurchaseRequestPage() {
         fullName: request.fullName,
         designation: request.designation,
         itemDescription: request.itemDescription,
-        quantity: request.quantity.toString(),
-        estimatedCost: request.estimatedCost.toString(),
+        amount: (request.amount || (request as any).estimatedCost || 0).toString(),
         purpose: request.purpose,
         remarks: request.remarks,
       });
@@ -322,12 +315,14 @@ export default function PurchaseRequestPage() {
     }
 
     try {
+      const request = purchaseRequests.find(r => r.id === requestToDelete);
       const now = new Date();
       const dateTimeStr = now.toLocaleString();
-      const remarksWithDateTime = `[${dateTimeStr}] [${user?.name || 'Unknown'}] ${rejectData.remarks}`;
+      const newRemarks = `[${dateTimeStr}] [REJECTED by ${user?.name || 'Unknown'}] ${rejectData.remarks}`;
+      const updatedRemarks = request?.remarks ? `${request.remarks}\n${newRemarks}` : newRemarks;
       
-      await purchaseRequestService.updatePurchaseRequest(requestToDelete, { status: 'Rejected', remarks: remarksWithDateTime });
-      const updatedRequests = purchaseRequests.map(r => r.id === requestToDelete ? { ...r, status: 'Rejected', remarks: remarksWithDateTime } : r);
+      await purchaseRequestService.updatePurchaseRequest(requestToDelete, { status: 'Rejected', remarks: updatedRemarks });
+      const updatedRequests = purchaseRequests.map(r => r.id === requestToDelete ? { ...r, status: 'Rejected', remarks: updatedRemarks } : r);
       setPurchaseRequests(updatedRequests);
       setSuccess('Purchase request rejected successfully');
       setRequestToDelete(null);
@@ -351,8 +346,7 @@ export default function PurchaseRequestPage() {
         fullName: '',
         designation: '',
         itemDescription: '',
-        quantity: '',
-        estimatedCost: '',
+        amount: '',
         purpose: '',
         remarks: '',
       });
@@ -384,10 +378,16 @@ export default function PurchaseRequestPage() {
 
     setIsLoading(true);
     try {
-      const timeOutRemarksWithUser = `[${user?.name || 'Unknown'}] ${timeOutData.timeOutRemarks}`;
+      const request = purchaseRequests.find(r => r.id === requestToTimeOut);
+      const now = new Date();
+      const dateTimeStr = now.toLocaleString();
+      const newRemarks = `[${dateTimeStr}] [COMPLETED by ${user?.name || 'Unknown'}] ${timeOutData.timeOutRemarks}`;
+      const updatedRemarks = request?.remarks ? `${request.remarks}\n${newRemarks}` : newRemarks;
+      
       const result = await purchaseRequestService.updatePurchaseRequest(requestToTimeOut, {
         dateTimeOut: timeOutData.dateTimeOut,
-        timeOutRemarks: timeOutRemarksWithUser,
+        remarks: updatedRemarks,
+        timeOutRemarks: newRemarks,
         status: 'Completed'
       });
 
@@ -492,162 +492,110 @@ export default function PurchaseRequestPage() {
                       }}
                     >
                       <Plus className="h-4 w-4" />
-                      Add Purchase Request
+                      Add Record
                     </Button>
                   </DialogTrigger>
-                <DialogContent className="sm:max-w-lg z-50 max-h-[90vh] overflow-y-auto">
+                <DialogContent className="max-w-2xl">
                   <DialogHeader>
-                    <DialogTitle className="text-lg font-semibold">
-                      {editingId ? 'Edit Purchase Request' : 'Add New Purchase Request'}
-                    </DialogTitle>
+                    <DialogTitle>{editingId ? 'Edit' : 'Add New'} Purchase Request</DialogTitle>
                     <DialogDescription>
-                      {editingId ? 'Update the purchase request details' : 'Fill in the form to add a new purchase request'}
+                      Fill in the form to {editingId ? 'update' : 'add'} a purchase request
                     </DialogDescription>
                   </DialogHeader>
-                  <div className="space-y-3">
-                    {!editingId && (
-                      <div className="space-y-1">
-                        <Label className="text-xs font-medium text-gray-700">Tracking ID</Label>
-                        <Input
-                          type="text"
-                          value={nextTrackingId}
-                          disabled
-                          className="bg-gray-100 h-8 text-xs"
-                        />
-                      </div>
-                    )}
-
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="space-y-1">
-                        <Label htmlFor="dateTimeIn" className="text-xs font-medium text-gray-700">Date/Time IN *</Label>
+                  <div className="grid gap-4 py-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="trackingId">Tracking ID</Label>
+                      <Input
+                        id="trackingId"
+                        value={editingId ? purchaseRequests.find(r => r.id === editingId)?.trackingId || '' : nextTrackingId}
+                        disabled
+                        className="bg-gray-50"
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="dateTimeIn">Date/Time IN *</Label>
                         <Input
                           id="dateTimeIn"
                           name="dateTimeIn"
                           type="datetime-local"
                           value={formData.dateTimeIn}
                           onChange={handleInputChange}
-                          className="h-8 text-xs"
+                          required
                         />
                       </div>
-
-                      <div className="space-y-1">
-                        <Label htmlFor="fullName" className="text-xs font-medium text-gray-700">Full Name *</Label>
+                      <div className="space-y-2">
+                        <Label htmlFor="fullName">Full Name *</Label>
                         <Input
                           id="fullName"
                           name="fullName"
                           placeholder="Full Name"
                           value={formData.fullName}
                           onChange={handleInputChange}
-                          className="h-8 text-xs"
+                          required
                         />
                       </div>
                     </div>
-
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="designation">Office *</Label>
+                        <Select value={formData.designation} onValueChange={(value) => handleSelectChange('designation', value)}>
+                          <SelectTrigger className="w-full">
+                            <SelectValue placeholder="Select" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {designationOptions.map((option) => (
+                              <SelectItem key={option} value={option}>
+                                {option}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="amount">Amount *</Label>
+                        <Input
+                          id="amount"
+                          name="amount"
+                          type="number"
+                          step="0.01"
+                          placeholder="Amount"
+                          value={formData.amount}
+                          onChange={handleInputChange}
+                          required
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="remarks">Remarks</Label>
+                        <Input
+                          id="remarks"
+                          name="remarks"
+                          value={formData.remarks}
+                          onChange={handleInputChange}
+                          placeholder="Enter remarks"
+                        />
+                      </div>
+                    </div>
                     <div className="space-y-2">
-                      <Label htmlFor="designation" className="text-sm font-medium text-gray-700">Designation *</Label>
-                      <Select value={formData.designation} onValueChange={(value) => handleSelectChange('designation', value)}>
-                        <SelectTrigger id="designation" className="w-full">
-                          <SelectValue placeholder="Select designation" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {designationOptions.map((option) => (
-                            <SelectItem key={option} value={option}>
-                              {option}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <div className="space-y-1">
-                      <Label htmlFor="itemDescription" className="text-xs font-medium text-gray-700">Item Description *</Label>
-                      <Textarea
-                        id="itemDescription"
-                        name="itemDescription"
-                        value={formData.itemDescription}
-                        onChange={handleInputChange}
-                        placeholder="Enter item description"
-                        rows={2}
-                        className="text-xs"
-                      />
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="space-y-1">
-                        <Label htmlFor="quantity" className="text-xs font-medium text-gray-700">Quantity *</Label>
-                        <Input
-                          id="quantity"
-                          name="quantity"
-                          type="number"
-                          placeholder="Quantity"
-                          value={formData.quantity}
-                          onChange={handleInputChange}
-                          className="h-8 text-xs"
-                        />
-                      </div>
-
-                      <div className="space-y-1">
-                        <Label htmlFor="estimatedCost" className="text-xs font-medium text-gray-700">Estimated Cost *</Label>
-                        <Input
-                          id="estimatedCost"
-                          name="estimatedCost"
-                          type="number"
-                          placeholder="Estimated Cost"
-                          value={formData.estimatedCost}
-                          onChange={handleInputChange}
-                          className="h-8 text-xs"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="space-y-1">
-                      <Label htmlFor="purpose" className="text-xs font-medium text-gray-700">Purpose *</Label>
+                      <Label htmlFor="purpose">Purpose *</Label>
                       <Textarea
                         id="purpose"
                         name="purpose"
                         value={formData.purpose}
                         onChange={handleInputChange}
                         placeholder="Enter purpose"
-                        rows={2}
-                        className="text-xs"
+                        rows={3}
+                        required
                       />
                     </div>
-
-                    {editingId && user?.role === 'admin' && (
-                      <div className="space-y-1">
-                        <Label htmlFor="dateTimeOut" className="text-xs font-medium text-gray-700">Date/Time OUT</Label>
-                        <Input
-                          id="dateTimeOut"
-                          name="dateTimeOut"
-                          type="datetime-local"
-                          value={formData.dateTimeOut || ''}
-                          onChange={handleInputChange}
-                          className="h-8 text-xs"
-                        />
-                      </div>
-                    )}
-
-                    <div className="space-y-1">
-                      <Label htmlFor="remarks" className="text-xs font-medium text-gray-700">Remarks</Label>
-                      <Textarea
-                        id="remarks"
-                        name="remarks"
-                        value={formData.remarks}
-                        onChange={handleInputChange}
-                        placeholder="Enter remarks"
-                        rows={2}
-                        className="text-xs"
-                      />
-                    </div>
-
-                    <Button
-                      className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 mt-2 h-9 text-sm"
-                      onClick={editingId ? confirmEditRequest : handleAddRequest}
-                      disabled={isLoading}
-                    >
-                      {isLoading ? 'Saving...' : editingId ? 'Update Request' : 'Add Request'}
-                    </Button>
                   </div>
+                  <Button
+                    onClick={editingId ? confirmEditRequest : handleAddRequest}
+                    disabled={isLoading}
+                    className="w-full bg-indigo-600 hover:bg-indigo-700"
+                  >
+                    {isLoading ? 'Saving...' : editingId ? 'Update Purchase Request' : 'Add Purchase Request'}
+                  </Button>
                 </DialogContent>
                 </Dialog>
               </div>
@@ -663,9 +611,8 @@ export default function PurchaseRequestPage() {
                     <TableHead className="text-center">Date/Time IN</TableHead>
                     <TableHead className="text-center">Date/Time OUT</TableHead>
                     <TableHead className="text-center">Full Name</TableHead>
-                    <TableHead className="text-center">Item Description</TableHead>
-                    <TableHead className="text-center">Quantity</TableHead>
-                    <TableHead className="text-center">Est. Cost</TableHead>
+                    <TableHead className="text-center">Purpose</TableHead>
+                    <TableHead className="text-center">Amount</TableHead>
                     <TableHead className="text-center">Status</TableHead>
                     <TableHead className="text-center">Remarks</TableHead>
                     <TableHead className="text-center">Actions</TableHead>
@@ -674,7 +621,7 @@ export default function PurchaseRequestPage() {
                 <TableBody>
                   {filteredPurchaseRequests.length === 0 ? (
                     <TableRow key="empty-state">
-                      <TableCell colSpan={11} className="text-center py-4 text-gray-500 text-xs">
+                      <TableCell colSpan={10} className="text-center py-4 text-gray-500 text-xs">
                         {purchaseRequests.length === 0 ? 'No purchase requests found. Click "Add Purchase Request" to create one.' : 'No purchase requests match your search.'}
                       </TableCell>
                     </TableRow>
@@ -694,9 +641,8 @@ export default function PurchaseRequestPage() {
                           {request.dateTimeOut ? new Date(request.dateTimeOut).toLocaleString() : '-'}
                         </TableCell>
                         <TableCell className="text-center text-xs">{request.fullName}</TableCell>
-                        <TableCell className="text-center text-xs">{request.itemDescription}</TableCell>
-                        <TableCell className="text-center text-xs">{request.quantity}</TableCell>
-                        <TableCell className="text-center text-xs">₱{request.estimatedCost.toLocaleString()}</TableCell>
+                        <TableCell className="text-center text-xs">{request.purpose}</TableCell>
+                        <TableCell className="text-center text-xs">₱{(request.amount || (request as any).estimatedCost || 0).toLocaleString()}</TableCell>
                         <TableCell className="text-center">
                           <span
                             className={`px-2 py-1 rounded text-xs font-medium ${
@@ -877,29 +823,9 @@ export default function PurchaseRequestPage() {
                     <p className="text-sm font-semibold text-gray-900 mt-1">{selectedRequest.designation}</p>
                   </div>
                   <div>
-                    <p className="text-xs font-medium text-gray-600 uppercase">Quantity</p>
-                    <p className="text-sm font-semibold text-gray-900 mt-1">{selectedRequest.quantity}</p>
+                    <p className="text-xs font-medium text-gray-600 uppercase">Amount</p>
+                    <p className="text-sm font-semibold text-gray-900 mt-1">₱{(selectedRequest.amount || (selectedRequest as any).estimatedCost || 0).toLocaleString()}</p>
                   </div>
-                  <div>
-                    <p className="text-xs font-medium text-gray-600 uppercase">Estimated Cost</p>
-                    <p className="text-sm font-semibold text-gray-900 mt-1">₱{selectedRequest.estimatedCost.toLocaleString()}</p>
-                  </div>
-                </div>
-              </div>
-
-              <div>
-                <p className="text-xs font-medium text-gray-600 uppercase">Item Description</p>
-                <p className="text-sm font-semibold text-gray-900 mt-1">{selectedRequest.itemDescription}</p>
-              </div>
-
-              <div className="grid grid-cols-2 gap-6">
-                <div>
-                  <p className="text-xs font-medium text-gray-600 uppercase">Quantity</p>
-                  <p className="text-sm font-semibold text-gray-900 mt-1">{selectedRequest.quantity}</p>
-                </div>
-                <div>
-                  <p className="text-xs font-medium text-gray-600 uppercase">Estimated Cost</p>
-                  <p className="text-sm font-semibold text-gray-900 mt-1">₱{selectedRequest.estimatedCost.toLocaleString()}</p>
                 </div>
               </div>
 

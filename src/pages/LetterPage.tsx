@@ -107,6 +107,7 @@ export default function LetterPage() {
     fullName: '',
     designationOffice: '',
     particulars: '',
+    remarks: '',
   });
 
   const [designationOptions, setDesignationOptions] = useState<string[]>([]);
@@ -344,6 +345,7 @@ export default function LetterPage() {
     'Travel Order',
     'Voucher',
     'Admin to PGO',
+    'Processing',
     'Others',
   ];
 
@@ -419,84 +421,54 @@ export default function LetterPage() {
                       }}
                     >
                       <Plus className="h-4 w-4" />
-                      Add Letter
+                      Add Record
                     </Button>
                   </DialogTrigger>
-                <DialogContent className="sm:max-w-lg z-50 max-h-[90vh] overflow-y-auto overflow-x-hidden">
+                <DialogContent className="max-w-2xl">
                   <DialogHeader>
-                    <DialogTitle className="text-lg font-semibold">
-                      {editingId ? 'Edit Letter' : 'Add New Letter'}
-                    </DialogTitle>
+                    <DialogTitle>{editingId ? 'Edit' : 'Add New'} Letter</DialogTitle>
                     <DialogDescription>
-                      {editingId ? 'Update the letter record details' : 'Fill in the form to add a new letter record'}
+                      Fill in the form to {editingId ? 'update' : 'add'} a letter record
                     </DialogDescription>
                   </DialogHeader>
-                  <div className="space-y-3">
-                    {/* Tracking ID - Display Only */}
-                    {!editingId && (
-                      <div className="space-y-1">
-                        <Label className="text-xs font-medium text-gray-700">Tracking ID</Label>
-                        <Input
-                          type="text"
-                          value={generateTrackingId()}
-                          disabled
-                          className="bg-gray-100 h-8 text-xs"
-                        />
-                      </div>
-                    )}
-
-                    <div className="grid grid-cols-2 gap-3">
-                      {/* Date/Time In */}
-                      <div className="space-y-1">
-                        <Label htmlFor="dateTimeIn" className="text-xs font-medium text-gray-700">Date/Time IN *</Label>
+                  <div className="grid gap-4 py-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="trackingId">Tracking ID</Label>
+                      <Input
+                        id="trackingId"
+                        value={editingId ? letters.find(l => l.id === editingId)?.trackingId || '' : generateTrackingId()}
+                        disabled
+                        className="bg-gray-50"
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="dateTimeIn">Date/Time IN *</Label>
                         <Input
                           id="dateTimeIn"
                           type="datetime-local"
                           value={formData.dateTimeIn}
                           onChange={(e) => setFormData({ ...formData, dateTimeIn: e.target.value })}
-                          className="h-8 text-xs"
+                          required
                         />
                       </div>
-
-                      {/* Full Name */}
-                      <div className="space-y-1">
-                        <Label htmlFor="fullName" className="text-xs font-medium text-gray-700">Full Name *</Label>
+                      <div className="space-y-2">
+                        <Label htmlFor="fullName">Full Name *</Label>
                         <Input
                           id="fullName"
                           value={formData.fullName}
                           onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
                           placeholder="Full Name"
-                          className="h-8 text-xs"
+                          required
                         />
                       </div>
                     </div>
-
-                    {editingId && user?.role === 'admin' && (
-                      <div className="space-y-1">
-                        <Label htmlFor="dateTimeOut" className="text-xs font-medium text-gray-700">Date/Time OUT</Label>
-                        <Input
-                          id="dateTimeOut"
-                          type="datetime-local"
-                          value={formData.dateTimeOut || ''}
-                          onChange={(e) => setFormData({ ...formData, dateTimeOut: e.target.value })}
-                          className="h-8 text-xs"
-                        />
-                      </div>
-                    )}
-
-                    <div className="grid grid-cols-2 gap-3">
-                      {/* Designation / Office */}
-                      <div className="space-y-1">
-                        <Label htmlFor="designationOffice" className="text-xs font-medium text-gray-700">Designation / Office *</Label>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="designationOffice">Office *</Label>
                         <Select value={formData.designationOffice} onValueChange={(value) => setFormData({ ...formData, designationOffice: value })}>
-                          <SelectTrigger 
-                            id="designationOffice" 
-                            className="w-full h-8 text-xs"
-                            title={formData.designationOffice || "Select designation"}
-                          >
-                            <SelectValue placeholder="Select">
-                              {formData.designationOffice ? getAcronym(formData.designationOffice) : 'Select'}
-                            </SelectValue>
+                          <SelectTrigger className="w-full">
+                            <SelectValue placeholder="Select" />
                           </SelectTrigger>
                           <SelectContent>
                             {designationOptions.map((option) => (
@@ -507,29 +479,34 @@ export default function LetterPage() {
                           </SelectContent>
                         </Select>
                       </div>
-
-                      {/* Particulars */}
-                      <div className="space-y-1">
-                        <Label htmlFor="particulars" className="text-xs font-medium text-gray-700">Particulars *</Label>
+                      <div className="space-y-2">
+                        <Label htmlFor="particulars">Particulars *</Label>
                         <Input
                           id="particulars"
                           value={formData.particulars}
                           onChange={(e) => setFormData({ ...formData, particulars: e.target.value })}
                           placeholder="Particulars"
-                          className="h-8 text-xs"
+                          required
                         />
                       </div>
                     </div>
-
-                    {/* Add/Update Button - Full Width */}
-                    <Button
-                      className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 mt-2 h-9 text-sm"
-                      onClick={handleAddOrUpdate}
-                      disabled={isLoading}
-                    >
-                      {isLoading ? 'Saving...' : editingId ? 'Update Letter' : 'Add Letter'}
-                    </Button>
+                    <div className="space-y-2">
+                      <Label htmlFor="remarks">Remarks</Label>
+                      <Input
+                        id="remarks"
+                        value={formData.remarks}
+                        onChange={(e) => setFormData({ ...formData, remarks: e.target.value })}
+                        placeholder="Enter remarks"
+                      />
+                    </div>
                   </div>
+                  <Button
+                    onClick={handleAddOrUpdate}
+                    disabled={isLoading}
+                    className="w-full bg-indigo-600 hover:bg-indigo-700"
+                  >
+                    {isLoading ? 'Saving...' : editingId ? 'Update Letter' : 'Add Letter'}
+                  </Button>
                 </DialogContent>
                 </Dialog>
               </div>

@@ -86,6 +86,7 @@ const recordTypes = [
   'Travel Order',
   'Voucher',
   'Admin to PGO',
+  'Processing',
   'Others',
 ];
 
@@ -365,12 +366,14 @@ export default function VoucherPage() {
 
     setIsLoading(true);
     try {
+      const voucher = vouchers.find(v => v.id === voucherToDelete);
       const now = new Date();
       const dateTimeStr = now.toLocaleString();
-      const remarksWithDateTime = `[${dateTimeStr}] [${user?.name || 'Unknown'}] ${rejectData.remarks}`;
+      const newRemarks = `[${dateTimeStr}] [REJECTED by ${user?.name || 'Unknown'}] ${rejectData.remarks}`;
+      const updatedRemarks = voucher?.remarks ? `${voucher.remarks}\n${newRemarks}` : newRemarks;
       
-      await voucherService.updateVoucher(voucherToDelete, { status: 'Rejected', remarks: remarksWithDateTime });
-      const updatedVouchers = vouchers.map(v => v.id === voucherToDelete ? { ...v, status: 'Rejected', remarks: remarksWithDateTime } : v);
+      await voucherService.updateVoucher(voucherToDelete, { status: 'Rejected', remarks: updatedRemarks });
+      const updatedVouchers = vouchers.map(v => v.id === voucherToDelete ? { ...v, status: 'Rejected', remarks: updatedRemarks } : v);
       setVouchers(updatedVouchers);
       setSuccess('Voucher rejected successfully');
       setVoucherToDelete(null);
@@ -411,10 +414,16 @@ export default function VoucherPage() {
 
     setIsLoading(true);
     try {
-      const timeOutRemarksWithUser = `[${user?.name || 'Unknown'}] ${timeOutData.timeOutRemarks}`;
+      const voucher = vouchers.find(v => v.id === voucherToTimeOut);
+      const now = new Date();
+      const dateTimeStr = now.toLocaleString();
+      const newRemarks = `[${dateTimeStr}] [COMPLETED by ${user?.name || 'Unknown'}] ${timeOutData.timeOutRemarks}`;
+      const updatedRemarks = voucher?.remarks ? `${voucher.remarks}\n${newRemarks}` : newRemarks;
+      
       await voucherService.updateVoucher(voucherToTimeOut, {
         dateTimeOut: timeOutData.dateTimeOut,
-        timeOutRemarks: timeOutRemarksWithUser,
+        remarks: updatedRemarks,
+        timeOutRemarks: newRemarks,
         status: 'Completed'
       });
 
@@ -516,7 +525,7 @@ export default function VoucherPage() {
                       }}
                     >
                       <Plus className="h-4 w-4" />
-                      Add Voucher
+                      Add Record
                     </Button>
                   </DialogTrigger>
                   <DialogContent className="sm:max-w-lg z-50 max-h-[90vh] overflow-y-auto overflow-x-hidden">

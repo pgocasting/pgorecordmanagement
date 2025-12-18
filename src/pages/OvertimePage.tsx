@@ -117,6 +117,7 @@ export default function OvertimePage() {
     inclusiveTimeEnd: '',
     purpose: '',
     placeOfAssignment: '',
+    remarks: '',
   });
 
   const recordTypes = [
@@ -129,6 +130,7 @@ export default function OvertimePage() {
     'Travel Order',
     'Voucher',
     'Admin to PGO',
+    'Processing',
     'Others',
   ];
 
@@ -359,12 +361,14 @@ export default function OvertimePage() {
 
     setIsLoading(true);
     try {
+      const overtime = overtimes.find(o => o.id === overtimeToDelete);
       const now = new Date();
       const dateTimeStr = now.toLocaleString();
-      const remarksWithDateTime = `[${dateTimeStr}] [${user?.name || 'Unknown'}] ${rejectData.remarks}`;
+      const newRemarks = `[${dateTimeStr}] [REJECTED by ${user?.name || 'Unknown'}] ${rejectData.remarks}`;
+      const updatedRemarks = overtime?.remarks ? `${overtime.remarks}\n${newRemarks}` : newRemarks;
       
-      await overtimeService.updateOvertime(overtimeToDelete, { status: 'Rejected', remarks: remarksWithDateTime });
-      const updatedOvertimes = overtimes.map(o => o.id === overtimeToDelete ? { ...o, status: 'Rejected', remarks: remarksWithDateTime } : o);
+      await overtimeService.updateOvertime(overtimeToDelete, { status: 'Rejected', remarks: updatedRemarks });
+      const updatedOvertimes = overtimes.map(o => o.id === overtimeToDelete ? { ...o, status: 'Rejected', remarks: updatedRemarks } : o);
       setOvertimes(updatedOvertimes);
       setSuccess('Overtime request rejected successfully');
       setOvertimeToDelete(null);
@@ -399,10 +403,16 @@ export default function OvertimePage() {
         throw new Error('Overtime record not found. It may have been deleted or the data is out of sync.');
       }
 
-      const timeOutRemarksWithUser = `[${user?.name || 'Unknown'}] ${timeOutData.timeOutRemarks}`;
+      const overtime = overtimes.find(o => o.id === overtimeToTimeOut);
+      const now = new Date();
+      const dateTimeStr = now.toLocaleString();
+      const newRemarks = `[${dateTimeStr}] [COMPLETED by ${user?.name || 'Unknown'}] ${timeOutData.timeOutRemarks}`;
+      const updatedRemarks = overtime?.remarks ? `${overtime.remarks}\n${newRemarks}` : newRemarks;
+      
       await overtimeService.updateOvertime(overtimeToTimeOut, {
         dateTimeOut: timeOutData.dateTimeOut,
-        timeOutRemarks: timeOutRemarksWithUser,
+        remarks: updatedRemarks,
+        timeOutRemarks: newRemarks,
         status: 'Completed'
       });
       
@@ -503,130 +513,115 @@ export default function OvertimePage() {
                     }}
                   >
                     <Plus className="h-4 w-4" />
-                    Add Overtime Request
+                    Add Record
                   </Button>
                 </DialogTrigger>
-                <DialogContent className="sm:max-w-lg z-50 max-h-[90vh] overflow-y-auto overflow-x-hidden">
+                <DialogContent className="max-w-2xl">
                   <DialogHeader>
-                    <DialogTitle className="text-lg font-semibold">{editingId ? 'Edit Overtime Request' : 'Add New Overtime Request'}</DialogTitle>
+                    <DialogTitle>{editingId ? 'Edit' : 'Add New'} Overtime Request</DialogTitle>
                     <DialogDescription>
-                      {editingId ? 'Update the overtime request details' : 'Fill in the form to add a new overtime request'}
+                      Fill in the form to {editingId ? 'update' : 'add'} an overtime request
                     </DialogDescription>
                   </DialogHeader>
-                  <div className="space-y-3">
-                    {!editingId && (
-                      <div className="space-y-1">
-                        <Label htmlFor="trackingId" className="text-xs font-medium text-gray-700">Tracking ID</Label>
-                        <Input
-                          id="trackingId"
-                          type="text"
-                          value={generateTrackingId()}
-                          disabled
-                          className="bg-gray-100 h-8 text-xs"
-                        />
-                      </div>
-                    )}
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="space-y-1">
-                        <Label htmlFor="dateTimeIn" className="text-xs font-medium text-gray-700">Date/Time IN *</Label>
+                  <div className="grid gap-4 py-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="trackingId">Tracking ID</Label>
+                      <Input
+                        id="trackingId"
+                        value={editingId ? overtimes.find((r: any) => r.id === editingId)?.trackingId || '' : generateTrackingId()}
+                        disabled
+                        className="bg-gray-50"
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="dateTimeIn">Date/Time IN *</Label>
                         <Input
                           id="dateTimeIn"
                           name="dateTimeIn"
                           type="datetime-local"
                           value={formData.dateTimeIn}
                           onChange={handleInputChange}
-                          className="h-8 text-xs"
+                          required
                         />
                       </div>
-
-                      <div className="space-y-1">
-                        <Label htmlFor="fullName" className="text-xs font-medium text-gray-700">Full Name *</Label>
+                      <div className="space-y-2">
+                        <Label htmlFor="fullName">Full Name *</Label>
                         <Input
                           id="fullName"
                           name="fullName"
                           placeholder="Full Name"
                           value={formData.fullName}
                           onChange={handleInputChange}
-                          className="h-8 text-xs"
+                          required
                         />
                       </div>
                     </div>
-
-                    {editingId && user?.role === 'admin' && (
-                      <div className="space-y-1">
-                        <Label htmlFor="dateTimeOut" className="text-xs font-medium text-gray-700">Date/Time OUT</Label>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="designation">Office *</Label>
+                        <Select value={formData.designation} onValueChange={(value) => handleSelectChange('designation', value)}>
+                          <SelectTrigger className="w-full">
+                            <SelectValue placeholder="Select" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {designationOptions.map((option) => (
+                              <SelectItem key={option} value={option}>
+                                {option}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="placeOfAssignment">Place of Assignment *</Label>
                         <Input
-                          id="dateTimeOut"
-                          name="dateTimeOut"
-                          type="datetime-local"
-                          value={formData.dateTimeOut || ''}
+                          id="placeOfAssignment"
+                          name="placeOfAssignment"
+                          placeholder="Enter place of assignment"
+                          value={formData.placeOfAssignment}
                           onChange={handleInputChange}
-                          className="h-8 text-xs"
+                          required
                         />
                       </div>
-                    )}
-
-                    <div className="space-y-1">
-                      <Label htmlFor="designation" className="text-xs font-medium text-gray-700">Designation/Office *</Label>
-                      <Select value={formData.designation} onValueChange={(value) => handleSelectChange('designation', value)}>
-                        <SelectTrigger 
-                          id="designation" 
-                          className="w-full h-8 text-xs"
-                          title={formData.designation || "Select designation"}
-                        >
-                          <SelectValue placeholder="Select">
-                            {formData.designation ? getAcronym(formData.designation) : 'Select'}
-                          </SelectValue>
-                        </SelectTrigger>
-                        <SelectContent>
-                          {designationOptions.map((option) => (
-                            <SelectItem key={option} value={option}>
-                              {option}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
                     </div>
-
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="space-y-1">
-                        <Label htmlFor="inclusiveDateStart" className="text-xs font-medium text-gray-700">Date Start *</Label>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="inclusiveDateStart">Date Start *</Label>
                         <Input
                           id="inclusiveDateStart"
                           name="inclusiveDateStart"
                           type="date"
                           value={formData.inclusiveDateStart}
                           onChange={handleInputChange}
-                          className="h-8 text-xs"
+                          required
                         />
                       </div>
-                      <div className="space-y-1">
-                        <Label htmlFor="inclusiveDateEnd" className="text-xs font-medium text-gray-700">Date End *</Label>
+                      <div className="space-y-2">
+                        <Label htmlFor="inclusiveDateEnd">Date End *</Label>
                         <Input
                           id="inclusiveDateEnd"
                           name="inclusiveDateEnd"
                           type="date"
                           value={formData.inclusiveDateEnd}
                           onChange={handleInputChange}
-                          className="h-8 text-xs"
+                          required
                         />
                       </div>
                     </div>
-
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="space-y-1">
-                        <Label htmlFor="inclusiveTimeStart" className="text-xs font-medium text-gray-700">Time Start</Label>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="inclusiveTimeStart">Time Start</Label>
                         <Input
                           id="inclusiveTimeStart"
                           name="inclusiveTimeStart"
                           type="time"
                           value={formData.inclusiveTimeStart}
                           onChange={handleInputChange}
-                          className="h-8 text-xs"
                         />
                       </div>
-                      <div className="space-y-1">
-                        <Label htmlFor="inclusiveTimeEnd" className="text-xs font-medium text-gray-700">Time End</Label>
+                      <div className="space-y-2">
+                        <Label htmlFor="inclusiveTimeEnd">Time End</Label>
                         <Input
                           id="inclusiveTimeEnd"
                           name="inclusiveTimeEnd"
@@ -636,7 +631,6 @@ export default function OvertimePage() {
                         />
                       </div>
                     </div>
-
                     <div className="space-y-2">
                       <Label htmlFor="purpose">Purpose *</Label>
                       <Input
@@ -645,30 +639,29 @@ export default function OvertimePage() {
                         placeholder="Enter purpose"
                         value={formData.purpose}
                         onChange={handleInputChange}
+                        required
                       />
                     </div>
-
                     <div className="space-y-2">
-                      <Label htmlFor="placeOfAssignment">Place of Assignment *</Label>
+                      <Label htmlFor="remarks">Remarks</Label>
                       <Input
-                        id="placeOfAssignment"
-                        name="placeOfAssignment"
-                        placeholder="Enter place of assignment"
-                        value={formData.placeOfAssignment}
+                        id="remarks"
+                        name="remarks"
+                        placeholder="Enter remarks"
+                        value={formData.remarks}
                         onChange={handleInputChange}
                       />
                     </div>
-
-                    <Button
-                      onClick={handleAddOvertime}
-                      disabled={isLoading}
-                      className="w-full bg-indigo-600 hover:bg-indigo-700"
-                    >
-                      {isLoading ? (editingId ? 'Updating...' : 'Adding...') : (editingId ? 'Update Request' : 'Add Request')}
-                    </Button>
                   </div>
+                  <Button
+                    onClick={handleAddOvertime}
+                    disabled={isLoading}
+                    className="w-full bg-indigo-600 hover:bg-indigo-700"
+                  >
+                    {isLoading ? 'Saving...' : editingId ? 'Update Overtime' : 'Add Overtime'}
+                  </Button>
                 </DialogContent>
-                </Dialog>
+              </Dialog>
               </div>
             </div>
 

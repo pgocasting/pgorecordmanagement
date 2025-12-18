@@ -122,6 +122,7 @@ export default function LocatorPage() {
     purpose: '',
     placeOfAssignment: '',
     receivedBy: '',
+    remarks: '',
   });
 
   const recordTypes = [
@@ -134,6 +135,7 @@ export default function LocatorPage() {
     'Travel Order',
     'Voucher',
     'Admin to PGO',
+    'Processing',
     'Others',
   ];
 
@@ -517,117 +519,105 @@ export default function LocatorPage() {
                       }}
                     >
                       <Plus className="h-4 w-4" />
-                      Add Locator
+                      Add Record
                     </Button>
                   </DialogTrigger>
-                <DialogContent className="sm:max-w-lg z-50 max-h-[90vh] overflow-y-auto overflow-x-hidden">
+                <DialogContent className="max-w-2xl">
                   <DialogHeader>
-                    <DialogTitle className="text-lg font-semibold">{editingId ? 'Edit Locator' : 'Add New Locator'}</DialogTitle>
+                    <DialogTitle>{editingId ? 'Edit' : 'Add New'} Locator</DialogTitle>
                     <DialogDescription>
-                      {editingId ? 'Update the locator record details' : 'Fill in the form to add a new locator record'}
+                      Fill in the form to {editingId ? 'update' : 'add'} a locator record
                     </DialogDescription>
                   </DialogHeader>
-                  <div className="space-y-3">
-                    {!editingId && (
-                      <div className="space-y-1">
-                        <Label htmlFor="trackingId" className="text-xs font-medium text-gray-700">Tracking ID</Label>
-                        <Input
-                          id="trackingId"
-                          type="text"
-                          value={generateTrackingId()}
-                          disabled
-                          className="bg-gray-100 h-8 text-xs"
-                        />
-                      </div>
-                    )}
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="space-y-1">
-                        <Label htmlFor="dateTimeIn" className="text-xs font-medium text-gray-700">Date/Time IN *</Label>
+                  <div className="grid gap-4 py-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="trackingId">Tracking ID</Label>
+                      <Input
+                        id="trackingId"
+                        value={editingId ? locators.find(l => l.id === editingId)?.trackingId || '' : generateTrackingId()}
+                        disabled
+                        className="bg-gray-50"
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="dateTimeIn">Date/Time IN *</Label>
                         <Input
                           id="dateTimeIn"
                           name="dateTimeIn"
                           type="datetime-local"
                           value={formData.dateTimeIn}
                           onChange={handleInputChange}
-                          className="h-8 text-xs"
+                          required
                         />
                       </div>
-
-                      <div className="space-y-1">
-                        <Label htmlFor="fullName" className="text-xs font-medium text-gray-700">Full Name *</Label>
+                      <div className="space-y-2">
+                        <Label htmlFor="fullName">Full Name *</Label>
                         <Input
                           id="fullName"
                           name="fullName"
                           placeholder="Full Name"
                           value={formData.fullName}
                           onChange={handleInputChange}
-                          className="h-8 text-xs"
+                          required
                         />
                       </div>
                     </div>
-
-                    {editingId && user?.role === 'admin' && (
-                      <div className="space-y-1">
-                        <Label htmlFor="dateTimeOut" className="text-xs font-medium text-gray-700">Date/Time OUT</Label>
-                        <Input
-                          id="dateTimeOut"
-                          name="dateTimeOut"
-                          type="datetime-local"
-                          value={formData.dateTimeOut || ''}
-                          onChange={handleInputChange}
-                          className="h-8 text-xs"
-                        />
-                      </div>
-                    )}
-
-                    <div className="space-y-1">
-                      <Label htmlFor="designation" className="text-xs font-medium text-gray-700">Designation/Office *</Label>
-                      <Select value={formData.designation} onValueChange={(value) => handleSelectChange('designation', value)}>
-                        <SelectTrigger 
-                          id="designation" 
-                          className="w-full h-8 text-xs"
-                          title={formData.designation || "Select designation"}
-                        >
-                          <SelectValue placeholder="Select">
-                            {formData.designation ? getAcronym(formData.designation) : 'Select'}
-                          </SelectValue>
-                        </SelectTrigger>
-                        <SelectContent>
-                          {designationOptions.map((option) => (
-                            <SelectItem key={option} value={option}>
-                              {option}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <Label htmlFor="inclusiveDateStart">Inclusive Date Start *</Label>
+                        <Label htmlFor="designation">Office *</Label>
+                        <Select value={formData.designation} onValueChange={(value) => handleSelectChange('designation', value)}>
+                          <SelectTrigger className="w-full">
+                            <SelectValue placeholder="Select" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {designationOptions.map((option) => (
+                              <SelectItem key={option} value={option}>
+                                {option}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="placeOfAssignment">Place of Assignment *</Label>
+                        <Input
+                          id="placeOfAssignment"
+                          name="placeOfAssignment"
+                          placeholder="Enter place of assignment"
+                          value={formData.placeOfAssignment}
+                          onChange={handleInputChange}
+                          required
+                        />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="inclusiveDateStart">Date Start *</Label>
                         <Input
                           id="inclusiveDateStart"
                           name="inclusiveDateStart"
                           type="date"
                           value={formData.inclusiveDateStart}
                           onChange={handleInputChange}
+                          required
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="inclusiveDateEnd">Inclusive Date End *</Label>
+                        <Label htmlFor="inclusiveDateEnd">Date End *</Label>
                         <Input
                           id="inclusiveDateEnd"
                           name="inclusiveDateEnd"
                           type="date"
                           value={formData.inclusiveDateEnd}
                           onChange={handleInputChange}
+                          required
                         />
                       </div>
                     </div>
-
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <Label htmlFor="inclusiveTimeStart">Inclusive Time Start</Label>
+                        <Label htmlFor="inclusiveTimeStart">Time Start</Label>
                         <Input
                           id="inclusiveTimeStart"
                           name="inclusiveTimeStart"
@@ -637,7 +627,7 @@ export default function LocatorPage() {
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="inclusiveTimeEnd">Inclusive Time End</Label>
+                        <Label htmlFor="inclusiveTimeEnd">Time End</Label>
                         <Input
                           id="inclusiveTimeEnd"
                           name="inclusiveTimeEnd"
@@ -647,7 +637,6 @@ export default function LocatorPage() {
                         />
                       </div>
                     </div>
-
                     <div className="space-y-2">
                       <Label htmlFor="purpose">Purpose</Label>
                       <Input
@@ -658,26 +647,24 @@ export default function LocatorPage() {
                         onChange={handleInputChange}
                       />
                     </div>
-
                     <div className="space-y-2">
-                      <Label htmlFor="placeOfAssignment">Place of Assignment *</Label>
+                      <Label htmlFor="remarks">Remarks</Label>
                       <Input
-                        id="placeOfAssignment"
-                        name="placeOfAssignment"
-                        placeholder="Enter place of assignment"
-                        value={formData.placeOfAssignment}
+                        id="remarks"
+                        name="remarks"
+                        placeholder="Enter remarks"
+                        value={formData.remarks}
                         onChange={handleInputChange}
                       />
                     </div>
-
-                    <Button
-                      onClick={handleAddLocator}
-                      disabled={isLoading}
-                      className="w-full bg-indigo-600 hover:bg-indigo-700"
-                    >
-                      {isLoading ? (editingId ? 'Updating...' : 'Adding...') : (editingId ? 'Update Locator' : 'Add Locator')}
-                    </Button>
                   </div>
+                  <Button
+                    onClick={handleAddLocator}
+                    disabled={isLoading}
+                    className="w-full bg-indigo-600 hover:bg-indigo-700"
+                  >
+                    {isLoading ? 'Saving...' : editingId ? 'Update Locator' : 'Add Locator'}
+                  </Button>
                 </DialogContent>
                 </Dialog>
               </div>

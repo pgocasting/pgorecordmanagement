@@ -100,6 +100,7 @@ const recordTypes = [
   'Travel Order',
   'Voucher',
   'Admin to PGO',
+  'Processing',
   'Others',
 ];
 
@@ -411,11 +412,17 @@ export default function OthersPage() {
         throw new Error('Other record not found. It may have been deleted or the data is out of sync.');
       }
 
-      const timeOutRemarksWithUser = `[${user?.name || 'Unknown'}] ${timeOutData.timeOutRemarks}`;
+      const record = records.find(r => r.id === recordToTimeOut);
+      const now = new Date();
+      const dateTimeStr = now.toLocaleString();
+      const newRemarks = `[${dateTimeStr}] [COMPLETED by ${user?.name || 'Unknown'}] ${timeOutData.timeOutRemarks}`;
+      const updatedRemarks = record?.remarks ? `${record.remarks}\n${newRemarks}` : newRemarks;
+      
       await othersService.updateRecord(recordToTimeOut, {
         dateTimeOut: timeOutData.dateTimeOut,
         status: 'Completed',
-        timeOutRemarks: timeOutRemarksWithUser
+        remarks: updatedRemarks,
+        timeOutRemarks: newRemarks
       });
       // Reload from Firestore
       const updatedRecords = await othersService.getRecords();
@@ -515,59 +522,65 @@ export default function OthersPage() {
                       Add Record
                     </Button>
                   </DialogTrigger>
-                  <DialogContent className="sm:max-w-lg z-50 max-h-[90vh] overflow-y-auto overflow-x-hidden">
+                  <DialogContent className="max-w-2xl">
                     <DialogHeader>
-                      <DialogTitle className="text-lg font-semibold">
-                        {editingId ? 'Edit Record' : 'Add New Record'}
-                      </DialogTitle>
+                      <DialogTitle>{editingId ? 'Edit' : 'Add New'} Others Record</DialogTitle>
                       <DialogDescription>
-                        {editingId ? 'Update the record details' : 'Fill in the form to add a new record'}
+                        Fill in the form to {editingId ? 'update' : 'add'} an others record
                       </DialogDescription>
                     </DialogHeader>
-                    <div className="space-y-3">
-                      {/* Tracking ID - Display Only */}
-                      {!editingId && (
-                        <div className="space-y-1">
-                          <Label className="text-xs font-medium text-gray-700">Tracking ID</Label>
-                          <Input
-                            type="text"
-                            value={nextTrackingId}
-                            disabled
-                            className="bg-gray-100 h-8 text-xs"
-                          />
-                        </div>
-                      )}
-
-                      <div className="grid grid-cols-2 gap-3">
-                        {/* Date/Time In */}
-                        <div className="space-y-1">
-                          <Label htmlFor="dateTimeIn" className="text-xs font-medium text-gray-700">Date/Time IN *</Label>
+                    <div className="grid gap-4 py-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="trackingId">Tracking ID</Label>
+                        <Input
+                          id="trackingId"
+                          value={editingId ? records.find(r => r.id === editingId)?.trackingId || '' : nextTrackingId}
+                          disabled
+                          className="bg-gray-50"
+                        />
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="dateTimeIn">Date/Time IN *</Label>
                           <Input
                             id="dateTimeIn"
                             name="dateTimeIn"
                             type="datetime-local"
                             value={formData.dateTimeIn}
                             onChange={handleInputChange}
-                            className="h-8 text-xs"
+                            required
                           />
                         </div>
-
-                        <div className="space-y-1">
-                          <Label htmlFor="fullName" className="text-xs font-medium text-gray-700">Full Name *</Label>
+                        <div className="space-y-2">
+                          <Label htmlFor="fullName">Full Name *</Label>
                           <Input
                             id="fullName"
                             name="fullName"
                             placeholder="Full Name"
                             value={formData.fullName}
                             onChange={handleInputChange}
-                            className="h-8 text-xs"
+                            required
                           />
                         </div>
                       </div>
-
-                      {editingId && user?.role === 'admin' && (
-                        <div className="space-y-1">
-                          <Label htmlFor="dateTimeOut" className="text-xs font-medium text-gray-700">Date/Time OUT</Label>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="designationOffice">Office *</Label>
+                          <Select value={formData.designationOffice} onValueChange={(value) => handleSelectChange('designationOffice', value)}>
+                            <SelectTrigger className="w-full">
+                              <SelectValue placeholder="Select" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {designationOptions.map((option) => (
+                                <SelectItem key={option} value={option}>
+                                  {option}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="dateTimeOut">Date/Time OUT</Label>
                           <Input
                             id="dateTimeOut"
                             name="dateTimeOut"
@@ -576,59 +589,34 @@ export default function OthersPage() {
                             onChange={handleInputChange}
                           />
                         </div>
-                      )}
-
-                      {/* Designation / Office */}
-                      <div className="space-y-2">
-                        <Label htmlFor="designationOffice" className="text-sm font-medium text-gray-700">Designation / Office *</Label>
-                        <Select value={formData.designationOffice} onValueChange={(value) => handleSelectChange('designationOffice', value)}>
-                          <SelectTrigger 
-                            id="designationOffice" 
-                            className="w-full"
-                            title={formData.designationOffice || "Select designation"}
-                          >
-                            <SelectValue placeholder="Select designation">
-                              {formData.designationOffice ? getAcronym(formData.designationOffice) : 'Select designation'}
-                            </SelectValue>
-                          </SelectTrigger>
-                          <SelectContent>
-                            {designationOptions.map((option) => (
-                              <SelectItem key={option} value={option}>
-                                {option}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
                       </div>
-
-                      {/* Inclusive Dates */}
                       <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
-                          <Label htmlFor="inclusiveDateStart" className="text-sm font-medium text-gray-700">Inclusive Date Start *</Label>
+                          <Label htmlFor="inclusiveDateStart">Date Start *</Label>
                           <Input
                             id="inclusiveDateStart"
                             name="inclusiveDateStart"
                             type="date"
                             value={formData.inclusiveDateStart}
                             onChange={handleInputChange}
+                            required
                           />
                         </div>
                         <div className="space-y-2">
-                          <Label htmlFor="inclusiveDateEnd" className="text-sm font-medium text-gray-700">Inclusive Date End *</Label>
+                          <Label htmlFor="inclusiveDateEnd">Date End *</Label>
                           <Input
                             id="inclusiveDateEnd"
                             name="inclusiveDateEnd"
                             type="date"
                             value={formData.inclusiveDateEnd}
                             onChange={handleInputChange}
+                            required
                           />
                         </div>
                       </div>
-
-                      {/* Inclusive Time */}
                       <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
-                          <Label htmlFor="inclusiveTimeStart" className="text-sm font-medium text-gray-700">Inclusive Time Start</Label>
+                          <Label htmlFor="inclusiveTimeStart">Time Start</Label>
                           <Input
                             id="inclusiveTimeStart"
                             name="inclusiveTimeStart"
@@ -638,7 +626,7 @@ export default function OthersPage() {
                           />
                         </div>
                         <div className="space-y-2">
-                          <Label htmlFor="inclusiveTimeEnd" className="text-sm font-medium text-gray-700">Inclusive Time End</Label>
+                          <Label htmlFor="inclusiveTimeEnd">Time End</Label>
                           <Input
                             id="inclusiveTimeEnd"
                             name="inclusiveTimeEnd"
@@ -648,10 +636,8 @@ export default function OthersPage() {
                           />
                         </div>
                       </div>
-
-                      {/* Purpose */}
                       <div className="space-y-2">
-                        <Label htmlFor="purpose" className="text-sm font-medium text-gray-700">Purpose</Label>
+                        <Label htmlFor="purpose">Purpose</Label>
                         <Textarea
                           id="purpose"
                           name="purpose"
@@ -661,46 +647,14 @@ export default function OthersPage() {
                           rows={3}
                         />
                       </div>
-
-                      {editingId && (
-                        <>
-                          {/* Amount - Editable in Edit Mode */}
-                          <div className="space-y-2">
-                            <Label htmlFor="amount" className="text-sm font-medium text-gray-700">Amount</Label>
-                            <Input
-                              id="amount"
-                              name="amount"
-                              type="number"
-                              value={formData.amount}
-                              onChange={handleInputChange}
-                              placeholder="Enter amount"
-                            />
-                          </div>
-
-                          {/* Link/Attachments - Editable in Edit Mode */}
-                          <div className="space-y-2">
-                            <Label htmlFor="linkAttachments" className="text-sm font-medium text-gray-700">Link / Attachments</Label>
-                            <Input
-                              id="linkAttachments"
-                              name="linkAttachments"
-                              type="text"
-                              value={formData.linkAttachments}
-                              onChange={handleInputChange}
-                              placeholder="Enter link or attachment URL"
-                            />
-                          </div>
-                        </>
-                      )}
-
-                      {/* Add/Update Button - Full Width */}
-                      <Button
-                        className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 mt-6"
-                        onClick={handleAddRecord}
-                        disabled={isLoading}
-                      >
-                        {isLoading ? 'Saving...' : editingId ? 'Update Record' : 'Add Record'}
-                      </Button>
                     </div>
+                    <Button 
+                      onClick={handleAddRecord} 
+                      disabled={isLoading}
+                      className="w-full bg-indigo-600 hover:bg-indigo-700"
+                    >
+                      {isLoading ? 'Saving...' : editingId ? 'Update Others' : 'Add Others'}
+                    </Button>
                   </DialogContent>
                 </Dialog>
               </div>

@@ -56,6 +56,7 @@ const recordTypes = [
   'Travel Order',
   'Voucher',
   'Admin to PGO',
+  'Processing',
   'Others',
 ];
 

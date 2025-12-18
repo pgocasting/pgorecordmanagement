@@ -78,6 +78,7 @@ const recordTypes = [
   'Travel Order',
   'Voucher',
   'Admin to PGO',
+  'Processing',
   'Others',
 ];
 
@@ -316,12 +317,14 @@ export default function ObligationRequestPage() {
 
     setIsLoading(true);
     try {
+      const request = obligationRequests.find(r => r.id === requestToDelete);
       const now = new Date();
       const dateTimeStr = now.toLocaleString();
-      const remarksWithDateTime = `[${dateTimeStr}] [${user?.name || 'Unknown'}] ${rejectData.remarks}`;
+      const newRemarks = `[${dateTimeStr}] [REJECTED by ${user?.name || 'Unknown'}] ${rejectData.remarks}`;
+      const updatedRemarks = request?.remarks ? `${request.remarks}\n${newRemarks}` : newRemarks;
       
-      await obligationRequestService.updateObligationRequest(requestToDelete, { status: 'Rejected', remarks: remarksWithDateTime });
-      const updatedRequests = obligationRequests.map(r => r.id === requestToDelete ? { ...r, status: 'Rejected', remarks: remarksWithDateTime } : r);
+      await obligationRequestService.updateObligationRequest(requestToDelete, { status: 'Rejected', remarks: updatedRemarks });
+      const updatedRequests = obligationRequests.map(r => r.id === requestToDelete ? { ...r, status: 'Rejected', remarks: updatedRemarks } : r);
       setObligationRequests(updatedRequests);
       setSuccess('Obligation request rejected successfully');
       setRequestToDelete(null);
@@ -379,10 +382,16 @@ export default function ObligationRequestPage() {
 
     setIsLoading(true);
     try {
-      const timeOutRemarksWithUser = `[${user?.name || 'Unknown'}] ${timeOutData.timeOutRemarks}`;
+      const request = obligationRequests.find(r => r.id === requestToTimeOut);
+      const now = new Date();
+      const dateTimeStr = now.toLocaleString();
+      const newRemarks = `[${dateTimeStr}] [COMPLETED by ${user?.name || 'Unknown'}] ${timeOutData.timeOutRemarks}`;
+      const updatedRemarks = request?.remarks ? `${request.remarks}\n${newRemarks}` : newRemarks;
+      
       const result = await obligationRequestService.updateObligationRequest(requestToTimeOut, {
         dateTimeOut: timeOutData.dateTimeOut,
-        timeOutRemarks: timeOutRemarksWithUser,
+        remarks: updatedRemarks,
+        timeOutRemarks: newRemarks,
         status: 'Completed'
       });
 
@@ -486,63 +495,56 @@ export default function ObligationRequestPage() {
                       }}
                     >
                       <Plus className="h-4 w-4" />
-                      Add Obligation Request
+                      Add Record
                     </Button>
                   </DialogTrigger>
-                <DialogContent className="sm:max-w-lg z-50 max-h-[90vh] overflow-y-auto">
+                <DialogContent className="max-w-2xl">
                   <DialogHeader>
-                    <DialogTitle className="text-lg font-semibold">
-                      {editingId ? 'Edit Obligation Request' : 'Add New Obligation Request'}
-                    </DialogTitle>
+                    <DialogTitle>{editingId ? 'Edit' : 'Add New'} Obligation Request</DialogTitle>
                     <DialogDescription>
-                      {editingId ? 'Update the obligation request details' : 'Fill in the form to add a new obligation request'}
+                      Fill in the form to {editingId ? 'update' : 'add'} an obligation request
                     </DialogDescription>
                   </DialogHeader>
-                  <div className="space-y-3">
-                    {!editingId && (
-                      <div className="space-y-1">
-                        <Label className="text-xs font-medium text-gray-700">Tracking ID</Label>
-                        <Input
-                          type="text"
-                          value={nextTrackingId}
-                          disabled
-                          className="bg-gray-100 h-8 text-xs"
-                        />
-                      </div>
-                    )}
-
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="space-y-1">
-                        <Label htmlFor="dateTimeIn" className="text-xs font-medium text-gray-700">Date/Time IN *</Label>
+                  <div className="grid gap-4 py-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="trackingId">Tracking ID</Label>
+                      <Input
+                        id="trackingId"
+                        value={editingId ? obligationRequests.find(r => r.id === editingId)?.trackingId || '' : nextTrackingId}
+                        disabled
+                        className="bg-gray-50"
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="dateTimeIn">Date/Time IN *</Label>
                         <Input
                           id="dateTimeIn"
                           name="dateTimeIn"
                           type="datetime-local"
                           value={formData.dateTimeIn}
                           onChange={handleInputChange}
-                          className="h-8 text-xs"
+                          required
                         />
                       </div>
-
-                      <div className="space-y-1">
-                        <Label htmlFor="fullName" className="text-xs font-medium text-gray-700">Full Name *</Label>
+                      <div className="space-y-2">
+                        <Label htmlFor="fullName">Full Name *</Label>
                         <Input
                           id="fullName"
                           name="fullName"
                           placeholder="Full Name"
                           value={formData.fullName}
                           onChange={handleInputChange}
-                          className="h-8 text-xs"
+                          required
                         />
                       </div>
                     </div>
-
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <Label htmlFor="designation" className="text-sm font-medium text-gray-700">Designation *</Label>
+                        <Label htmlFor="designation">Office *</Label>
                         <Select value={formData.designation} onValueChange={(value) => handleSelectChange('designation', value)}>
-                          <SelectTrigger id="designation" className="w-full">
-                            <SelectValue placeholder="Select designation" />
+                          <SelectTrigger className="w-full">
+                            <SelectValue placeholder="Select" />
                           </SelectTrigger>
                           <SelectContent>
                             {designationOptions.map((option) => (
@@ -553,81 +555,62 @@ export default function ObligationRequestPage() {
                           </SelectContent>
                         </Select>
                       </div>
-
                       <div className="space-y-2">
-                        <Label htmlFor="obligationType" className="text-sm font-medium text-gray-700">Obligation Type *</Label>
+                        <Label htmlFor="obligationType">Obligation Type *</Label>
                         <Input
                           id="obligationType"
                           name="obligationType"
                           placeholder="Enter Obligation Type"
                           value={formData.obligationType}
                           onChange={handleInputChange}
-                          disabled={isLoading}
+                          required
                         />
                       </div>
                     </div>
-
-                    <div className="space-y-1">
-                      <Label htmlFor="amount" className="text-xs font-medium text-gray-700">Amount *</Label>
-                      <Input
-                        id="amount"
-                        name="amount"
-                        type="number"
-                        placeholder="Amount"
-                        value={formData.amount}
-                        onChange={handleInputChange}
-                        className="h-8 text-xs"
-                      />
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="amount">Amount *</Label>
+                        <Input
+                          id="amount"
+                          name="amount"
+                          type="number"
+                          placeholder="Amount"
+                          value={formData.amount}
+                          onChange={handleInputChange}
+                          required
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="remarks">Remarks</Label>
+                        <Input
+                          id="remarks"
+                          name="remarks"
+                          value={formData.remarks}
+                          onChange={handleInputChange}
+                          placeholder="Enter remarks"
+                        />
+                      </div>
                     </div>
-
-                    <div className="space-y-1">
-                      <Label htmlFor="particulars" className="text-xs font-medium text-gray-700">Particulars *</Label>
+                    <div className="space-y-2">
+                      <Label htmlFor="particulars">Particulars *</Label>
                       <Textarea
                         id="particulars"
                         name="particulars"
                         value={formData.particulars}
                         onChange={handleInputChange}
                         placeholder="Enter particulars"
-                        rows={2}
-                        className="text-xs"
+                        rows={3}
+                        required
                       />
                     </div>
-
-                    {editingId && user?.role === 'admin' && (
-                      <div className="space-y-1">
-                        <Label htmlFor="dateTimeOut" className="text-xs font-medium text-gray-700">Date/Time OUT</Label>
-                        <Input
-                          id="dateTimeOut"
-                          name="dateTimeOut"
-                          type="datetime-local"
-                          value={formData.dateTimeOut || ''}
-                          onChange={handleInputChange}
-                          className="h-8 text-xs"
-                        />
-                      </div>
-                    )}
-
-                    <div className="space-y-1">
-                      <Label htmlFor="remarks" className="text-xs font-medium text-gray-700">Remarks</Label>
-                      <Textarea
-                        id="remarks"
-                        name="remarks"
-                        value={formData.remarks}
-                        onChange={handleInputChange}
-                        placeholder="Enter remarks"
-                        rows={2}
-                        className="text-xs"
-                      />
-                    </div>
-
-                    <Button
-                      className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 mt-2 h-9 text-sm"
-                      onClick={editingId ? confirmEditRequest : handleAddRequest}
-                      disabled={isLoading}
-                    >
-                      {isLoading ? 'Saving...' : editingId ? 'Update Request' : 'Add Request'}
-                    </Button>
                   </div>
+                  <Button
+                    onClick={editingId ? confirmEditRequest : handleAddRequest}
+                    disabled={isLoading}
+                    className="w-full bg-indigo-600 hover:bg-indigo-700"
+                  >
+                    {isLoading ? 'Saving...' : editingId ? 'Update Obligation Request' : 'Add Obligation Request'}
+                  </Button>
                 </DialogContent>
                 </Dialog>
               </div>

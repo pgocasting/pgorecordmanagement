@@ -454,7 +454,44 @@ export const purchaseRequestService = {
   }
 };
 
+// Processing Service
+export const processingService = {
+  async addRecord(recordData: any) {
+    return addItem<Processing>('processings', recordData);
+  },
+
+  async getRecords() {
+    return getItems<Processing>('processings');
+  },
+
+  async updateRecord(recordId: string, recordData: any) {
+    return updateItem<Processing>('processings', recordId, recordData);
+  },
+
+  async deleteRecord(recordId: string) {
+    return deleteItem('processings', recordId);
+  }
+};
+
 // Designation Service
+interface Processing {
+  id: string;
+  trackingId: string;
+  receivedBy: string;
+  dateTimeIn: string;
+  dateTimeOut?: string;
+  fullName: string;
+  designationOffice: string;
+  purpose: string;
+  amount?: number;
+  status: string;
+  remarks?: string;
+  timeOutRemarks?: string;
+  linkAttachments?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 interface Designation {
   id: string;
   name: string;

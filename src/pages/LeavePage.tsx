@@ -119,6 +119,7 @@ export default function LeavePage() {
     inclusiveDateEnd: '',
     purpose: '',
     status: '',
+    remarks: '',
   });
 
   useEffect(() => {
@@ -144,6 +145,7 @@ export default function LeavePage() {
     'Travel Order',
     'Voucher',
     'Admin to PGO',
+    'Processing',
     'Others',
   ];
 
@@ -515,81 +517,56 @@ export default function LeavePage() {
                       }}
                     >
                       <Plus className="h-4 w-4" />
-                      Add Leave
+                      Add Record
                     </Button>
                   </DialogTrigger>
-                <DialogContent className="sm:max-w-lg z-50 max-h-[90vh] overflow-y-auto overflow-x-hidden">
+                <DialogContent className="max-w-2xl">
                   <DialogHeader>
-                    <DialogTitle className="text-lg font-semibold">{editingId ? 'Edit Leave' : 'Add New Leave'}</DialogTitle>
+                    <DialogTitle>{editingId ? 'Edit' : 'Add New'} Leave</DialogTitle>
                     <DialogDescription>
-                      {editingId ? 'Update the leave record details' : 'Fill in the form to add a new leave record'}
+                      Fill in the form to {editingId ? 'update' : 'add'} a leave record
                     </DialogDescription>
                   </DialogHeader>
-                  <div className="space-y-3">
-                    {!editingId && (
-                      <div className="space-y-1">
-                        <Label htmlFor="trackingId" className="text-xs font-medium text-gray-700">Tracking ID</Label>
-                        <Input
-                          id="trackingId"
-                          type="text"
-                          value={generateTrackingId()}
-                          disabled
-                          className="bg-gray-100 h-8 text-xs"
-                        />
-                      </div>
-                    )}
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="space-y-1">
-                        <Label htmlFor="dateTimeIn" className="text-xs font-medium text-gray-700">Date/Time IN *</Label>
+                  <div className="grid gap-4 py-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="trackingId">Tracking ID</Label>
+                      <Input
+                        id="trackingId"
+                        value={editingId ? leaves.find(l => l.id === editingId)?.trackingId || '' : generateTrackingId()}
+                        disabled
+                        className="bg-gray-50"
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="dateTimeIn">Date/Time IN *</Label>
                         <Input
                           id="dateTimeIn"
                           name="dateTimeIn"
                           type="datetime-local"
                           value={formData.dateTimeIn}
                           onChange={handleInputChange}
-                          className="h-8 text-xs"
+                          required
                         />
                       </div>
-
-                      <div className="space-y-1">
-                        <Label htmlFor="fullName" className="text-xs font-medium text-gray-700">Full Name *</Label>
+                      <div className="space-y-2">
+                        <Label htmlFor="fullName">Full Name *</Label>
                         <Input
                           id="fullName"
                           name="fullName"
                           placeholder="Full Name"
                           value={formData.fullName}
                           onChange={handleInputChange}
-                          className="h-8 text-xs"
+                          required
                         />
                       </div>
                     </div>
-
-                    {editingId && user?.role === 'admin' && (
-                      <div className="space-y-1">
-                        <Label htmlFor="dateTimeOut" className="text-xs font-medium text-gray-700">Date/Time OUT</Label>
-                        <Input
-                          id="dateTimeOut"
-                          name="dateTimeOut"
-                          type="datetime-local"
-                          value={formData.dateTimeOut || ''}
-                          onChange={handleInputChange}
-                          className="h-8 text-xs"
-                        />
-                      </div>
-                    )}
-
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="space-y-1">
-                        <Label htmlFor="designation" className="text-xs font-medium text-gray-700">Designation/Office *</Label>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="designation">Office *</Label>
                         <Select value={formData.designation} onValueChange={(value) => handleSelectChange('designation', value)}>
-                          <SelectTrigger 
-                            id="designation" 
-                            className="w-full h-8 text-xs"
-                            title={formData.designation || "Select designation"}
-                          >
-                            <SelectValue placeholder="Select">
-                              {formData.designation ? getAcronym(formData.designation) : 'Select'}
-                            </SelectValue>
+                          <SelectTrigger className="w-full">
+                            <SelectValue placeholder="Select" />
                           </SelectTrigger>
                           <SelectContent>
                             {designationOptions.map((option) => (
@@ -600,18 +577,11 @@ export default function LeavePage() {
                           </SelectContent>
                         </Select>
                       </div>
-
-                      <div className="space-y-1">
-                        <Label htmlFor="leaveType" className="text-xs font-medium text-gray-700">Leave Type *</Label>
+                      <div className="space-y-2">
+                        <Label htmlFor="leaveType">Leave Type *</Label>
                         <Select value={formData.leaveType} onValueChange={(value) => handleSelectChange('leaveType', value)}>
-                          <SelectTrigger 
-                            id="leaveType" 
-                            className="w-full h-8 text-xs"
-                            title={formData.leaveType || "Select leave type"}
-                          >
-                            <SelectValue placeholder="Select">
-                              {formData.leaveType ? getAcronym(formData.leaveType) : 'Select'}
-                            </SelectValue>
+                          <SelectTrigger className="w-full">
+                            <SelectValue placeholder="Select" />
                           </SelectTrigger>
                           <SelectContent>
                             {leaveTypeOptions.map((option) => (
@@ -623,34 +593,32 @@ export default function LeavePage() {
                         </Select>
                       </div>
                     </div>
-
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="space-y-1">
-                        <Label htmlFor="inclusiveDateStart" className="text-xs font-medium text-gray-700">Date Start *</Label>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="inclusiveDateStart">Date Start *</Label>
                         <Input
                           id="inclusiveDateStart"
                           name="inclusiveDateStart"
                           type="date"
                           value={formData.inclusiveDateStart}
                           onChange={handleInputChange}
-                          className="h-8 text-xs"
+                          required
                         />
                       </div>
-                      <div className="space-y-1">
-                        <Label htmlFor="inclusiveDateEnd" className="text-xs font-medium text-gray-700">Date End *</Label>
+                      <div className="space-y-2">
+                        <Label htmlFor="inclusiveDateEnd">Date End *</Label>
                         <Input
                           id="inclusiveDateEnd"
                           name="inclusiveDateEnd"
                           type="date"
                           value={formData.inclusiveDateEnd}
                           onChange={handleInputChange}
-                          className="h-8 text-xs"
+                          required
                         />
                       </div>
                     </div>
-
-                    <div className="space-y-1">
-                      <Label htmlFor="purpose" className="text-xs font-medium text-gray-700">Purpose</Label>
+                    <div className="space-y-2">
+                      <Label htmlFor="purpose">Purpose</Label>
                       <Input
                         id="purpose"
                         name="purpose"
@@ -659,15 +627,24 @@ export default function LeavePage() {
                         onChange={handleInputChange}
                       />
                     </div>
-
-                    <Button
-                      onClick={handleAddLeave}
-                      disabled={isLoading}
-                      className="w-full bg-indigo-600 hover:bg-indigo-700"
-                    >
-                      {isLoading ? (editingId ? 'Updating...' : 'Adding...') : (editingId ? 'Update Leave' : 'Add Leave')}
-                    </Button>
+                    <div className="space-y-2">
+                      <Label htmlFor="remarks">Remarks</Label>
+                      <Input
+                        id="remarks"
+                        name="remarks"
+                        placeholder="Enter remarks"
+                        value={formData.remarks}
+                        onChange={handleInputChange}
+                      />
+                    </div>
                   </div>
+                  <Button
+                    onClick={handleAddLeave}
+                    disabled={isLoading}
+                    className="w-full bg-indigo-600 hover:bg-indigo-700"
+                  >
+                    {isLoading ? 'Saving...' : editingId ? 'Update Leave' : 'Add Leave'}
+                  </Button>
                 </DialogContent>
                 </Dialog>
               </div>
