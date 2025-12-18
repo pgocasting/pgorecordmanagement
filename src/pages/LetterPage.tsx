@@ -63,20 +63,6 @@ interface Letter {
   timeOutRemarks?: string;
 }
 
-const getAcronymUnused = (text: string): string => {
-  if (!text) return '';
-  // Check if text has acronym in parentheses
-  const acronymMatch = text.match(/\(([^)]+)\)/);
-  if (acronymMatch) {
-    return acronymMatch[1];
-  }
-  // If no parentheses, create acronym from first letters
-  return text
-    .split(' ')
-    .map(word => word.charAt(0).toUpperCase())
-    .join('');
-};
-
 export default function LetterPage() {
   const navigate = useNavigate();
   const { logout, user } = useAuth();

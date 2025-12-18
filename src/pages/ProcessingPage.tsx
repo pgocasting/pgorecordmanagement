@@ -99,7 +99,6 @@ export default function ProcessingPage() {
   const [rejectData, setRejectData] = useState({
     remarks: '',
   });
-  const [editConfirmOpenUnused, setEditConfirmOpen] = useState(false);
   const [timeOutConfirmOpen, setTimeOutConfirmOpen] = useState(false);
   const [recordToTimeOut, setRecordToTimeOut] = useState<string | null>(null);
   const [timeOutData, setTimeOutData] = useState({
@@ -193,27 +192,37 @@ export default function ProcessingPage() {
       return;
     }
 
-    // If editing, show confirmation modal
-    if (editingId) {
-      setEditConfirmOpen(true);
-      return;
-    }
-
-    // If adding new, proceed directly
     setIsLoading(true);
     try {
-      const newRecord = {
-        trackingId: nextTrackingId,
-        ...formData,
-        receivedBy: user?.name || 'Unknown',
-        amount: formData.amount ? parseFloat(formData.amount) : undefined,
-        status: 'Pending',
-        timeOutRemarks: '',
-      };
-      const result = await processingService.addRecord(newRecord);
-      setSuccess('Record added successfully');
-
-      setRecords([result as Processing, ...records]);
+      if (editingId) {
+        // Update existing record
+        const updateData = {
+          ...formData,
+          amount: formData.amount ? parseFloat(formData.amount) : undefined,
+        };
+        await processingService.updateRecord(editingId, updateData);
+        const updatedRecords = records.map(r => r.id === editingId ? { 
+          ...r, 
+          ...formData,
+          amount: formData.amount ? parseFloat(formData.amount) : undefined 
+        } : r);
+        setRecords(updatedRecords);
+        setSuccess('Record updated successfully');
+        setEditingId(null);
+      } else {
+        // Add new record
+        const newRecord = {
+          trackingId: nextTrackingId,
+          ...formData,
+          receivedBy: user?.name || 'Unknown',
+          amount: formData.amount ? parseFloat(formData.amount) : undefined,
+          status: 'Pending',
+          timeOutRemarks: '',
+        };
+        const result = await processingService.addRecord(newRecord);
+        setRecords([result as Processing, ...records]);
+        setSuccess('Record added successfully');
+      }
 
       setFormData({
         receivedBy: '',
@@ -231,49 +240,6 @@ export default function ProcessingPage() {
     } catch (err) {
       console.error('Failed to save record:', err);
       setSuccess('Error saving record');
-      setSuccessModalOpen(true);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const confirmEditRecordUnused = async () => {
-    if (!editingId) return;
-
-    setIsLoading(true);
-    try {
-      const updateData = {
-        ...formData,
-        amount: formData.amount ? parseFloat(formData.amount) : undefined,
-      };
-      await processingService.updateRecord(editingId, updateData);
-      setSuccess('Record updated successfully');
-      setEditingId(null);
-
-      const updatedRecords = records.map(r => r.id === editingId ? { 
-        ...r, 
-        ...formData,
-        amount: formData.amount ? parseFloat(formData.amount) : undefined 
-      } : r);
-      setRecords(updatedRecords);
-
-      setFormData({
-        receivedBy: '',
-        dateTimeIn: getCurrentDateTime(),
-        dateTimeOut: '',
-        fullName: '',
-        designationOffice: '',
-        purpose: '',
-        amount: '',
-        remarks: '',
-        linkAttachments: '',
-      });
-      setIsDialogOpen(false);
-      setEditConfirmOpen(false);
-      setSuccessModalOpen(true);
-    } catch (err) {
-      console.error('Failed to save record:', err);
-      setSuccess('Error updating record');
       setSuccessModalOpen(true);
     } finally {
       setIsLoading(false);

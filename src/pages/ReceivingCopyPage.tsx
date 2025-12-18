@@ -211,20 +211,6 @@ export default function ReceivingCopyPage() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const categoryAmountsUnused = allRecords.reduce((acc, record) => {
-    if (record.recordType === 'Voucher' || record.recordType === 'Purchase Request' || record.recordType === 'Processing') {
-      const amount = typeof record.amount === 'string' ? 
-        parseFloat(record.amount.replace(/[^0-9.-]+/g, '')) || 0 : 
-        Number(record.amount) || 0;
-      
-      if (!acc[record.recordType]) {
-        acc[record.recordType] = 0;
-      }
-      acc[record.recordType] += amount;
-    }
-    return acc;
-  }, {} as Record<string, number>);
-
   // Format amount for display
   const formatAmount = (amount: string | number | undefined): string => {
     if (amount === undefined || amount === null || amount === '') return '-';

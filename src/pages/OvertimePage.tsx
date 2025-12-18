@@ -69,18 +69,6 @@ interface Overtime {
   timeOutRemarks?: string;
 }
 
-const getAcronymUnused = (text: string): string => {
-  if (!text) return '';
-  const acronymMatch = text.match(/\(([^)]+)\)/);
-  if (acronymMatch) {
-    return acronymMatch[1];
-  }
-  return text
-    .split(' ')
-    .map(word => word.charAt(0).toUpperCase())
-    .join('');
-};
-
 export default function OvertimePage() {
   const navigate = useNavigate();
   const { logout, user } = useAuth();

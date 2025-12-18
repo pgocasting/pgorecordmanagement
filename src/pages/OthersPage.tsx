@@ -71,18 +71,6 @@ interface Others {
   linkAttachments?: string;
 }
 
-const getAcronymUnused = (text: string): string => {
-  if (!text) return '';
-  const acronymMatch = text.match(/\(([^)]+)\)/);
-  if (acronymMatch) {
-    return acronymMatch[1];
-  }
-  return text
-    .split(' ')
-    .map(word => word.charAt(0).toUpperCase())
-    .join('');
-};
-
 const formatCurrency = (amount: string | number | undefined): string => {
   if (!amount) return '-';
   const num = typeof amount === 'string' ? parseFloat(amount) : amount;
