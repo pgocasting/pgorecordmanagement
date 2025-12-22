@@ -18,6 +18,7 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -950,93 +951,99 @@ export default function OvertimePage() {
 
       {/* View Modal */}
       <Dialog open={viewModalOpen} onOpenChange={setViewModalOpen}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="max-w-2xl max-h-[80vh] flex flex-col">
           <DialogHeader>
             <DialogTitle>Overtime Request Details</DialogTitle>
+            <DialogDescription>
+              View complete information about this overtime request record
+            </DialogDescription>
           </DialogHeader>
-          {selectedOvertime && (
-            <div className="space-y-3 text-sm">
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <p className="text-gray-600 font-medium">Tracking ID</p>
-                  <p className="text-gray-900">{selectedOvertime.trackingId}</p>
+          
+          {/* Scrollable Content Area */}
+          <div className="flex-1 overflow-y-auto">
+            {selectedOvertime && (
+              <div className="space-y-4">
+                {/* Personal Information */}
+                <div className="bg-white border border-gray-200 rounded-lg p-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-xs font-medium text-gray-600 uppercase">Full Name</p>
+                      <p className="text-sm font-semibold text-gray-900 mt-1">{selectedOvertime.fullName}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs font-medium text-gray-600 uppercase">Designation/Office</p>
+                      <p className="text-sm font-semibold text-gray-900 mt-1">{selectedOvertime.designation}</p>
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-gray-600 font-medium">Status</p>
-                  <p className="text-gray-900">{selectedOvertime.status}</p>
+
+                {/* Overtime Details */}
+                <div className="bg-white border border-gray-200 rounded-lg p-4">
+                  <div className="grid grid-cols-3 gap-4">
+                    <div>
+                      <p className="text-xs font-medium text-gray-600 uppercase">Date/Time In</p>
+                      <p className="text-sm font-semibold text-gray-900 mt-1">{formatDateTimeWithoutSeconds(selectedOvertime.dateTimeIn)}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs font-medium text-gray-600 uppercase">Date/Time Out</p>
+                      <p className="text-sm font-semibold text-gray-900 mt-1">{selectedOvertime.dateTimeOut ? formatDateTimeWithoutSeconds(selectedOvertime.dateTimeOut) : '-'}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs font-medium text-gray-600 uppercase">Place of Assignment</p>
+                      <p className="text-sm font-semibold text-gray-900 mt-1">{selectedOvertime.placeOfAssignment || '-'}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs font-medium text-gray-600 uppercase">Start Date</p>
+                      <p className="text-sm font-semibold text-gray-900 mt-1">{selectedOvertime.inclusiveDateStart || '-'}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs font-medium text-gray-600 uppercase">End Date</p>
+                      <p className="text-sm font-semibold text-gray-900 mt-1">{selectedOvertime.inclusiveDateEnd || '-'}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs font-medium text-gray-600 uppercase">Start Time</p>
+                      <p className="text-sm font-semibold text-gray-900 mt-1">{selectedOvertime.inclusiveTimeStart || '-'}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Purpose */}
+                <div className="bg-white border border-gray-200 rounded-lg p-4">
+                  <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wide mb-3">Purpose</h3>
+                  <p className="text-sm font-semibold text-gray-900 whitespace-pre-wrap">{selectedOvertime.purpose || '-'}</p>
+                </div>
+
+                {/* Remarks */}
+                <div className="bg-white border border-gray-200 rounded-lg p-4">
+                  <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wide mb-3">Remarks</h3>
+                  <p className="text-sm font-semibold text-gray-900 whitespace-pre-wrap">{selectedOvertime.remarks || '-'}</p>
+                  {selectedOvertime.timeOutRemarks && (
+                    <div className="mt-3 pt-3 border-t border-gray-200">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <p className="text-xs font-semibold text-blue-600 uppercase">Date/Time Out</p>
+                          <p className="text-sm font-semibold text-blue-900 mt-1">{selectedOvertime.dateTimeOut ? formatDateTimeWithoutSeconds(selectedOvertime.dateTimeOut) : '-'}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs font-semibold text-blue-600 uppercase">Time Out Remarks</p>
+                          <p className="text-sm font-semibold text-blue-900 mt-1 whitespace-pre-wrap">{selectedOvertime.timeOutRemarks}</p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
-              <div>
-                <p className="text-gray-600 font-medium">Received By</p>
-                <p className="text-gray-900">{selectedOvertime.receivedBy || '-'}</p>
-              </div>
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <p className="text-gray-600 font-medium">Full Name</p>
-                  <p className="text-gray-900">{selectedOvertime.fullName}</p>
-                </div>
-                <div>
-                  <p className="text-gray-600 font-medium">Designation</p>
-                  <p className="text-gray-900">{selectedOvertime.designation}</p>
-                </div>
-              </div>
-              <div>
-                <p className="text-gray-600 font-medium">Date/Time IN</p>
-                <p className="text-gray-900">{formatDateTimeWithoutSeconds(selectedOvertime.dateTimeIn)}</p>
-              </div>
-              <div>
-                <p className="text-gray-600 font-medium">Date/Time OUT</p>
-                <p className="text-gray-900">{selectedOvertime.dateTimeOut ? formatDateTimeWithoutSeconds(selectedOvertime.dateTimeOut) : '-'}</p>
-              </div>
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <p className="text-gray-600 font-medium">Inclusive Date Start</p>
-                  <p className="text-gray-900">{selectedOvertime.inclusiveDateStart}</p>
-                </div>
-                <div>
-                  <p className="text-gray-600 font-medium">Inclusive Date End</p>
-                  <p className="text-gray-900">{selectedOvertime.inclusiveDateEnd}</p>
-                </div>
-              </div>
-              <div>
-                <p className="text-gray-600 font-medium">Purpose</p>
-                <p className="text-gray-900">{selectedOvertime.purpose}</p>
-              </div>
-              <div>
-                <p className="text-gray-600 font-medium">Place of Assignment</p>
-                <p className="text-gray-900">{selectedOvertime.placeOfAssignment}</p>
-              </div>
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <p className="text-gray-600 font-medium">Inclusive Date Start</p>
-                  <p className="text-gray-900">{selectedOvertime.inclusiveDateStart || '-'}</p>
-                </div>
-                <div>
-                  <p className="text-gray-600 font-medium">Inclusive Date End</p>
-                  <p className="text-gray-900">{selectedOvertime.inclusiveDateEnd || '-'}</p>
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <p className="text-gray-600 font-medium">Inclusive Time Start</p>
-                  <p className="text-gray-900">{selectedOvertime.inclusiveTimeStart || '-'}</p>
-                </div>
-                <div>
-                  <p className="text-gray-600 font-medium">Inclusive Time End</p>
-                  <p className="text-gray-900">{selectedOvertime.inclusiveTimeEnd || '-'}</p>
-                </div>
-              </div>
-              <div>
-                <p className="text-gray-600 font-medium">Remarks</p>
-                <p className="text-gray-900">{selectedOvertime.remarks || selectedOvertime.timeOutRemarks || '-'}</p>
-              </div>
-            </div>
-          )}
-          <div className="flex justify-end pt-4">
-            <Button onClick={() => setViewModalOpen(false)} className="bg-indigo-600 hover:bg-indigo-700">
+            )}
+          </div>
+          
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setViewModalOpen(false)}
+            >
               Close
             </Button>
-          </div>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 

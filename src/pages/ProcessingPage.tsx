@@ -20,6 +20,7 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -891,103 +892,102 @@ setFormData(initialFormData());
 
       {/* View Record Modal */}
       <Dialog open={viewModalOpen} onOpenChange={setViewModalOpen}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-2xl max-h-[80vh] flex flex-col">
           <DialogHeader>
             <DialogTitle>Processing Record Details</DialogTitle>
+            <DialogDescription>
+              View complete information about this processing record
+            </DialogDescription>
           </DialogHeader>
-          {selectedRecord && (
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1">
-                  <p className="text-sm font-medium text-gray-500">Tracking ID</p>
-                  <p>{selectedRecord.trackingId}</p>
+          
+          {/* Scrollable Content Area */}
+          <div className="flex-1 overflow-y-auto">
+            {selectedRecord && (
+              <div className="space-y-4">
+                {/* Personal Information */}
+                <div className="bg-white border border-gray-200 rounded-lg p-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-xs font-medium text-gray-600 uppercase">Full Name</p>
+                      <p className="text-sm font-semibold text-gray-900 mt-1">{selectedRecord.fullName}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs font-medium text-gray-600 uppercase">Designation/Office</p>
+                      <p className="text-sm font-semibold text-gray-900 mt-1">{selectedRecord.designationOffice}</p>
+                    </div>
+                  </div>
                 </div>
-                <div className="space-y-1">
-                  <p className="text-sm font-medium text-gray-500">Status</p>
-                  <p>
-                    <span 
-                      className={`px-2 py-1 rounded-full text-xs font-medium ${
-                        selectedRecord.status === 'Completed' 
-                          ? 'bg-green-100 text-green-800' 
-                          : selectedRecord.status === 'Rejected'
-                          ? 'bg-red-100 text-red-800'
-                          : 'bg-yellow-100 text-yellow-800'
-                      }`}
+
+                {/* Processing Details */}
+                <div className="bg-white border border-gray-200 rounded-lg p-4">
+                  <div className="grid grid-cols-3 gap-4">
+                    <div>
+                      <p className="text-xs font-medium text-gray-600 uppercase">Date/Time In</p>
+                      <p className="text-sm font-semibold text-gray-900 mt-1">{formatDateTimeWithoutSeconds(selectedRecord.dateTimeIn)}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs font-medium text-gray-600 uppercase">Date/Time Out</p>
+                      <p className="text-sm font-semibold text-gray-900 mt-1">{selectedRecord.dateTimeOut ? formatDateTimeWithoutSeconds(selectedRecord.dateTimeOut) : '-'}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs font-medium text-gray-600 uppercase">Amount</p>
+                      <p className="text-sm font-semibold text-gray-900 mt-1">{selectedRecord.amount ? formatAmount(selectedRecord.amount) : '-'}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Purpose */}
+                <div className="bg-white border border-gray-200 rounded-lg p-4">
+                  <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wide mb-3">Purpose</h3>
+                  <p className="text-sm font-semibold text-gray-900 whitespace-pre-wrap">{selectedRecord.purpose || '-'}</p>
+                </div>
+
+                {/* Remarks */}
+                <div className="bg-white border border-gray-200 rounded-lg p-4">
+                  <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wide mb-3">Remarks</h3>
+                  <p className="text-sm font-semibold text-gray-900 whitespace-pre-wrap">{selectedRecord.remarks || '-'}</p>
+                  {selectedRecord.timeOutRemarks && (
+                    <div className="mt-3 pt-3 border-t border-gray-200">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <p className="text-xs font-semibold text-blue-600 uppercase">Date/Time Out</p>
+                          <p className="text-sm font-semibold text-blue-900 mt-1">{selectedRecord.dateTimeOut ? formatDateTimeWithoutSeconds(selectedRecord.dateTimeOut) : '-'}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs font-semibold text-blue-600 uppercase">Time Out Remarks</p>
+                          <p className="text-sm font-semibold text-blue-900 mt-1 whitespace-pre-wrap">{selectedRecord.timeOutRemarks}</p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Link Attachments */}
+                {selectedRecord.linkAttachments && (
+                  <div className="bg-white border border-gray-200 rounded-lg p-4">
+                    <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wide mb-3">Link Attachments</h3>
+                    <a 
+                      href={selectedRecord.linkAttachments} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="text-blue-600 hover:underline text-sm font-semibold"
                     >
-                      {selectedRecord.status}
-                    </span>
-                  </p>
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1">
-                  <p className="text-sm font-medium text-gray-500">Date/Time In</p>
-                  <p>{formatDateTimeWithoutSeconds(selectedRecord.dateTimeIn)}</p>
-                </div>
-                {selectedRecord.dateTimeOut && (
-                  <div className="space-y-1">
-                    <p className="text-sm font-medium text-gray-500">Date/Time Out</p>
-                    <p>{formatDateTimeWithoutSeconds(selectedRecord.dateTimeOut)}</p>
+                      {selectedRecord.linkAttachments}
+                    </a>
                   </div>
                 )}
               </div>
-              <div className="space-y-1">
-                <p className="text-sm font-medium text-gray-500">Full Name</p>
-                <p>{selectedRecord.fullName}</p>
-              </div>
-              <div className="space-y-1">
-                <p className="text-sm font-medium text-gray-500">Designation/Office</p>
-                <p>{selectedRecord.designationOffice}</p>
-              </div>
-              <div className="space-y-1">
-                <p className="text-sm font-medium text-gray-500">Purpose</p>
-                <p className="whitespace-pre-line">{selectedRecord.purpose}</p>
-              </div>
-              {selectedRecord.amount && (
-                <div className="space-y-1">
-                  <p className="text-sm font-medium text-gray-500">Amount</p>
-                  <p className="text-lg font-semibold text-gray-900">
-                    {formatAmount(selectedRecord.amount)}
-                  </p>
-                </div>
-              )}
-              {selectedRecord.linkAttachments && (
-                <div className="space-y-1">
-                  <p className="text-sm font-medium text-gray-500">Link Attachments</p>
-                  <a 
-                    href={selectedRecord.linkAttachments} 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="text-blue-600 hover:underline"
-                  >
-                    {selectedRecord.linkAttachments}
-                  </a>
-                </div>
-              )}
-              {selectedRecord.remarks && (
-                <div className="space-y-1">
-                  <p className="text-sm font-medium text-gray-500">Remarks</p>
-                  <p className="whitespace-pre-line">{selectedRecord.remarks}</p>
-                </div>
-              )}
-              {selectedRecord.timeOutRemarks && (
-                <div className="space-y-1">
-                  <p className="text-sm font-medium text-gray-500">Time Out Remarks</p>
-                  <p className="whitespace-pre-line">{selectedRecord.timeOutRemarks}</p>
-                </div>
-              )}
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1">
-                  <p className="text-sm font-medium text-gray-500">Received By</p>
-                  <p>{selectedRecord.receivedBy}</p>
-                </div>
-                <div className="space-y-1">
-                  <p className="text-sm font-medium text-gray-500">Created At</p>
-                  <p>{selectedRecord.dateTimeIn && formatDateTimeWithoutSeconds(selectedRecord.dateTimeIn)}</p>
-                </div>
-              </div>
-            </div>
-          )}
+            )}
+          </div>
+          
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setViewModalOpen(false)}
+            >
+              Close
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 

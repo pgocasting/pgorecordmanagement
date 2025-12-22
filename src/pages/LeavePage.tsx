@@ -13,15 +13,20 @@ const getCurrentDateTime = (): string => {
   return `${year}-${month}-${day}T${hours}:${minutes}`;
 };
 import { Button } from '@/components/ui/button';
-import { ActionButtons } from '@/components/ActionButtons';
 import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
+import {
+  Card,
+  CardContent,
+} from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import {
   Sheet,
   SheetContent,
@@ -100,6 +105,60 @@ export default function LeavePage() {
       hour12: true,
       timeZone: 'Asia/Manila'
     });
+  };
+
+  // Helper function to get acronym from designation
+  const getDesignationAcronym = (designation: string): string => {
+    const acronymMap: { [key: string]: string } = {
+      'Office of the Provincial Governor (PGO)': 'PGO',
+      'Office of the Vice Governor (OVG)': 'OVG',
+      "Provincial Administrator's Office (PAO)": 'PAO',
+      'Provincial Legal Office (PLO)': 'PLO',
+      'Provincial Treasury Office (PTO)': 'PTO',
+      'Provincial Accounting Office (PAccO)': 'PAccO',
+      'Provincial Budget Office (PBO)': 'PBO',
+      "Provincial Assessor's Office (PAO)": 'PAO',
+      'Provincial Engineer\'s Office (PEO)': 'PEO',
+      'Provincial Health Office (PHO)': 'PHO',
+      'Provincial Social Welfare and Development Office (PSWDO)': 'PSWDO',
+      'Provincial Agriculture Office (PAgrO)': 'PAgrO',
+      'Provincial Veterinary Office (PVO)': 'PVO',
+      'Provincial Environment and Natural Resources Office (PENRO)': 'PENRO',
+      'Provincial Planning and Development Office (PPDO)': 'PPDO',
+      'Provincial Human Resource Management Office (PHRMO)': 'PHRMO',
+      'Provincial General Services Office (PGSO)': 'PGSO',
+      'Provincial Information and Communications Technology Office (PICTO)': 'PICTO',
+      'Provincial Disaster Risk Reduction and Management Office (PDRRMO)': 'PDRRMO',
+      'Provincial Tourism Office (PTO)': 'PTO',
+      'Provincial Youth, Sports, and Development Office (PYSDO)': 'PYSDO',
+      'Sangguniang Panlalawigan Secretariat (SPS)': 'SPS',
+      'Admin': 'Admin',
+      'Manager': 'Manager',
+      'Staff': 'Staff',
+      'Officer': 'Officer'
+    };
+    
+    // If the full designation is in the map, return its acronym
+    if (acronymMap[designation]) {
+      return acronymMap[designation];
+    }
+    
+    // If it's already an acronym, return as is
+    const acronyms = Object.values(acronymMap);
+    if (acronyms.includes(designation)) {
+      return designation;
+    }
+    
+    // Extract acronym from parentheses if present
+    const match = designation.match(/\(([^)]+)\)/);
+    if (match) {
+      return match[1];
+    }
+    
+    // Default: return first letters of words (max 4 chars)
+    const words = designation.split(' ');
+    const acronym = words.slice(0, 4).map(word => word.charAt(0)).join('').toUpperCase();
+    return acronym;
   };
 
   const navigate = useNavigate();
@@ -569,7 +628,12 @@ export default function LeavePage() {
       
       const now = new Date().toISOString();
       const currentUser = user?.name || 'Unknown';
-      const newRemarks = timeOutData.timeOutRemarks;
+      const formattedDateTimeOut = formatDateTimeWithoutSeconds(timeOutData.dateTimeOut);
+      const newRemarks = `${timeOutData.timeOutRemarks}\n\nTime Out: ${formattedDateTimeOut}`;
+      
+      console.log('Debug - Time Out Data:', timeOutData);
+      console.log('Debug - Formatted DateTime Out:', formattedDateTimeOut);
+      console.log('Debug - New Remarks:', newRemarks);
       
       const updatedRemarksHistory = [
         ...(leave.remarksHistory || []),
@@ -616,7 +680,7 @@ export default function LeavePage() {
   };
 
   return (
-    <div className="flex h-screen bg-gray-50">
+    <div className="flex h-screen bg-background">
       {/* Mobile Sidebar */}
       <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
         <SheetTrigger asChild className="md:hidden">
@@ -630,37 +694,37 @@ export default function LeavePage() {
       </Sheet>
 
       {/* Desktop Sidebar */}
-      <div className="hidden md:block bg-white border-r border-gray-200 shadow-sm">
+      <div className="hidden md:block bg-card border-r shadow-sm">
         <Sidebar recordTypes={recordTypes} onNavigate={undefined} />
       </div>
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Top Bar */}
-        <div className="bg-white border-b border-gray-200 px-6 py-4">
+        <div className="bg-card border-b px-6 py-4">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Leave Records</h1>
-              <p className="text-sm text-gray-600">Welcome back</p>
+              <h1 className="text-2xl font-bold text-foreground">Leave Records</h1>
+              <p className="text-sm text-muted-foreground">Welcome back</p>
             </div>
             
             {/* User Info and Logout */}
             <div className="flex items-center gap-2">
               {user?.name && (
-                <div className="flex items-center gap-2 px-3 py-2 bg-gray-50 rounded-lg border border-gray-200">
-                  <div className="w-6 h-6 rounded-full bg-indigo-100 flex items-center justify-center shrink-0">
-                    <User className="h-3 w-3 text-indigo-600" />
+                <div className="flex items-center gap-2 px-3 py-2 bg-secondary rounded-lg border">
+                  <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                    <User className="h-3 w-3 text-primary" />
                   </div>
                   <div className="flex flex-col min-w-0">
-                    <p className="text-xs font-medium text-gray-900 truncate">{user.name}</p>
-                    <p className="text-xs text-gray-500 truncate capitalize">{user.role}</p>
+                    <p className="text-xs font-medium text-foreground truncate">{user.name}</p>
+                    <p className="text-xs text-muted-foreground truncate capitalize">{user.role}</p>
                   </div>
                 </div>
               )}
               
               <Button
                 variant="outline"
-                className="gap-2 text-red-600 hover:text-red-700 hover:bg-red-50 h-9"
+                className="gap-2 text-destructive hover:text-destructive hover:bg-destructive/10 h-9"
                 onClick={handleLogout}
               >
                 <LogOut className="h-4 w-4" />
@@ -671,17 +735,17 @@ export default function LeavePage() {
         </div>
 
         {/* Content Area */}
-        <div className="flex-1 overflow-auto p-6 bg-linear-to-br from-gray-100 via-gray-50 to-gray-100" style={{backgroundImage: 'linear-gradient(0deg, transparent 24%, rgba(200, 200, 200, 0.05) 25%, rgba(200, 200, 200, 0.05) 26%, transparent 27%, transparent 74%, rgba(200, 200, 200, 0.05) 75%, rgba(200, 200, 200, 0.05) 76%, transparent 77%, transparent), linear-gradient(90deg, transparent 24%, rgba(200, 200, 200, 0.05) 25%, rgba(200, 200, 200, 0.05) 26%, transparent 27%, transparent 74%, rgba(200, 200, 200, 0.05) 75%, rgba(200, 200, 200, 0.05) 76%, transparent 77%, transparent)', backgroundSize: '50px 50px'}}>
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+        <div className="flex-1 overflow-auto p-6 bg-muted/30">
+          <div className="bg-card rounded-lg shadow-sm border overflow-hidden">
             {/* Header */}
-            <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+            <div className="px-6 py-4 border-b flex items-center justify-between">
               <div>
-                <h2 className="text-xl font-bold text-gray-900">Leaves</h2>
-                <p className="text-sm text-gray-600">Manage and view all leave records</p>
+                <h2 className="text-xl font-bold text-foreground">Leaves</h2>
+                <p className="text-sm text-muted-foreground">Manage and view all leave records</p>
               </div>
               <div className="flex items-center gap-3">
                 <div className="relative w-64">
-                  <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                  <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                   <Input
                     placeholder="Search by tracking ID, name..."
                     value={searchTerm}
@@ -812,17 +876,6 @@ export default function LeavePage() {
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <Label htmlFor="inclusiveDateStart">Date Start *</Label>
-                        <Input
-                          id="inclusiveDateStart"
-                          name="inclusiveDateStart"
-                          type="date"
-                          value={formData.inclusiveDateStart}
-                          onChange={handleInputChange}
-                          required
-                        />
-                      </div>
-                      <div className="space-y-2">
                         <Label htmlFor="inclusiveDateEnd">Date End *</Label>
                         <Input
                           id="inclusiveDateEnd"
@@ -833,13 +886,24 @@ export default function LeavePage() {
                           required
                         />
                       </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="inclusiveDateStart">Date Start *</Label>
+                        <Input
+                          id="inclusiveDateStart"
+                          name="inclusiveDateStart"
+                          type="date"
+                          value={formData.inclusiveDateStart}
+                          onChange={handleInputChange}
+                          required
+                        />
+                      </div>
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="purpose">Purpose</Label>
                       <Input
                         id="purpose"
                         name="purpose"
-                        placeholder="Enter purpose"
+                        placeholder="Purpose"
                         value={formData.purpose}
                         onChange={handleInputChange}
                       />
@@ -849,7 +913,7 @@ export default function LeavePage() {
                       <Input
                         id="remarks"
                         name="remarks"
-                        placeholder="Enter remarks"
+                        placeholder="Remarks"
                         value={formData.remarks}
                         onChange={handleInputChange}
                       />
@@ -868,60 +932,68 @@ export default function LeavePage() {
             </div>
 
             {/* Table */}
-            <div className="bg-white rounded-lg border border-gray-200 shadow-md overflow-hidden">
+            <div className="bg-card rounded-lg border shadow-sm overflow-hidden">
               <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
-                  <TableRow className="bg-gray-50">
-                    <TableHead className="font-semibold py-1 px-1 text-center text-xs">Received By</TableHead>
-                    <TableHead className="font-semibold py-1 px-1 text-center text-xs">Tracking ID</TableHead>
-                    <TableHead className="font-semibold py-1 px-1 text-center text-xs">Date/Time IN</TableHead>
-                    <TableHead className="font-semibold py-1 px-1 text-center text-xs">Date/Time OUT</TableHead>
-                    <TableHead className="font-semibold py-1 px-1 text-center text-xs">Full Name</TableHead>
-                    <TableHead className="font-semibold py-1 px-1 text-center text-xs">Designation</TableHead>
-                    <TableHead className="font-semibold py-1 px-1 text-center text-xs">Leave Type</TableHead>
-                    <TableHead className="font-semibold py-1 px-1 text-center text-xs">Dates</TableHead>
-                    <TableHead className="font-semibold py-1 px-1 text-center text-xs">Purpose</TableHead>
-                    <TableHead className="font-semibold py-1 px-1 text-center text-xs">Status</TableHead>
-                    <TableHead className="font-semibold py-1 px-1 text-center text-xs">Remarks</TableHead>
-                    <TableHead className="font-semibold py-1 px-1 text-center text-xs">Actions</TableHead>
+                  <TableRow className="bg-muted/50">
+                    <TableHead className="font-semibold py-3 px-4 text-center text-xs">Received By</TableHead>
+                    <TableHead className="font-semibold py-3 px-4 text-center text-xs">Tracking ID</TableHead>
+                    <TableHead className="font-semibold py-3 px-4 text-center text-xs">Date/Time IN</TableHead>
+                    <TableHead className="font-semibold py-3 px-4 text-center text-xs">Date/Time OUT</TableHead>
+                    <TableHead className="font-semibold py-3 px-4 text-center text-xs">Full Name</TableHead>
+                    <TableHead className="font-semibold py-3 px-4 text-center text-xs">Designation</TableHead>
+                    <TableHead className="font-semibold py-3 px-4 text-center text-xs">Leave Type</TableHead>
+                    <TableHead className="font-semibold py-3 px-4 text-center text-xs">Dates</TableHead>
+                    <TableHead className="font-semibold py-3 px-4 text-center text-xs">Purpose</TableHead>
+                    <TableHead className="font-semibold py-3 px-4 text-center text-xs">Status</TableHead>
+                    <TableHead className="font-semibold py-3 px-4 text-center text-xs">Remarks</TableHead>
+                    <TableHead className="font-semibold py-3 px-4 text-center text-xs">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {filteredLeaves.length === 0 ? (
                     <TableRow key="empty-state">
-                      <TableCell colSpan={12} className="text-center py-4 text-gray-500 text-xs">
+                      <TableCell colSpan={12} className="text-center py-8 text-muted-foreground">
                         {leaves.length === 0 ? 'No leaves found. Click "Add Leave" to create one.' : 'No leaves match your search.'}
                       </TableCell>
                     </TableRow>
                   ) : (
                     filteredLeaves.map((item) => (
-                      <TableRow key={item.id} className="hover:bg-gray-50">
-                        <TableCell className="text-xs py-1 px-1 text-center wrap-break-word whitespace-normal">{item.receivedBy || '-'}</TableCell>
-                        <TableCell className="text-xs py-1 px-1 text-center font-bold italic text-indigo-600 wrap-break-word whitespace-normal">{item.trackingId}</TableCell>
-                        <TableCell className="text-xs py-1 px-1 text-center wrap-break-word whitespace-normal">{formatDateTimeWithoutSeconds(item.dateTimeIn)}</TableCell>
-                        <TableCell className={`text-xs py-1 px-1 text-center wrap-break-word whitespace-normal ${item.status === 'Completed' ? 'text-green-600 font-medium' : 'text-red-600'}`}>{item.dateTimeOut ? formatDateTimeWithoutSeconds(item.dateTimeOut) : '-'}</TableCell>
-                        <TableCell className="text-xs py-1 px-1 text-center wrap-break-word whitespace-normal">{item.fullName}</TableCell>
-                        <TableCell className="text-xs py-1 px-1 text-center wrap-break-word whitespace-normal">{item.designation}</TableCell>
-                        <TableCell className="text-xs py-1 px-1 text-center wrap-break-word whitespace-normal">{item.leaveType}</TableCell>
-                        <TableCell className="text-xs py-1 px-1 text-center wrap-break-word whitespace-normal">{item.inclusiveDateStart} to {item.inclusiveDateEnd}</TableCell>
-                        <TableCell className="text-xs py-1 px-1 text-center wrap-break-word whitespace-normal">{item.purpose}</TableCell>
-                        <TableCell className="text-xs py-1 px-1 text-center wrap-break-word whitespace-normal">
-                          <span
-                            className={`px-1 py-0.5 rounded text-xs font-medium ${
-                              item.status === 'Completed'
-                                ? 'bg-green-100 text-green-800'
-                                : item.status === 'Approved'
-                                ? 'bg-green-100 text-green-800'
-                                : item.status === 'Rejected'
-                                ? 'bg-red-100 text-red-800'
-                                : item.status === 'Pending'
-                                ? 'bg-yellow-100 text-yellow-800'
-                                : 'bg-gray-100 text-gray-800'
+                      <TableRow key={item.id} className="hover:bg-muted/50 transition-colors">
+                        <TableCell className="text-sm py-3 px-4 text-center">{item.receivedBy || '-'}</TableCell>
+                        <TableCell className="text-sm py-3 px-4 text-center font-bold text-primary">{item.trackingId}</TableCell>
+                        <TableCell className="text-sm py-3 px-4 text-center">{formatDateTimeWithoutSeconds(item.dateTimeIn)}</TableCell>
+                        <TableCell className={`text-sm py-3 px-4 text-center ${item.status === 'Completed' ? 'text-green-600 font-medium' : 'text-red-600'}`}>{item.dateTimeOut ? formatDateTimeWithoutSeconds(item.dateTimeOut) : '-'}</TableCell>
+                        <TableCell className="text-sm py-3 px-4 text-center">{item.fullName}</TableCell>
+                        <TableCell className="text-sm py-3 px-4 text-center">
+                          <div className="group relative inline-block">
+                            <span className="text-primary font-medium hover:underline cursor-default">
+                              {getDesignationAcronym(item.designation)}
+                            </span>
+                            <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-sm rounded-lg shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
+                              <div className="font-medium">{item.designation}</div>
+                              <div className="absolute top-full left-1/2 transform -translate-x-1/2 -mt-1 w-2 h-2 bg-gray-900 rotate-45"></div>
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-sm py-3 px-4 text-center">{item.leaveType}</TableCell>
+                        <TableCell className="text-sm py-3 px-4 text-center">{item.inclusiveDateStart} to {item.inclusiveDateEnd}</TableCell>
+                        <TableCell className="text-sm py-3 px-4 text-center">{item.purpose}</TableCell>
+                        <TableCell className="text-sm py-3 px-4 text-center">
+                          <Badge 
+                            variant={
+                              item.status === 'Rejected' ? 'destructive' : 'secondary'
+                            }
+                            className={`${
+                              item.status === 'Completed' || item.status === 'Approved' ? 
+                              'bg-green-100 text-green-800 hover:bg-green-200 border-green-200' : 
+                              item.status === 'Pending' || (!item.status || item.status === 'Pending') ? 
+                              'bg-yellow-100 text-yellow-800 hover:bg-yellow-200 border-yellow-200' : ''
                             }`}
                           >
                             {item.status || 'Pending'}
-                          </span>
+                          </Badge>
                         </TableCell>
                         <TableCell 
                           className="wrap-break-word whitespace-normal text-xs cursor-pointer hover:bg-gray-50"
@@ -951,22 +1023,66 @@ export default function LeavePage() {
                             </div>
                           ) : '-'}
                         </TableCell>
-                        <TableCell className="py-1 px-1 text-center wrap-break-word whitespace-normal">
-                          <ActionButtons
-                            onView={() => handleViewLeave(item.id)}
-                            onEdit={() => handleEditLeave(item.id)}
-                            onTimeOut={() => handleTimeOut(item.id)}
-                            onReject={() => handleRejectLeave(item.id)}
-                            hidden={item.status === 'Rejected'}
-                            canEdit={item.status !== 'Rejected' && item.status !== 'Completed'}
-                            canReject={item.status !== 'Rejected' && item.status !== 'Completed'}
-                            showTimeOut={item.status !== 'Completed' && item.status !== 'Rejected'}
-                            showEdit={item.status !== 'Completed'}
-                            showReject={item.status !== 'Completed'}
-                            editDisabledReason={item.status === 'Rejected' ? 'Cannot edit rejected records' : (item.status === 'Completed' ? 'Cannot edit completed records' : undefined)}
-                            rejectDisabledReason={item.status === 'Rejected' ? 'Record already rejected' : (item.status === 'Completed' ? 'Cannot reject completed records' : undefined)}
-                          />
-                        </TableCell>
+                        <TableCell className="text-sm py-3 px-4">
+                          <div className="flex flex-col items-center gap-1">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleViewLeave(item.id)}
+                              className="h-8 w-16 text-blue-600 border-blue-600 hover:bg-blue-50 hover:text-blue-700"
+                            >
+                              View
+                            </Button>
+                            {item.status === 'Pending' && (
+                              <>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleEditLeave(item.id)}
+                                  className="h-8 w-16 text-orange-600 border-orange-600 hover:bg-orange-50 hover:text-orange-700"
+                                >
+                                  Edit
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                              onClick={() => handleRejectLeave(item.id)}
+                              className="h-8 w-16 text-red-600 border-red-600 hover:bg-red-50 hover:text-red-700"
+                            >
+                              Reject
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleTimeOut(item.id)}
+                              className="h-8 w-16 text-blue-600 border-blue-600 hover:bg-blue-50 hover:text-blue-700"
+                            >
+                              Out
+                            </Button>
+                          </>
+                        )}
+                        {item.status === 'Approved' && (
+                          <>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleEditLeave(item.id)}
+                              className="h-8 w-16 text-orange-600 border-orange-600 hover:bg-orange-50 hover:text-orange-700"
+                            >
+                              Edit
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleTimeOut(item.id)}
+                              className="h-8 w-16 text-blue-600 border-blue-600 hover:bg-blue-50 hover:text-blue-700"
+                            >
+                              Out
+                            </Button>
+                          </>
+                        )}
+                      </div>
+                    </TableCell>
                       </TableRow>
                     ))
                   )}
@@ -1128,132 +1244,171 @@ export default function LeavePage() {
 
       {/* View Modal */}
       <Dialog open={viewModalOpen} onOpenChange={setViewModalOpen}>
-        <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="text-2xl">Leave Details</DialogTitle>
-          </DialogHeader>
-          {selectedLeave && (
-            <div className="space-y-6">
-              {/* Header Row - Tracking ID, Status, Date/Time IN */}
-              <div className="grid grid-cols-3 gap-6 pb-4 border-b border-gray-200">
-                <div>
-                  <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Tracking ID</p>
-                  <p className="text-lg font-bold text-indigo-600 mt-1">{selectedLeave.trackingId}</p>
-                </div>
-                <div>
-                  <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Status</p>
-                  <p className="mt-2">
-                    <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                      selectedLeave.status === 'Completed' ? 'bg-green-100 text-green-800' :
-                      selectedLeave.status === 'Pending' ? 'bg-yellow-100 text-yellow-800' :
-                      selectedLeave.status === 'Rejected' ? 'bg-red-100 text-red-800' :
-                      'bg-gray-100 text-gray-800'
-                    }`}>
-                      {selectedLeave.status}
-                    </span>
-                  </p>
-                </div>
-                <div>
-                  <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Date/Time In</p>
-                  <p className="text-sm font-medium text-gray-900 mt-1">{formatDateTimeWithoutSeconds(selectedLeave.dateTimeIn)}</p>
-                </div>
-              </div>
-
-              {/* Received By */}
+        <DialogContent className="w-[90vw] h-[90vh] overflow-hidden flex flex-col">
+          <DialogHeader className="pb-4 shrink-0">
+            <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Received By</p>
-                <p className="text-sm font-medium text-gray-900 mt-1">{selectedLeave.receivedBy || '-'}</p>
+                <DialogTitle className="text-xl font-semibold text-gray-900">Leave Details</DialogTitle>
+                <DialogDescription className="text-sm text-gray-600 mt-1">
+                  View complete information about this leave record
+                </DialogDescription>
               </div>
-
-              {/* Personal Information */}
-              <div>
-                <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wide mb-4">Personal Information</h3>
-                <div className="grid grid-cols-2 gap-6">
-                  <div>
-                    <p className="text-xs font-medium text-gray-600 uppercase">Full Name</p>
-                    <p className="text-sm font-semibold text-gray-900 mt-1">{selectedLeave.fullName}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs font-medium text-gray-600 uppercase">Designation</p>
-                    <p className="text-sm font-semibold text-gray-900 mt-1">{selectedLeave.designation}</p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Leave Information */}
-              <div>
-                <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wide mb-4">Leave Information</h3>
-                <div className="grid grid-cols-2 gap-6">
-                  <div>
-                    <p className="text-xs font-medium text-gray-600 uppercase">Leave Type</p>
-                    <p className="text-sm font-medium text-gray-900 mt-1">{selectedLeave.leaveType}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs font-medium text-gray-600 uppercase">Date/Time Out</p>
-                    <p className="text-sm font-semibold text-gray-900 mt-1">{selectedLeave.dateTimeOut ? formatDateTimeWithoutSeconds(selectedLeave.dateTimeOut) : '-'}</p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Purpose */}
-              <div>
-                <p className="text-xs font-medium text-gray-600 uppercase">Purpose</p>
-                <p className="text-sm font-semibold text-gray-900 mt-1">{selectedLeave.purpose || '-'}</p>
-              </div>
-
-              {/* Leave Period */}
-              <div>
-                <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wide mb-4">Leave Period</h3>
-                <div className="grid grid-cols-2 gap-6">
-                  <div>
-                    <p className="text-xs font-medium text-gray-600 uppercase">Inclusive Date Start</p>
-                    <p className="text-sm font-semibold text-gray-900 mt-1">{selectedLeave.inclusiveDateStart || '-'}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs font-medium text-gray-600 uppercase">Inclusive Date End</p>
-                    <p className="text-sm font-semibold text-gray-900 mt-1">{selectedLeave.inclusiveDateEnd}</p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Details */}
-              <div>
-                <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wide mb-4">Details</h3>
-                <div>
-                  <p className="text-xs font-medium text-gray-600 uppercase">Purpose</p>
-                  <p className="text-sm font-semibold text-gray-900 mt-1 whitespace-pre-wrap">{selectedLeave.purpose}</p>
-                </div>
-              </div>
-
-              {/* Additional Information */}
-              <div>
-                <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wide mb-4">Additional Information</h3>
-                <div className="space-y-4">
-                  <div>
-                    <p className="text-xs font-medium text-gray-600 uppercase">Remarks</p>
-                    <p className="text-sm font-semibold text-gray-900 mt-1">{selectedLeave.remarks || '-'}</p>
-                  </div>
-                  {selectedLeave.timeOutRemarks && (
-                    <div>
-                      <p className="text-xs font-semibold text-blue-600 uppercase">Time Out Remarks</p>
-                      <p className="text-sm font-semibold text-blue-900 mt-1">{selectedLeave.timeOutRemarks}</p>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Close Button */}
-              <div className="flex justify-end gap-2 pt-4 border-t border-gray-200">
-                <Button
-                  variant="outline"
-                  onClick={() => setViewModalOpen(false)}
-                  className="px-6"
+              {selectedLeave && (
+                <Badge 
+                  variant={
+                    selectedLeave.status === 'Rejected' ? 'destructive' : 'secondary'
+                  }
+                  className={`${
+                    selectedLeave.status === 'Completed' || selectedLeave.status === 'Approved' ? 
+                    'bg-green-100 text-green-800 hover:bg-green-200 border-green-200' : 
+                    selectedLeave.status === 'Pending' || (!selectedLeave.status || selectedLeave.status === 'Pending') ? 
+                    'bg-yellow-100 text-yellow-800 hover:bg-yellow-200 border-yellow-200' : ''
+                  } px-3 py-1 shrink-0`}
                 >
-                  Close
-                </Button>
-              </div>
+                  {selectedLeave.status || 'Pending'}
+                </Badge>
+              )}
             </div>
-          )}
+          </DialogHeader>
+          
+          {/* Scrollable Content Area */}
+          <div className="overflow-y-auto px-1 flex-1 min-h-0">
+            {selectedLeave && (
+              <div className="space-y-4">
+                {/* Additional Information */}
+                <Card className="border-gray-200">
+                  <CardContent className="p-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <p className="text-sm font-medium text-gray-600">Tracking ID</p>
+                        <p className="text-sm text-gray-900 mt-1">{selectedLeave.trackingId}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-gray-600">Received By</p>
+                        <p className="text-sm text-gray-900 mt-1">{selectedLeave.receivedBy || '-'}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-gray-600">Date/Time In</p>
+                        <p className="text-sm text-gray-900 mt-1">{formatDateTimeWithoutSeconds(selectedLeave.dateTimeIn)}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-gray-600">Created Date</p>
+                        <p className="text-sm text-gray-900 mt-1">{formatDateTimeWithoutSeconds(selectedLeave.createdAt)}</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Basic Information */}
+                <Card className="border-gray-200">
+                  <CardContent className="p-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <p className="text-sm font-medium text-gray-600">Full Name</p>
+                        <p className="text-sm text-gray-900 mt-1">{selectedLeave.fullName}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-gray-600">Designation</p>
+                        <div className="mt-1">
+                          <div className="group relative inline-block">
+                            <span className="text-primary font-medium hover:underline cursor-default">
+                              {getDesignationAcronym(selectedLeave.designation)}
+                            </span>
+                            <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-sm rounded-lg shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
+                              <div className="font-medium">{selectedLeave.designation}</div>
+                              <div className="absolute top-full left-1/2 transform -translate-x-1/2 -mt-1 w-2 h-2 bg-gray-900 rotate-45"></div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-gray-600">Leave Type</p>
+                        <p className="text-sm text-gray-900 mt-1">{selectedLeave.leaveType}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-gray-600">Status</p>
+                        <div className="mt-1">
+                          <Badge 
+                            variant={
+                              selectedLeave.status === 'Rejected' ? 'destructive' : 'secondary'
+                            }
+                            className={`${
+                              selectedLeave.status === 'Completed' || selectedLeave.status === 'Approved' ? 
+                              'bg-green-100 text-green-800 hover:bg-green-200 border-green-200' : 
+                              selectedLeave.status === 'Pending' || (!selectedLeave.status || selectedLeave.status === 'Pending') ? 
+                              'bg-yellow-100 text-yellow-800 hover:bg-yellow-200 border-yellow-200' : ''
+                            } text-xs`}
+                          >
+                            {selectedLeave.status || 'Pending'}
+                          </Badge>
+                        </div>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-gray-600">Start Date</p>
+                        <p className="text-sm text-gray-900 mt-1">{selectedLeave.inclusiveDateStart || '-'}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-gray-600">End Date</p>
+                        <p className="text-sm text-gray-900 mt-1">{selectedLeave.inclusiveDateEnd}</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Purpose and Remarks */}
+                <Card className="border-gray-200">
+                  <CardContent className="p-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      {/* Purpose Column */}
+                      <div>
+                        <p className="text-sm font-medium text-gray-600 mb-2">Purpose</p>
+                        <p className="text-sm text-gray-900 whitespace-pre-wrap bg-gray-50 px-3 py-2 rounded-md border border-gray-200 min-h-[100px]">
+                          {selectedLeave.purpose || 'No purpose specified'}
+                        </p>
+                      </div>
+                      
+                      {/* Remarks Column */}
+                      <div>
+                        <p className="text-sm font-medium text-gray-600 mb-2">Remarks</p>
+                        <p className="text-sm text-gray-900 whitespace-pre-wrap bg-gray-50 px-3 py-2 rounded-md border border-gray-200 min-h-[100px]">
+                          {selectedLeave.remarks || 'No remarks'}
+                        </p>
+                        {selectedLeave.timeOutRemarks && (
+                          <div className="mt-3 pt-3 border-t border-gray-200">
+                            <p className="text-sm font-medium text-gray-600 mb-2">Time Out Details</p>
+                            <div className="space-y-2">
+                              <div>
+                                <p className="text-sm font-medium text-gray-600">Date/Time Out</p>
+                                <p className="text-sm text-gray-900 bg-blue-50 px-2 py-1 rounded border border-blue-200">
+                                  {selectedLeave.dateTimeOut ? formatDateTimeWithoutSeconds(selectedLeave.dateTimeOut) : '-'}
+                                </p>
+                              </div>
+                              <div>
+                                <p className="text-sm font-medium text-gray-600">Time Out Remarks</p>
+                                <p className="text-sm text-gray-900 whitespace-pre-wrap bg-blue-50 px-2 py-1 rounded border border-blue-200">
+                                  {selectedLeave.timeOutRemarks}
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
+          </div>
+          
+          <DialogFooter className="pt-4 border-t border-gray-200 shrink-0">
+            <Button
+              variant="outline"
+              onClick={() => setViewModalOpen(false)}
+              className="px-6"
+            >
+              Close
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 

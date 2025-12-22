@@ -7,6 +7,7 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -982,100 +983,100 @@ export default function VoucherPage() {
 
       {/* View Modal */}
       <Dialog open={viewModalOpen} onOpenChange={setViewModalOpen}>
-        <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-2xl max-h-[80vh] flex flex-col">
           <DialogHeader>
             <DialogTitle className="text-2xl">Voucher Details</DialogTitle>
             <DialogDescription>
-              View the complete details of this voucher record.
+              View complete information about this voucher record
             </DialogDescription>
           </DialogHeader>
-          {selectedVoucher && (
-            <div className="space-y-6">
-              <div className="grid grid-cols-3 gap-6 pb-4 border-b border-gray-200">
-                <div>
-                  <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Tracking ID</p>
-                  <p className="text-lg font-bold text-indigo-600 mt-1">{selectedVoucher.trackingId}</p>
-                </div>
-                <div>
-                  <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Status</p>
-                  <p className="mt-2">
-                    <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                      selectedVoucher.status === 'Completed' ? 'bg-green-100 text-green-800' :
-                      selectedVoucher.status === 'Pending' ? 'bg-yellow-100 text-yellow-800' :
-                      selectedVoucher.status === 'Rejected' ? 'bg-red-100 text-red-800' :
-                      'bg-gray-100 text-gray-800'
-                    }`}>
-                      {selectedVoucher.status}
-                    </span>
-                  </p>
-                </div>
-                <div>
-                  <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Date/Time In</p>
-                  <p className="text-sm font-medium text-gray-900 mt-1">{formatDateTimeWithoutSeconds(selectedVoucher.dateTimeIn)}</p>
-                </div>
-              </div>
-
-              <div>
-                <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Received By</p>
-                <p className="text-sm font-medium text-gray-900 mt-1">{selectedVoucher.receivedBy || '-'}</p>
-              </div>
-
-              <div>
-                <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wide mb-4">Voucher Information</h3>
-                <div className="grid grid-cols-2 gap-6">
-                  <div>
-                    <p className="text-xs font-medium text-gray-600 uppercase">DV No.</p>
-                    <p className="text-sm font-semibold text-gray-900 mt-1">{selectedVoucher.dvNo}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs font-medium text-gray-600 uppercase">Payee</p>
-                    <p className="text-sm font-semibold text-gray-900 mt-1">{selectedVoucher.payee}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs font-medium text-gray-600 uppercase">Amount</p>
-                    <p className="text-sm font-semibold text-gray-900 mt-1">{formatAmount(selectedVoucher.amount)}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs font-medium text-gray-600 uppercase">Type</p>
-                    <p className="text-sm font-semibold text-gray-900 mt-1">{selectedVoucher.voucherType}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs font-medium text-gray-600 uppercase">Designation / Office</p>
-                    <p className="text-sm font-semibold text-gray-900 mt-1">{selectedVoucher.designationOffice}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs font-medium text-gray-600 uppercase">Funds</p>
-                    <p className="text-sm font-semibold text-gray-900 mt-1">{selectedVoucher.funds}</p>
+          
+          {/* Scrollable Content Area */}
+          <div className="flex-1 overflow-y-auto">
+            {selectedVoucher && (
+              <div className="space-y-4">
+                {/* Personal Information */}
+                <div className="bg-white border border-gray-200 rounded-lg p-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-xs font-medium text-gray-600 uppercase">Payee</p>
+                      <p className="text-sm font-semibold text-gray-900 mt-1">{selectedVoucher.payee}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs font-medium text-gray-600 uppercase">Designation/Office</p>
+                      <p className="text-sm font-semibold text-gray-900 mt-1">{selectedVoucher.designationOffice}</p>
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              <div>
-                <p className="text-xs font-medium text-gray-600 uppercase">Particulars</p>
-                <p className="text-sm font-semibold text-gray-900 mt-1 whitespace-pre-wrap">{selectedVoucher.particulars}</p>
-              </div>
+                {/* Voucher Details */}
+                <div className="bg-white border border-gray-200 rounded-lg p-4">
+                  <div className="grid grid-cols-3 gap-4">
+                    <div>
+                      <p className="text-xs font-medium text-gray-600 uppercase">DV No.</p>
+                      <p className="text-sm font-semibold text-gray-900 mt-1">{selectedVoucher.dvNo}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs font-medium text-gray-600 uppercase">Amount</p>
+                      <p className="text-sm font-semibold text-gray-900 mt-1">{formatAmount(selectedVoucher.amount)}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs font-medium text-gray-600 uppercase">Type</p>
+                      <p className="text-sm font-semibold text-gray-900 mt-1">{selectedVoucher.voucherType}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs font-medium text-gray-600 uppercase">Date/Time In</p>
+                      <p className="text-sm font-semibold text-gray-900 mt-1">{formatDateTimeWithoutSeconds(selectedVoucher.dateTimeIn)}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs font-medium text-gray-600 uppercase">Date/Time Out</p>
+                      <p className="text-sm font-semibold text-gray-900 mt-1">{selectedVoucher.dateTimeOut ? formatDateTimeWithoutSeconds(selectedVoucher.dateTimeOut) : '-'}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs font-medium text-gray-600 uppercase">Funds</p>
+                      <p className="text-sm font-semibold text-gray-900 mt-1">{selectedVoucher.funds || '-'}</p>
+                    </div>
+                  </div>
+                </div>
 
-              <div>
-                <p className="text-xs font-medium text-gray-600 uppercase">Date/Time Out</p>
-                <p className="text-sm font-semibold text-gray-900 mt-1">{selectedVoucher.dateTimeOut ? formatDateTimeWithoutSeconds(selectedVoucher.dateTimeOut) : '-'}</p>
-              </div>
+                {/* Particulars */}
+                <div className="bg-white border border-gray-200 rounded-lg p-4">
+                  <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wide mb-3">Particulars</h3>
+                  <p className="text-sm font-semibold text-gray-900 whitespace-pre-wrap">{selectedVoucher.particulars || '-'}</p>
+                </div>
 
-              <div>
-                <p className="text-xs font-medium text-gray-600 uppercase">Remarks</p>
-                <p className="text-sm font-semibold text-gray-900 mt-1">{selectedVoucher.remarks || selectedVoucher.timeOutRemarks || '-'}</p>
+                {/* Remarks */}
+                <div className="bg-white border border-gray-200 rounded-lg p-4">
+                  <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wide mb-3">Remarks</h3>
+                  <p className="text-sm font-semibold text-gray-900 whitespace-pre-wrap">{selectedVoucher.remarks || '-'}</p>
+                  {selectedVoucher.timeOutRemarks && (
+                    <div className="mt-3 pt-3 border-t border-gray-200">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <p className="text-xs font-semibold text-blue-600 uppercase">Date/Time Out</p>
+                          <p className="text-sm font-semibold text-blue-900 mt-1">{selectedVoucher.dateTimeOut ? formatDateTimeWithoutSeconds(selectedVoucher.dateTimeOut) : '-'}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs font-semibold text-blue-600 uppercase">Time Out Remarks</p>
+                          <p className="text-sm font-semibold text-blue-900 mt-1 whitespace-pre-wrap">{selectedVoucher.timeOutRemarks}</p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
-
-              <div className="flex justify-end gap-2 pt-4 border-t border-gray-200">
-                <Button
-                  variant="outline"
-                  onClick={() => setViewModalOpen(false)}
-                  className="px-6"
-                >
-                  Close
-                </Button>
-              </div>
-            </div>
-          )}
+            )}
+          </div>
+          
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setViewModalOpen(false)}
+              className="px-6"
+            >
+              Close
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 

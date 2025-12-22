@@ -18,6 +18,7 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -1048,93 +1049,99 @@ export default function TravelOrderPage() {
 
       {/* View Modal */}
       <Dialog open={viewModalOpen} onOpenChange={setViewModalOpen}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="max-w-2xl max-h-[80vh] flex flex-col">
           <DialogHeader>
             <DialogTitle>Travel Order Details</DialogTitle>
+            <DialogDescription>
+              View complete information about this travel order record
+            </DialogDescription>
           </DialogHeader>
-          {selectedTravelOrder && (
-            <div className="space-y-3 text-sm">
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <p className="text-gray-600 font-medium">Tracking ID</p>
-                  <p className="text-gray-900">{selectedTravelOrder.trackingId}</p>
+          
+          {/* Scrollable Content Area */}
+          <div className="flex-1 overflow-y-auto">
+            {selectedTravelOrder && (
+              <div className="space-y-4">
+                {/* Personal Information */}
+                <div className="bg-white border border-gray-200 rounded-lg p-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-xs font-medium text-gray-600 uppercase">Full Name</p>
+                      <p className="text-sm font-semibold text-gray-900 mt-1">{selectedTravelOrder.fullName}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs font-medium text-gray-600 uppercase">Designation/Office</p>
+                      <p className="text-sm font-semibold text-gray-900 mt-1">{selectedTravelOrder.designation}</p>
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-gray-600 font-medium">Status</p>
-                  <p className="text-gray-900">{selectedTravelOrder.status}</p>
+
+                {/* Travel Details */}
+                <div className="bg-white border border-gray-200 rounded-lg p-4">
+                  <div className="grid grid-cols-3 gap-4">
+                    <div>
+                      <p className="text-xs font-medium text-gray-600 uppercase">Date/Time In</p>
+                      <p className="text-sm font-semibold text-gray-900 mt-1">{formatDateTimeWithoutSeconds(selectedTravelOrder.dateTimeIn)}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs font-medium text-gray-600 uppercase">Date/Time Out</p>
+                      <p className="text-sm font-semibold text-gray-900 mt-1">{selectedTravelOrder.dateTimeOut ? formatDateTimeWithoutSeconds(selectedTravelOrder.dateTimeOut) : '-'}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs font-medium text-gray-600 uppercase">Place of Assignment</p>
+                      <p className="text-sm font-semibold text-gray-900 mt-1">{selectedTravelOrder.placeOfAssignment || '-'}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs font-medium text-gray-600 uppercase">Start Date</p>
+                      <p className="text-sm font-semibold text-gray-900 mt-1">{selectedTravelOrder.inclusiveDateStart || '-'}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs font-medium text-gray-600 uppercase">End Date</p>
+                      <p className="text-sm font-semibold text-gray-900 mt-1">{selectedTravelOrder.inclusiveDateEnd || '-'}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs font-medium text-gray-600 uppercase">Transportation</p>
+                      <p className="text-sm font-semibold text-gray-900 mt-1">{selectedTravelOrder.transportation || '-'}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Purpose */}
+                <div className="bg-white border border-gray-200 rounded-lg p-4">
+                  <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wide mb-3">Purpose</h3>
+                  <p className="text-sm font-semibold text-gray-900 whitespace-pre-wrap">{selectedTravelOrder.purpose || '-'}</p>
+                </div>
+
+                {/* Remarks */}
+                <div className="bg-white border border-gray-200 rounded-lg p-4">
+                  <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wide mb-3">Remarks</h3>
+                  <p className="text-sm font-semibold text-gray-900 whitespace-pre-wrap">{selectedTravelOrder.remarks || '-'}</p>
+                  {selectedTravelOrder.timeOutRemarks && (
+                    <div className="mt-3 pt-3 border-t border-gray-200">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <p className="text-xs font-semibold text-blue-600 uppercase">Date/Time Out</p>
+                          <p className="text-sm font-semibold text-blue-900 mt-1">{selectedTravelOrder.dateTimeOut ? formatDateTimeWithoutSeconds(selectedTravelOrder.dateTimeOut) : '-'}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs font-semibold text-blue-600 uppercase">Time Out Remarks</p>
+                          <p className="text-sm font-semibold text-blue-900 mt-1 whitespace-pre-wrap">{selectedTravelOrder.timeOutRemarks}</p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
-              <div>
-                <p className="text-gray-600 font-medium">Received By</p>
-                <p className="text-gray-900">{selectedTravelOrder.receivedBy || '-'}</p>
-              </div>
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <p className="text-gray-600 font-medium">Full Name</p>
-                  <p className="text-gray-900">{selectedTravelOrder.fullName}</p>
-                </div>
-                <div>
-                  <p className="text-gray-600 font-medium">Designation</p>
-                  <p className="text-gray-900">{selectedTravelOrder.designation}</p>
-                </div>
-              </div>
-              <div>
-                <p className="text-gray-600 font-medium">Date/Time IN</p>
-                <p className="text-gray-900">{formatDateTimeWithoutSeconds(selectedTravelOrder.dateTimeIn)}</p>
-              </div>
-              <div>
-                <p className="text-gray-600 font-medium">Date/Time OUT</p>
-                <p className="text-gray-900">{selectedTravelOrder.dateTimeOut ? formatDateTimeWithoutSeconds(selectedTravelOrder.dateTimeOut) : '-'}</p>
-              </div>
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <p className="text-gray-600 font-medium">Inclusive Date Start</p>
-                  <p className="text-gray-900">{selectedTravelOrder.inclusiveDateStart}</p>
-                </div>
-                <div>
-                  <p className="text-gray-600 font-medium">Inclusive Date End</p>
-                  <p className="text-gray-900">{selectedTravelOrder.inclusiveDateEnd}</p>
-                </div>
-              </div>
-              <div>
-                <p className="text-gray-600 font-medium">Purpose</p>
-                <p className="text-gray-900">{selectedTravelOrder.purpose}</p>
-              </div>
-              <div>
-                <p className="text-gray-600 font-medium">Place of Assignment</p>
-                <p className="text-gray-900">{selectedTravelOrder.placeOfAssignment}</p>
-              </div>
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <p className="text-gray-600 font-medium">Inclusive Date Start</p>
-                  <p className="text-gray-900">{selectedTravelOrder.inclusiveDateStart || '-'}</p>
-                </div>
-                <div>
-                  <p className="text-gray-600 font-medium">Inclusive Date End</p>
-                  <p className="text-gray-900">{selectedTravelOrder.inclusiveDateEnd || '-'}</p>
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <p className="text-gray-600 font-medium">Inclusive Time Start</p>
-                  <p className="text-gray-900">{selectedTravelOrder.inclusiveTimeStart || '-'}</p>
-                </div>
-                <div>
-                  <p className="text-gray-600 font-medium">Inclusive Time End</p>
-                  <p className="text-gray-900">{selectedTravelOrder.inclusiveTimeEnd || '-'}</p>
-                </div>
-              </div>
-              <div>
-                <p className="text-gray-600 font-medium">Remarks</p>
-                <p className="text-gray-900">{selectedTravelOrder.remarks || selectedTravelOrder.timeOutRemarks || '-'}</p>
-              </div>
-            </div>
-          )}
-          <div className="flex justify-end pt-4">
-            <Button onClick={() => setViewModalOpen(false)} className="bg-indigo-600 hover:bg-indigo-700">
+            )}
+          </div>
+          
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setViewModalOpen(false)}
+            >
               Close
             </Button>
-          </div>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 

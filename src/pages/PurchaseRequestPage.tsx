@@ -31,6 +31,7 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -939,85 +940,93 @@ export default function PurchaseRequestPage() {
 
       {/* View Modal */}
       <Dialog open={viewModalOpen} onOpenChange={setViewModalOpen}>
-        <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-2xl max-h-[80vh] flex flex-col">
           <DialogHeader>
-            <DialogTitle className="text-2xl">Purchase Request Details</DialogTitle>
+            <DialogTitle>Purchase Request Details</DialogTitle>
+            <DialogDescription>
+              View complete information about this purchase request record
+            </DialogDescription>
           </DialogHeader>
-          {selectedRequest && (
-            <div className="space-y-6">
-              <div className="grid grid-cols-3 gap-6 pb-4 border-b border-gray-200">
-                <div>
-                  <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Tracking ID</p>
-                  <p className="text-lg font-bold text-indigo-600 mt-1">{selectedRequest.trackingId}</p>
-                </div>
-                <div>
-                  <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Status</p>
-                  <p className="mt-2">
-                    <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                      selectedRequest.status === 'Completed' ? 'bg-green-100 text-green-800' :
-                      selectedRequest.status === 'Pending' ? 'bg-yellow-100 text-yellow-800' :
-                      selectedRequest.status === 'Rejected' ? 'bg-red-100 text-red-800' :
-                      'bg-gray-100 text-gray-800'
-                    }`}>
-                      {selectedRequest.status}
-                    </span>
-                  </p>
-                </div>
-                <div>
-                  <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Date/Time In</p>
-                  <p className="text-sm font-medium text-gray-900 mt-1">{formatDateTimeWithoutSeconds(selectedRequest.dateTimeIn)}</p>
-                </div>
-              </div>
-
-              <div>
-                <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Received By</p>
-                <p className="text-sm font-medium text-gray-900 mt-1">{selectedRequest.receivedBy || '-'}</p>
-              </div>
-
-              <div>
-                <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wide mb-4">Request Information</h3>
-                <div className="grid grid-cols-2 gap-6">
-                  <div>
-                    <p className="text-xs font-medium text-gray-600 uppercase">Full Name</p>
-                    <p className="text-sm font-semibold text-gray-900 mt-1">{selectedRequest.fullName}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs font-medium text-gray-600 uppercase">Designation</p>
-                    <p className="text-sm font-semibold text-gray-900 mt-1">{selectedRequest.designation}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs font-medium text-gray-600 uppercase">Amount</p>
-                    <p className="text-sm font-semibold text-gray-900 mt-1">{formatAmount(selectedRequest.amount || (selectedRequest as any).estimatedCost)}</p>
+          
+          {/* Scrollable Content Area */}
+          <div className="flex-1 overflow-y-auto">
+            {selectedRequest && (
+              <div className="space-y-4">
+                {/* Personal Information */}
+                <div className="bg-white border border-gray-200 rounded-lg p-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-xs font-medium text-gray-600 uppercase">Full Name</p>
+                      <p className="text-sm font-semibold text-gray-900 mt-1">{selectedRequest.fullName}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs font-medium text-gray-600 uppercase">Designation/Office</p>
+                      <p className="text-sm font-semibold text-gray-900 mt-1">{selectedRequest.designation}</p>
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              <div>
-                <p className="text-xs font-medium text-gray-600 uppercase">Purpose</p>
-                <p className="text-sm font-semibold text-gray-900 mt-1">{selectedRequest.purpose}</p>
-              </div>
+                {/* Request Details */}
+                <div className="bg-white border border-gray-200 rounded-lg p-4">
+                  <div className="grid grid-cols-3 gap-4">
+                    <div>
+                      <p className="text-xs font-medium text-gray-600 uppercase">Date/Time In</p>
+                      <p className="text-sm font-semibold text-gray-900 mt-1">{formatDateTimeWithoutSeconds(selectedRequest.dateTimeIn)}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs font-medium text-gray-600 uppercase">Date/Time Out</p>
+                      <p className="text-sm font-semibold text-gray-900 mt-1">{selectedRequest.dateTimeOut ? formatDateTimeWithoutSeconds(selectedRequest.dateTimeOut) : '-'}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs font-medium text-gray-600 uppercase">Amount</p>
+                      <p className="text-sm font-semibold text-gray-900 mt-1">{formatAmount(selectedRequest.amount || (selectedRequest as any).estimatedCost)}</p>
+                    </div>
+                  </div>
+                </div>
 
-              <div>
-                <p className="text-xs font-medium text-gray-600 uppercase">Date/Time Out</p>
-                <p className="text-sm font-semibold text-gray-900 mt-1">{selectedRequest.dateTimeOut ? formatDateTimeWithoutSeconds(selectedRequest.dateTimeOut) : '-'}</p>
-              </div>
+                {/* Item Description */}
+                <div className="bg-white border border-gray-200 rounded-lg p-4">
+                  <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wide mb-3">Item Description</h3>
+                  <p className="text-sm font-semibold text-gray-900 whitespace-pre-wrap">{selectedRequest.itemDescription || '-'}</p>
+                </div>
 
-              <div>
-                <p className="text-xs font-medium text-gray-600 uppercase">Remarks</p>
-                <p className="text-sm font-semibold text-gray-900 mt-1">{selectedRequest.remarks || selectedRequest.timeOutRemarks || '-'}</p>
-              </div>
+                {/* Purpose */}
+                <div className="bg-white border border-gray-200 rounded-lg p-4">
+                  <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wide mb-3">Purpose</h3>
+                  <p className="text-sm font-semibold text-gray-900 whitespace-pre-wrap">{selectedRequest.purpose || '-'}</p>
+                </div>
 
-              <div className="flex justify-end gap-2 pt-4 border-t border-gray-200">
-                <Button
-                  variant="outline"
-                  onClick={() => setViewModalOpen(false)}
-                  className="px-6"
-                >
-                  Close
-                </Button>
+                {/* Remarks */}
+                <div className="bg-white border border-gray-200 rounded-lg p-4">
+                  <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wide mb-3">Remarks</h3>
+                  <p className="text-sm font-semibold text-gray-900 whitespace-pre-wrap">{selectedRequest.remarks || '-'}</p>
+                  {selectedRequest.timeOutRemarks && (
+                    <div className="mt-3 pt-3 border-t border-gray-200">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <p className="text-xs font-semibold text-blue-600 uppercase">Date/Time Out</p>
+                          <p className="text-sm font-semibold text-blue-900 mt-1">{selectedRequest.dateTimeOut ? formatDateTimeWithoutSeconds(selectedRequest.dateTimeOut) : '-'}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs font-semibold text-blue-600 uppercase">Time Out Remarks</p>
+                          <p className="text-sm font-semibold text-blue-900 mt-1 whitespace-pre-wrap">{selectedRequest.timeOutRemarks}</p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
-            </div>
-          )}
+            )}
+          </div>
+          
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setViewModalOpen(false)}
+            >
+              Close
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 

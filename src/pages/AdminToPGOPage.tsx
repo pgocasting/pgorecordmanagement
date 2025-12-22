@@ -17,6 +17,7 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -973,99 +974,90 @@ export default function AdminToPGOPage() {
 
       {/* View Modal */}
       <Dialog open={viewModalOpen} onOpenChange={setViewModalOpen}>
-        <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-2xl max-h-[80vh] flex flex-col">
           <DialogHeader>
-            <DialogTitle className="text-2xl">Admin to PGO Details</DialogTitle>
+            <DialogTitle>Admin to PGO Details</DialogTitle>
+            <DialogDescription>
+              View complete information about this admin to PGO record
+            </DialogDescription>
           </DialogHeader>
-          {selectedRecord && (
-            <div className="space-y-6">
-              {/* Header Row - Tracking ID, Status, Date/Time IN */}
-              <div className="grid grid-cols-3 gap-6 pb-4 border-b border-gray-200">
-                <div>
-                  <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Tracking ID</p>
-                  <p className="text-lg font-bold text-indigo-600 mt-1">{selectedRecord.trackingId}</p>
-                </div>
-                <div>
-                  <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Status</p>
-                  <p className="mt-2">
-                    <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                      selectedRecord.status === 'Completed' ? 'bg-green-100 text-green-800' :
-                      selectedRecord.status === 'Pending' ? 'bg-yellow-100 text-yellow-800' :
-                      selectedRecord.status === 'Rejected' ? 'bg-red-100 text-red-800' :
-                      'bg-gray-100 text-gray-800'
-                    }`}>
-                      {selectedRecord.status}
-                    </span>
-                  </p>
-                </div>
-                <div>
-                  <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Date/Time In</p>
-                  <p className="text-sm font-medium text-gray-900 mt-1">{formatDateTimeWithoutSeconds(selectedRecord.dateTimeIn)}</p>
-                </div>
-              </div>
-
-              {/* Received By */}
-              <div>
-                <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Received By</p>
-                <p className="text-sm font-medium text-gray-900 mt-1">{selectedRecord.receivedBy || '-'}</p>
-              </div>
-
-              {/* Personal Information */}
-              <div>
-                <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wide mb-4">Personal Information</h3>
-                <div className="grid grid-cols-2 gap-6">
-                  <div>
-                    <p className="text-xs font-medium text-gray-600 uppercase">Full Name</p>
-                    <p className="text-sm font-semibold text-gray-900 mt-1">{selectedRecord.fullName}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs font-medium text-gray-600 uppercase">Office Address</p>
-                    <p className="text-sm font-semibold text-gray-900 mt-1">{selectedRecord.officeAddress}</p>
+          
+          {/* Scrollable Content Area */}
+          <div className="flex-1 overflow-y-auto">
+            {selectedRecord && (
+              <div className="space-y-4">
+                {/* Personal Information */}
+                <div className="bg-white border border-gray-200 rounded-lg p-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-xs font-medium text-gray-600 uppercase">Full Name</p>
+                      <p className="text-sm font-semibold text-gray-900 mt-1">{selectedRecord.fullName}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs font-medium text-gray-600 uppercase">Office</p>
+                      <p className="text-sm font-semibold text-gray-900 mt-1">{selectedRecord.officeAddress}</p>
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              {/* Date/Time Out */}
-              <div>
-                <p className="text-xs font-medium text-gray-600 uppercase">Date/Time Out</p>
-                <p className="text-sm font-semibold text-gray-900 mt-1">{selectedRecord.dateTimeOut ? formatDateTimeWithoutSeconds(selectedRecord.dateTimeOut) : '-'}</p>
-              </div>
-
-              {/* Particulars */}
-              <div>
-                <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wide mb-4">Details</h3>
-                <div>
-                  <p className="text-xs font-medium text-gray-600 uppercase">Particulars</p>
-                  <p className="text-sm font-semibold text-gray-900 mt-1 whitespace-pre-wrap">{selectedRecord.particulars}</p>
-                </div>
-              </div>
-
-              {/* Additional Information */}
-              <div>
-                <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wide mb-4">Additional Information</h3>
-                <div className="space-y-4">
-                  <div>
-                    <p className="text-xs font-medium text-gray-600 uppercase">Remarks</p>
-                    <p className="text-sm font-semibold text-gray-900 mt-1">{selectedRecord.remarks || selectedRecord.timeOutRemarks || '-'}</p>
+                {/* Record Details */}
+                <div className="bg-white border border-gray-200 rounded-lg p-4">
+                  <div className="grid grid-cols-3 gap-4">
+                    <div>
+                      <p className="text-xs font-medium text-gray-600 uppercase">Date/Time In</p>
+                      <p className="text-sm font-semibold text-gray-900 mt-1">{formatDateTimeWithoutSeconds(selectedRecord.dateTimeIn)}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs font-medium text-gray-600 uppercase">Date/Time Out</p>
+                      <p className="text-sm font-semibold text-gray-900 mt-1">{selectedRecord.dateTimeOut ? formatDateTimeWithoutSeconds(selectedRecord.dateTimeOut) : '-'}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs font-medium text-gray-600 uppercase">Record Type</p>
+                      <p className="text-sm font-semibold text-gray-900 mt-1">Admin to PGO</p>
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              {/* Close Button */}
-              <div className="flex justify-end gap-2 pt-4 border-t border-gray-200">
-                <Button
-                  variant="outline"
-                  onClick={() => setViewModalOpen(false)}
-                  className="px-6"
-                >
-                  Close
-                </Button>
+                {/* Particulars */}
+                <div className="bg-white border border-gray-200 rounded-lg p-4">
+                  <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wide mb-3">Particulars</h3>
+                  <p className="text-sm font-semibold text-gray-900 whitespace-pre-wrap">{selectedRecord.particulars || '-'}</p>
+                </div>
+
+                {/* Remarks */}
+                <div className="bg-white border border-gray-200 rounded-lg p-4">
+                  <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wide mb-3">Remarks</h3>
+                  <p className="text-sm font-semibold text-gray-900 whitespace-pre-wrap">{selectedRecord.remarks || '-'}</p>
+                  {selectedRecord.timeOutRemarks && (
+                    <div className="mt-3 pt-3 border-t border-gray-200">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <p className="text-xs font-semibold text-blue-600 uppercase">Date/Time Out</p>
+                          <p className="text-sm font-semibold text-blue-900 mt-1">{selectedRecord.dateTimeOut ? formatDateTimeWithoutSeconds(selectedRecord.dateTimeOut) : '-'}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs font-semibold text-blue-600 uppercase">Time Out Remarks</p>
+                          <p className="text-sm font-semibold text-blue-900 mt-1 whitespace-pre-wrap">{selectedRecord.timeOutRemarks}</p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
-            </div>
-          )}
+            )}
+          </div>
+          
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setViewModalOpen(false)}
+            >
+              Close
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+                                        </div>
   );
 }
 
