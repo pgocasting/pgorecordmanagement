@@ -182,8 +182,6 @@ export default function AdminToPGOPage() {
     };
     
     loadRecords();
-    const interval = setInterval(loadRecords, 30000);
-    return () => clearInterval(interval);
   }, []);
 
   const filteredRecords = records.filter(record =>
