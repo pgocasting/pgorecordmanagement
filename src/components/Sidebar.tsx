@@ -1,8 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
-import { Home, FileText, BarChart3, Settings, Printer, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Home, FileText, BarChart3, Settings, Printer, ChevronLeft, ChevronRight, Clock } from 'lucide-react';
 
 interface SidebarProps {
   onNavigate?: () => void;
@@ -28,6 +28,30 @@ export function Sidebar({ onNavigate, recordTypes = [] }: SidebarProps) {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [currentDateTime, setCurrentDateTime] = useState('');
+
+  // Update current date and time every second
+  useEffect(() => {
+    const updateDateTime = () => {
+      const now = new Date();
+      const philippinesTime = new Date(now.toLocaleString("en-US", {timeZone: "Asia/Manila"}));
+      const formattedDateTime = philippinesTime.toLocaleString('en-US', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: true,
+        timeZone: 'Asia/Manila'
+      });
+      setCurrentDateTime(formattedDateTime);
+    };
+
+    updateDateTime();
+    const interval = setInterval(updateDateTime, 1000);
+
+    return () => clearInterval(interval);
+  }, []);
 
   const handleNavigate = (href: string) => {
     onNavigate?.();
@@ -37,7 +61,7 @@ export function Sidebar({ onNavigate, recordTypes = [] }: SidebarProps) {
   return (
     <div className={`h-full flex flex-col bg-white transition-all duration-300 ${isCollapsed ? 'w-20' : 'w-64'}`}>
       {/* Logo Section */}
-      <div className={`border-b border-gray-200 bg-gradient-to-r from-indigo-50 to-blue-50 relative transition-all duration-300 ${isCollapsed ? 'py-4 px-2' : 'p-6'}`}>
+      <div className={`border-b border-gray-200 bg-linear-to-r from-indigo-50 to-blue-50 relative transition-all duration-300 ${isCollapsed ? 'py-4 px-2' : 'p-6'}`}>
         <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'gap-3 pr-8'}`}>
           <div className="shrink-0">
             <img 
@@ -122,18 +146,19 @@ export function Sidebar({ onNavigate, recordTypes = [] }: SidebarProps) {
         )}
       </nav>
 
-      {/* User Info Section */}
+      {/* Date and Time Display */}
       <div className="p-4 border-t border-gray-200">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center shrink-0">
-            <span className="text-sm font-semibold text-indigo-600">
-              {user?.name?.charAt(0).toUpperCase() || 'U'}
-            </span>
-          </div>
+          <Clock className="h-4 w-4 text-indigo-600 shrink-0" />
           {!isCollapsed && (
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-gray-900 truncate">{user?.name}</p>
-              <p className="text-xs text-gray-500 truncate capitalize">{user?.role}</p>
+              <p className="text-xs font-medium text-gray-500">Philippine Time</p>
+              <p className="text-sm font-semibold text-gray-900 truncate">{currentDateTime}</p>
+            </div>
+          )}
+          {isCollapsed && (
+            <div className="text-xs text-gray-600 text-center">
+              {currentDateTime.split(', ')[1] || '--:--'}
             </div>
           )}
         </div>

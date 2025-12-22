@@ -28,6 +28,7 @@ import {
   Menu,
   LogOut,
   Search,
+  User,
 } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Sidebar } from '@/components/Sidebar';
@@ -299,19 +300,37 @@ export default function DashboardPage() {
       {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Top Bar */}
-        <div className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Records Management</h1>
-            <p className="text-sm text-gray-600">Welcome back, {user?.name}</p>
+        <div className="bg-white border-b border-gray-200 px-6 py-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">Records Management</h1>
+              <p className="text-sm text-gray-600">Welcome back</p>
+            </div>
+            
+            {/* User Info and Logout */}
+            <div className="flex items-center gap-4">
+              {user?.name && (
+                <div className="flex items-center gap-3 px-4 py-2 bg-gray-50 rounded-lg border border-gray-200">
+                  <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center shrink-0">
+                    <User className="h-4 w-4 text-indigo-600" />
+                  </div>
+                  <div className="flex flex-col min-w-0">
+                    <p className="text-sm font-medium text-gray-900 truncate">{user.name}</p>
+                    <p className="text-xs text-gray-500 truncate capitalize">{user.role}</p>
+                  </div>
+                </div>
+              )}
+              
+              <Button
+                variant="outline"
+                className="gap-2 text-red-600 hover:text-red-700 hover:bg-red-50"
+                onClick={handleLogout}
+              >
+                <LogOut className="h-4 w-4" />
+                Logout
+              </Button>
+            </div>
           </div>
-          <Button
-            variant="outline"
-            className="gap-2 text-red-600 hover:text-red-700 hover:bg-red-50"
-            onClick={handleLogout}
-          >
-            <LogOut className="h-4 w-4" />
-            Logout
-          </Button>
         </div>
 
         {/* Content Area */}

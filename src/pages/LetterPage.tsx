@@ -33,7 +33,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Plus, Menu, LogOut, Search } from 'lucide-react';
+import {
+  Plus,
+  Menu,
+  LogOut,
+  Search,
+  User,
+} from 'lucide-react';
 import { ActionButtons } from '@/components/ActionButtons';
 import { Sidebar } from '@/components/Sidebar';
 import SuccessModal from '@/components/SuccessModal';
@@ -72,6 +78,20 @@ interface Letter {
 }
 
 export default function LetterPage() {
+  // Helper function to format time without seconds with AM/PM in Philippine timezone
+  const formatDateTimeWithoutSeconds = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleString('en-US', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true,
+      timeZone: 'Asia/Manila'
+    });
+  };
+
   const navigate = useNavigate();
   const { logout, user } = useAuth();
   const [letters, setLetters] = useState<Letter[]>([]);
@@ -361,7 +381,18 @@ export default function LetterPage() {
 
   const handleTimeOut = (letterId: string) => {
     setLetterToTimeOut(letterId);
-    setTimeOutDateTime('');
+    // Get current time in Philippine timezone (GMT+8)
+    const now = new Date();
+    // Format as YYYY-MM-DDTHH:mm in Philippine timezone
+    const philippinesTime = new Date(now.toLocaleString("en-US", {timeZone: "Asia/Manila"}));
+    const year = philippinesTime.getFullYear();
+    const month = String(philippinesTime.getMonth() + 1).padStart(2, '0');
+    const day = String(philippinesTime.getDate()).padStart(2, '0');
+    const hours = String(philippinesTime.getHours()).padStart(2, '0');
+    const minutes = String(philippinesTime.getMinutes()).padStart(2, '0');
+    const dateTimeLocal = `${year}-${month}-${day}T${hours}:${minutes}`;
+    
+    setTimeOutDateTime(dateTimeLocal);
     setTimeOutRemarks('');
     setTimeOutModalOpen(true);
   };
@@ -470,19 +501,37 @@ export default function LetterPage() {
       {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Top Bar */}
-        <div className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Letter Records</h1>
-            <p className="text-sm text-gray-600">Welcome back, {user?.name}</p>
+        <div className="bg-white border-b border-gray-200 px-6 py-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">Letter Records</h1>
+              <p className="text-sm text-gray-600">Welcome back</p>
+            </div>
+            
+            {/* User Info and Logout */}
+            <div className="flex items-center gap-4">
+              {user?.name && (
+                <div className="flex items-center gap-3 px-4 py-2 bg-gray-50 rounded-lg border border-gray-200">
+                  <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center shrink-0">
+                    <User className="h-4 w-4 text-indigo-600" />
+                  </div>
+                  <div className="flex flex-col min-w-0">
+                    <p className="text-sm font-medium text-gray-900 truncate">{user.name}</p>
+                    <p className="text-xs text-gray-500 truncate capitalize">{user.role}</p>
+                  </div>
+                </div>
+              )}
+              
+              <Button
+                variant="outline"
+                className="gap-2 text-red-600 hover:text-red-700 hover:bg-red-50"
+                onClick={handleLogout}
+              >
+                <LogOut className="h-4 w-4" />
+                Logout
+              </Button>
+            </div>
           </div>
-          <Button
-            variant="outline"
-            className="gap-2 text-red-600 hover:text-red-700 hover:bg-red-50"
-            onClick={handleLogout}
-          >
-            <LogOut className="h-4 w-4" />
-            Logout
-          </Button>
         </div>
 
         {/* Content Area */}
@@ -637,8 +686,8 @@ export default function LetterPage() {
                       <TableRow key={letter.id} className="hover:bg-gray-50">
                         <TableCell className="wrap-break-word whitespace-normal text-center text-xs">{letter.receivedBy || '-'}</TableCell>
                         <TableCell className="font-bold italic wrap-break-word whitespace-normal text-center text-xs text-indigo-600">{letter.trackingId}</TableCell>
-                        <TableCell className="wrap-break-word whitespace-normal text-center text-xs">{new Date(letter.dateTimeIn).toLocaleString()}</TableCell>
-                        <TableCell className={`wrap-break-word whitespace-normal text-center text-xs ${letter.status === 'Completed' ? 'text-green-600 font-medium' : 'text-red-600'}`}>{letter.dateTimeOut ? new Date(letter.dateTimeOut).toLocaleString() : '-'}</TableCell>
+                        <TableCell className="wrap-break-word whitespace-normal text-center text-xs">{formatDateTimeWithoutSeconds(letter.dateTimeIn)}</TableCell>
+                        <TableCell className={`wrap-break-word whitespace-normal text-center text-xs ${letter.status === 'Completed' ? 'text-green-600 font-medium' : 'text-red-600'}`}>{letter.dateTimeOut ? formatDateTimeWithoutSeconds(letter.dateTimeOut) : '-'}</TableCell>
                         <TableCell className="wrap-break-word whitespace-normal text-center text-xs uppercase">{letter.fullName}</TableCell>
                         <TableCell className="wrap-break-word whitespace-normal text-center text-xs">{letter.designationOffice}</TableCell>
                         <TableCell className="wrap-break-word whitespace-normal text-center text-xs">{letter.particulars}</TableCell>
@@ -669,7 +718,7 @@ export default function LetterPage() {
       {letter.remarksHistory?.length > 0 && (
         <div className={`${letter.status === 'Completed' ? 'text-green-600' : letter.status === 'Rejected' ? 'text-red-600' : 'text-yellow-600'}`}>
           {letter.remarksHistory[0]?.timestamp && letter.status !== 'Completed' && letter.status !== 'Pending' && (
-            <span>[{new Date(letter.remarksHistory[0].timestamp).toLocaleString()}] </span>
+            <span>[{formatDateTimeWithoutSeconds(letter.remarksHistory[0].timestamp)}] </span>
           )}
           [{letter.status} by {letter.receivedBy}]
         </div>
@@ -742,7 +791,7 @@ export default function LetterPage() {
                 </div>
                 <div>
                   <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Date/Time In</p>
-                  <p className="text-sm font-medium text-gray-900 mt-1">{new Date(selectedLetter.dateTimeIn).toLocaleString()}</p>
+                  <p className="text-sm font-medium text-gray-900 mt-1">{formatDateTimeWithoutSeconds(selectedLetter.dateTimeIn)}</p>
                 </div>
               </div>
 
@@ -770,7 +819,7 @@ export default function LetterPage() {
               {/* Date/Time Out */}
               <div>
                 <p className="text-xs font-medium text-gray-600 uppercase">Date/Time Out</p>
-                <p className="text-sm font-semibold text-gray-900 mt-1">{selectedLetter.dateTimeOut ? new Date(selectedLetter.dateTimeOut).toLocaleString() : '-'}</p>
+                <p className="text-sm font-semibold text-gray-900 mt-1">{selectedLetter.dateTimeOut ? formatDateTimeWithoutSeconds(selectedLetter.dateTimeOut) : '-'}</p>
               </div>
 
               {/* Details */}

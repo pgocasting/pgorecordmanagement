@@ -34,7 +34,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Plus, Menu, LogOut, Search } from 'lucide-react';
+import {
+  Plus,
+  Menu,
+  LogOut,
+  Search,
+  User,
+} from 'lucide-react';
 import { Sidebar } from '@/components/Sidebar';
 import { ActionButtons } from '@/components/ActionButtons';
 import SuccessModal from '@/components/SuccessModal';
@@ -109,6 +115,20 @@ const recordTypes = [
 ];
 
 export default function VoucherPage() {
+  // Helper function to format time without seconds with AM/PM in Philippine timezone
+  const formatDateTimeWithoutSeconds = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleString('en-US', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true,
+      timeZone: 'Asia/Manila'
+    });
+  };
+
   const navigate = useNavigate();
   const { logout, user } = useAuth();
   const [vouchers, setVouchers] = useState<Voucher[]>([]);
@@ -471,7 +491,21 @@ export default function VoucherPage() {
 
   const handleTimeOut = (id: string) => {
     setVoucherToTimeOut(id);
-    setTimeOutData({ dateTimeOut: '', timeOutRemarks: '' });
+    // Get current time in Philippine timezone (GMT+8)
+    const now = new Date();
+    // Format as YYYY-MM-DDTHH:mm in Philippine timezone
+    const philippinesTime = new Date(now.toLocaleString("en-US", {timeZone: "Asia/Manila"}));
+    const year = philippinesTime.getFullYear();
+    const month = String(philippinesTime.getMonth() + 1).padStart(2, '0');
+    const day = String(philippinesTime.getDate()).padStart(2, '0');
+    const hours = String(philippinesTime.getHours()).padStart(2, '0');
+    const minutes = String(philippinesTime.getMinutes()).padStart(2, '0');
+    const dateTimeLocal = `${year}-${month}-${day}T${hours}:${minutes}`;
+    
+    setTimeOutData({ 
+      dateTimeOut: dateTimeLocal,
+      timeOutRemarks: '' 
+    });
     setTimeOutConfirmOpen(true);
   };
 
@@ -551,19 +585,37 @@ export default function VoucherPage() {
       {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Top Bar */}
-        <div className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Voucher Records</h1>
-            <p className="text-sm text-gray-600">Welcome back, {user?.name}</p>
+        <div className="bg-white border-b border-gray-200 px-6 py-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">Voucher Records</h1>
+              <p className="text-sm text-gray-600">Welcome back</p>
+            </div>
+            
+            {/* User Info and Logout */}
+            <div className="flex items-center gap-4">
+              {user?.name && (
+                <div className="flex items-center gap-3 px-4 py-2 bg-gray-50 rounded-lg border border-gray-200">
+                  <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center shrink-0">
+                    <User className="h-4 w-4 text-indigo-600" />
+                  </div>
+                  <div className="flex flex-col min-w-0">
+                    <p className="text-sm font-medium text-gray-900 truncate">{user.name}</p>
+                    <p className="text-xs text-gray-500 truncate capitalize">{user.role}</p>
+                  </div>
+                </div>
+              )}
+              
+              <Button
+                variant="outline"
+                className="gap-2 text-red-600 hover:text-red-700 hover:bg-red-50"
+                onClick={handleLogout}
+              >
+                <LogOut className="h-4 w-4" />
+                Logout
+              </Button>
+            </div>
           </div>
-          <Button
-            variant="outline"
-            className="gap-2 text-red-600 hover:text-red-700 hover:bg-red-50"
-            onClick={handleLogout}
-          >
-            <LogOut className="h-4 w-4" />
-            Logout
-          </Button>
         </div>
 
         {/* Content Area */}
@@ -794,8 +846,8 @@ export default function VoucherPage() {
                         <TableRow key={voucher.id} className="hover:bg-gray-50">
                           <TableCell className="wrap-break-word whitespace-normal text-center text-xs">{voucher.receivedBy || '-'}</TableCell>
                           <TableCell className="font-bold italic wrap-break-word whitespace-normal text-center text-xs text-indigo-600">{voucher.trackingId}</TableCell>
-                          <TableCell className="wrap-break-word whitespace-normal text-center text-xs">{new Date(voucher.dateTimeIn).toLocaleString()}</TableCell>
-                          <TableCell className={`wrap-break-word whitespace-normal text-center text-xs ${voucher.status === 'Completed' ? 'text-green-600 font-medium' : 'text-red-600'}`}>{voucher.dateTimeOut ? new Date(voucher.dateTimeOut).toLocaleString() : '-'}</TableCell>
+                          <TableCell className="wrap-break-word whitespace-normal text-center text-xs">{formatDateTimeWithoutSeconds(voucher.dateTimeIn)}</TableCell>
+                          <TableCell className={`wrap-break-word whitespace-normal text-center text-xs ${voucher.status === 'Completed' ? 'text-green-600 font-medium' : 'text-red-600'}`}>{voucher.dateTimeOut ? formatDateTimeWithoutSeconds(voucher.dateTimeOut) : '-'}</TableCell>
                           <TableCell className="wrap-break-word whitespace-normal text-center text-xs">{voucher.dvNo}</TableCell>
                           <TableCell className="wrap-break-word whitespace-normal text-center text-xs">{voucher.payee}</TableCell>
                           <TableCell className="wrap-break-word whitespace-normal text-center text-xs">{formatAmount(voucher.amount)}</TableCell>
@@ -827,7 +879,7 @@ export default function VoucherPage() {
       {voucher.remarksHistory?.length > 0 && (
         <div className={`${voucher.status === 'Completed' ? 'text-green-600' : voucher.status === 'Rejected' ? 'text-red-600' : 'text-yellow-600'}`}>
           {voucher.remarksHistory[0]?.timestamp && voucher.status !== 'Completed' && voucher.status !== 'Pending' && (
-            <span>[{new Date(voucher.remarksHistory[0].timestamp).toLocaleString()}] </span>
+            <span>[{formatDateTimeWithoutSeconds(voucher.remarksHistory[0].timestamp)}] </span>
           )}
           [{voucher.status} by {voucher.receivedBy}]
         </div>
@@ -902,7 +954,7 @@ export default function VoucherPage() {
                 </div>
                 <div>
                   <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Date/Time In</p>
-                  <p className="text-sm font-medium text-gray-900 mt-1">{new Date(selectedVoucher.dateTimeIn).toLocaleString()}</p>
+                  <p className="text-sm font-medium text-gray-900 mt-1">{formatDateTimeWithoutSeconds(selectedVoucher.dateTimeIn)}</p>
                 </div>
               </div>
 
@@ -948,7 +1000,7 @@ export default function VoucherPage() {
 
               <div>
                 <p className="text-xs font-medium text-gray-600 uppercase">Date/Time Out</p>
-                <p className="text-sm font-semibold text-gray-900 mt-1">{selectedVoucher.dateTimeOut ? new Date(selectedVoucher.dateTimeOut).toLocaleString() : '-'}</p>
+                <p className="text-sm font-semibold text-gray-900 mt-1">{selectedVoucher.dateTimeOut ? formatDateTimeWithoutSeconds(selectedVoucher.dateTimeOut) : '-'}</p>
               </div>
 
               <div>

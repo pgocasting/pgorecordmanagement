@@ -27,18 +27,41 @@ export default function TimeOutModal({
   onRemarksChange,
   isLoading = false,
 }: TimeOutModalProps) {
+  // Format the datetime for display in Philippine timezone
+  const formatPhilippineTime = (dateTimeString: string) => {
+    if (!dateTimeString) return '';
+    
+    try {
+      const date = new Date(dateTimeString + 'Z'); // Add Z to treat as UTC
+      return date.toLocaleString('en-US', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: true,
+        timeZone: 'Asia/Manila'
+      });
+    } catch (error) {
+      return dateTimeString;
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="text-lg font-semibold">Record Time Out</DialogTitle>
           <DialogDescription>
-            Enter the date/time out and any remarks for this record.
+            Enter the date/time out and any remarks for this record. Time is in Philippine timezone (GMT+8).
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4">
           <div>
-            <Label htmlFor="timeOutDateTime" className="text-sm font-medium text-gray-700">Date/Time OUT *</Label>
+            <Label htmlFor="timeOutDateTime" className="text-sm font-medium text-gray-700">
+              Date/Time OUT *
+              <span className="text-xs text-gray-500 ml-2">(Philippine Time)</span>
+            </Label>
             <Input
               id="timeOutDateTime"
               type="datetime-local"
@@ -46,6 +69,11 @@ export default function TimeOutModal({
               onChange={(e) => onDateTimeOutChange(e.target.value)}
               className="mt-2"
             />
+            {dateTimeOut && (
+              <p className="text-xs text-gray-600 mt-1">
+                Philippine Time: {formatPhilippineTime(dateTimeOut)}
+              </p>
+            )}
           </div>
           <div>
             <Label htmlFor="timeOutRemarks" className="text-sm font-medium text-gray-700">Remarks *</Label>

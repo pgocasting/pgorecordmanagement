@@ -44,7 +44,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Plus, Menu, LogOut, Search } from 'lucide-react';
+import { Plus, Menu, LogOut, Search, User } from 'lucide-react';
 import { Sidebar } from '@/components/Sidebar';
 import SuccessModal from '@/components/SuccessModal';
 import TimeOutModal from '@/components/TimeOutModal';
@@ -75,6 +75,20 @@ interface Leave {
 }
 
 export default function LeavePage() {
+  // Helper function to format time without seconds with AM/PM in Philippine timezone
+  const formatDateTimeWithoutSeconds = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleString('en-US', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true,
+      timeZone: 'Asia/Manila'
+    });
+  };
+
   const navigate = useNavigate();
   const { logout, user } = useAuth();
   const [leaves, setLeaves] = useState<Leave[]>([]);
@@ -472,8 +486,19 @@ export default function LeavePage() {
 
   const handleTimeOut = (id: string) => {
     setLeaveToTimeOut(id);
+    // Get current time in Philippine timezone (GMT+8)
+    const now = new Date();
+    // Format as YYYY-MM-DDTHH:mm in Philippine timezone
+    const philippinesTime = new Date(now.toLocaleString("en-US", {timeZone: "Asia/Manila"}));
+    const year = philippinesTime.getFullYear();
+    const month = String(philippinesTime.getMonth() + 1).padStart(2, '0');
+    const day = String(philippinesTime.getDate()).padStart(2, '0');
+    const hours = String(philippinesTime.getHours()).padStart(2, '0');
+    const minutes = String(philippinesTime.getMinutes()).padStart(2, '0');
+    const dateTimeLocal = `${year}-${month}-${day}T${hours}:${minutes}`;
+    
     setTimeOutData({
-      dateTimeOut: '',
+      dateTimeOut: dateTimeLocal,
       timeOutRemarks: '',
     });
     setTimeOutConfirmOpen(true);
@@ -571,19 +596,37 @@ export default function LeavePage() {
       {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Top Bar */}
-        <div className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Leave Records</h1>
-            <p className="text-sm text-gray-600">Welcome back, {user?.name}</p>
+        <div className="bg-white border-b border-gray-200 px-6 py-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">Leave Records</h1>
+              <p className="text-sm text-gray-600">Welcome back</p>
+            </div>
+            
+            {/* User Info and Logout */}
+            <div className="flex items-center gap-4">
+              {user?.name && (
+                <div className="flex items-center gap-3 px-4 py-2 bg-gray-50 rounded-lg border border-gray-200">
+                  <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center shrink-0">
+                    <User className="h-4 w-4 text-indigo-600" />
+                  </div>
+                  <div className="flex flex-col min-w-0">
+                    <p className="text-sm font-medium text-gray-900 truncate">{user.name}</p>
+                    <p className="text-xs text-gray-500 truncate capitalize">{user.role}</p>
+                  </div>
+                </div>
+              )}
+              
+              <Button
+                variant="outline"
+                className="gap-2 text-red-600 hover:text-red-700 hover:bg-red-50"
+                onClick={handleLogout}
+              >
+                <LogOut className="h-4 w-4" />
+                Logout
+              </Button>
+            </div>
           </div>
-          <Button
-            variant="outline"
-            className="gap-2 text-red-600 hover:text-red-700 hover:bg-red-50"
-            onClick={handleLogout}
-          >
-            <LogOut className="h-4 w-4" />
-            Logout
-          </Button>
         </div>
 
         {/* Content Area */}
@@ -792,8 +835,8 @@ export default function LeavePage() {
                       <TableRow key={item.id} className="hover:bg-gray-50">
                         <TableCell className="text-xs py-1 px-1 text-center wrap-break-word whitespace-normal">{item.receivedBy || '-'}</TableCell>
                         <TableCell className="text-xs py-1 px-1 text-center font-bold italic text-indigo-600 wrap-break-word whitespace-normal">{item.trackingId}</TableCell>
-                        <TableCell className="text-xs py-1 px-1 text-center wrap-break-word whitespace-normal">{new Date(item.dateTimeIn).toLocaleString()}</TableCell>
-                        <TableCell className={`text-xs py-1 px-1 text-center wrap-break-word whitespace-normal ${item.status === 'Completed' ? 'text-green-600 font-medium' : 'text-red-600'}`}>{item.dateTimeOut ? new Date(item.dateTimeOut).toLocaleString() : '-'}</TableCell>
+                        <TableCell className="text-xs py-1 px-1 text-center wrap-break-word whitespace-normal">{formatDateTimeWithoutSeconds(item.dateTimeIn)}</TableCell>
+                        <TableCell className={`text-xs py-1 px-1 text-center wrap-break-word whitespace-normal ${item.status === 'Completed' ? 'text-green-600 font-medium' : 'text-red-600'}`}>{item.dateTimeOut ? formatDateTimeWithoutSeconds(item.dateTimeOut) : '-'}</TableCell>
                         <TableCell className="text-xs py-1 px-1 text-center wrap-break-word whitespace-normal">{item.fullName}</TableCell>
                         <TableCell className="text-xs py-1 px-1 text-center wrap-break-word whitespace-normal">{item.designation}</TableCell>
                         <TableCell className="text-xs py-1 px-1 text-center wrap-break-word whitespace-normal">{item.leaveType}</TableCell>
@@ -833,7 +876,7 @@ export default function LeavePage() {
                               {item.remarksHistory?.length > 0 && (
                                 <div className={`${item.status === 'Completed' ? 'text-green-600' : item.status === 'Rejected' ? 'text-red-600' : 'text-yellow-600'}`}>
                                   {item.remarksHistory[0]?.timestamp && item.status !== 'Completed' && item.status !== 'Pending' && (
-                                    <span>[{new Date(item.remarksHistory[0].timestamp).toLocaleString()}] </span>
+                                    <span>[{formatDateTimeWithoutSeconds(item.remarksHistory[0].timestamp)}] </span>
                                   )}
                                   [{item.status} by {item.receivedBy}]
                                 </div>
@@ -1048,7 +1091,7 @@ export default function LeavePage() {
                 </div>
                 <div>
                   <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Date/Time In</p>
-                  <p className="text-sm font-medium text-gray-900 mt-1">{new Date(selectedLeave.dateTimeIn).toLocaleString()}</p>
+                  <p className="text-sm font-medium text-gray-900 mt-1">{formatDateTimeWithoutSeconds(selectedLeave.dateTimeIn)}</p>
                 </div>
               </div>
 
@@ -1079,11 +1122,11 @@ export default function LeavePage() {
                 <div className="grid grid-cols-2 gap-6">
                   <div>
                     <p className="text-xs font-medium text-gray-600 uppercase">Leave Type</p>
-                    <p className="text-sm font-semibold text-gray-900 mt-1">{selectedLeave.leaveType}</p>
+                    <p className="text-sm font-medium text-gray-900 mt-1">{selectedLeave.leaveType}</p>
                   </div>
                   <div>
                     <p className="text-xs font-medium text-gray-600 uppercase">Date/Time Out</p>
-                    <p className="text-sm font-semibold text-gray-900 mt-1">{selectedLeave.dateTimeOut ? new Date(selectedLeave.dateTimeOut).toLocaleString() : '-'}</p>
+                    <p className="text-sm font-semibold text-gray-900 mt-1">{selectedLeave.dateTimeOut ? formatDateTimeWithoutSeconds(selectedLeave.dateTimeOut) : '-'}</p>
                   </div>
                 </div>
               </div>
