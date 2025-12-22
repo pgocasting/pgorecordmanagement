@@ -2,16 +2,6 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { letterService, designationService } from '@/services/firebaseService';
-
-const getCurrentDateTime = (): string => {
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = String(now.getMonth() + 1).padStart(2, '0');
-  const day = String(now.getDate()).padStart(2, '0');
-  const hours = String(now.getHours()).padStart(2, '0');
-  const minutes = String(now.getMinutes()).padStart(2, '0');
-  return `${year}-${month}-${day}T${hours}:${minutes}`;
-};
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -48,6 +38,23 @@ import { ActionButtons } from '@/components/ActionButtons';
 import { Sidebar } from '@/components/Sidebar';
 import SuccessModal from '@/components/SuccessModal';
 import TimeOutModal from '@/components/TimeOutModal';
+
+const getCurrentDateTime = (): string => {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  const hours = String(now.getHours()).padStart(2, '0');
+  const minutes = String(now.getMinutes()).padStart(2, '0');
+  return `${year}-${month}-${day}T${hours}:${minutes}`;
+};
+
+const getOriginalRemarks = (remarks: string | undefined): string => {
+  if (!remarks) return '-';
+  const lines = remarks.split('\n');
+  const originalLines = lines.filter(line => !line.match(/^\[.*\]\s*\[(REJECTED|COMPLETED)\s+by\s+.*\]/));
+  return originalLines.join('\n').trim() || '-';
+};
 
 interface Letter {
   id: string;
@@ -164,6 +171,7 @@ export default function LetterPage() {
           fullName: formData.fullName,
           designationOffice: formData.designationOffice,
           particulars: formData.particulars,
+          remarks: formData.remarks,
         };
         await letterService.updateLetter(editingId, updateData);
         setSuccess('Letter updated successfully');
@@ -227,12 +235,14 @@ export default function LetterPage() {
       }
 
       try {
+        const letter = letters.find(l => l.id === letterToDelete);
         const now = new Date();
         const dateTimeStr = now.toLocaleString();
-        const remarksWithDateTime = `[${dateTimeStr}] [${user?.name || 'Unknown'}] ${rejectData.remarks}`;
+        const newRemarks = `[${dateTimeStr}] [REJECTED by ${user?.name || 'Unknown'}] ${rejectData.remarks}`;
+        const updatedRemarks = letter?.remarks ? `${letter.remarks}\n${newRemarks}` : newRemarks;
         
-        await letterService.updateLetter(letterToDelete, { status: 'Rejected', remarks: remarksWithDateTime });
-        const updatedLetters = letters.map(l => l.id === letterToDelete ? { ...l, status: 'Rejected', remarks: remarksWithDateTime } : l);
+        await letterService.updateLetter(letterToDelete, { status: 'Rejected', remarks: updatedRemarks });
+        const updatedLetters = letters.map(l => l.id === letterToDelete ? { ...l, status: 'Rejected', remarks: updatedRemarks } : l);
         setLetters(updatedLetters);
         setLetterToDelete(null);
         setRejectData({ remarks: '' });
@@ -294,11 +304,17 @@ export default function LetterPage() {
         throw new Error('Letter record not found. It may have been deleted or the data is out of sync.');
       }
 
-      const timeOutRemarksWithUser = `[${user?.name || 'Unknown'}] ${timeOutRemarks}`;
+      const letter = letters.find(l => l.id === letterToTimeOut);
+      const now = new Date();
+      const dateTimeStr = now.toLocaleString();
+      const newRemarks = `[${dateTimeStr}] [COMPLETED by ${user?.name || 'Unknown'}] ${timeOutRemarks}`;
+      const updatedRemarks = letter?.remarks ? `${letter.remarks}\n${newRemarks}` : newRemarks;
+      
       await letterService.updateLetter(letterToTimeOut, {
         dateTimeOut: timeOutDateTime,
-        timeOutRemarks: timeOutRemarksWithUser,
-        status: 'Completed'
+        status: 'Completed',
+        remarks: updatedRemarks,
+        timeOutRemarks: newRemarks
       });
       // Reload letters from Firestore
       const updatedLetters = await letterService.getLetters();
@@ -353,7 +369,7 @@ export default function LetterPage() {
       </Sheet>
 
       {/* Desktop Sidebar */}
-      <div className="hidden md:block w-64 bg-white border-r border-gray-200 shadow-sm">
+      <div className="hidden md:block bg-white border-r border-gray-200 shadow-sm">
         <Sidebar recordTypes={recordTypes} onNavigate={undefined} />
       </div>
 
@@ -541,7 +557,9 @@ export default function LetterPage() {
                             {letter.status}
                           </span>
                         </TableCell>
-                        <TableCell className={`wrap-break-word whitespace-normal text-center text-xs ${letter.status === 'Completed' ? 'text-green-600 font-medium' : letter.status === 'Rejected' ? 'text-red-600 font-medium' : ''}`}>{letter.status === 'Completed' ? (letter.timeOutRemarks || letter.remarks || '-') : (letter.remarks || '-')}</TableCell>
+                        <TableCell className="wrap-break-word whitespace-normal text-center text-xs">
+                          {getOriginalRemarks(letter.remarks)}
+                        </TableCell>
                         <TableCell className="text-center">
                           <ActionButtons
                             onView={() => handleView(letter)}

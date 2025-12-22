@@ -60,6 +60,23 @@ const recordTypes = [
   'Others',
 ];
 
+const formatAmount = (amount: string | number | undefined): string => {
+  if (amount === undefined || amount === null || amount === '') return '-';
+  
+  const num = typeof amount === 'string' ? 
+    parseFloat(amount.replace(/[^0-9.-]+/g, '')) : 
+    Number(amount);
+    
+  if (isNaN(num)) return '-';
+  
+  return new Intl.NumberFormat('en-PH', {
+    style: 'currency',
+    currency: 'PHP',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  }).format(num).replace('₱', '₱ ');
+};
+
 export default function ReportPage() {
   const navigate = useNavigate();
   const { logout, user } = useAuth();
@@ -330,7 +347,7 @@ export default function ReportPage() {
       </Sheet>
 
       {/* Desktop Sidebar */}
-      <div className="hidden md:block w-64 bg-white border-r border-gray-200 shadow-sm">
+      <div className="hidden md:block bg-white border-r border-gray-200 shadow-sm">
         <Sidebar recordTypes={recordTypes} onNavigate={undefined} />
       </div>
 
@@ -535,7 +552,7 @@ export default function ReportPage() {
                             {record.fullName || record.payee || record.dvNo || '-'}
                           </TableCell>
                           <TableCell className="text-center text-xs font-semibold">
-                            {record.amount || record.estimatedCost ? `₱${(record.amount || record.estimatedCost).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '-'}
+                            {formatAmount(record.amount || record.estimatedCost)}
                           </TableCell>
                           <TableCell className="text-center">
                             <span

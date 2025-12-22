@@ -2,16 +2,6 @@ import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { purchaseRequestService, designationService } from '@/services/firebaseService';
-
-const getCurrentDateTime = (): string => {
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = String(now.getMonth() + 1).padStart(2, '0');
-  const day = String(now.getDate()).padStart(2, '0');
-  const hours = String(now.getHours()).padStart(2, '0');
-  const minutes = String(now.getMinutes()).padStart(2, '0');
-  return `${year}-${month}-${day}T${hours}:${minutes}`;
-};
 import { Sidebar } from '@/components/Sidebar';
 import { Button } from '@/components/ui/button';
 import {
@@ -50,6 +40,23 @@ import { ActionButtons } from '@/components/ActionButtons';
 import SuccessModal from '@/components/SuccessModal';
 import TimeOutModal from '@/components/TimeOutModal';
 import { MonthlyTotalCard } from '@/components/MonthlyTotalCard';
+
+const getCurrentDateTime = (): string => {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  const hours = String(now.getHours()).padStart(2, '0');
+  const minutes = String(now.getMinutes()).padStart(2, '0');
+  return `${year}-${month}-${day}T${hours}:${minutes}`;
+};
+
+const getOriginalRemarks = (remarks: string | undefined): string => {
+  if (!remarks) return '-';
+  const lines = remarks.split('\n');
+  const originalLines = lines.filter(line => !line.match(/^\[.*\]\s*\[(REJECTED|COMPLETED)\s+by\s+.*\]/));
+  return originalLines.join('\n').trim() || '-';
+};
 
 interface PurchaseRequest {
   id: string;
@@ -173,6 +180,30 @@ export default function PurchaseRequestPage() {
       })
       .reduce((sum, request) => sum + (request.amount || (request as any).estimatedCost || 0), 0);
   }, [purchaseRequests]);
+
+  const formatAmount = (amount: string | number | undefined): string => {
+    if (amount === undefined || amount === null || amount === '') return '-';
+    
+    const num = typeof amount === 'string' ? 
+      parseFloat(amount.replace(/[^0-9.-]+/g, '')) : 
+      Number(amount);
+      
+    if (isNaN(num)) return '-';
+    
+    return new Intl.NumberFormat('en-PH', {
+      style: 'currency',
+      currency: 'PHP',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    }).format(num).replace('₱', '₱ ');
+  };
+
+  const getOriginalRemarks = (remarks: string | undefined): string => {
+    if (!remarks) return '-';
+    const lines = remarks.split('\n');
+    const originalLines = lines.filter(line => !line.match(/^\[.*\]\s*\[(REJECTED|COMPLETED)\s+by\s+.*\]/));
+    return originalLines.join('\n').trim() || '-';
+  };
 
   const handleLogout = () => {
     logout();
@@ -430,7 +461,7 @@ export default function PurchaseRequestPage() {
       </Sheet>
 
       {/* Desktop Sidebar */}
-      <div className="hidden md:block w-64 bg-white border-r border-gray-200 shadow-sm">
+      <div className="hidden md:block bg-white border-r border-gray-200 shadow-sm">
         <Sidebar recordTypes={recordTypes} onNavigate={undefined} />
       </div>
 
@@ -641,7 +672,7 @@ export default function PurchaseRequestPage() {
                         </TableCell>
                         <TableCell className="text-center text-xs">{request.fullName}</TableCell>
                         <TableCell className="text-center text-xs">{request.purpose}</TableCell>
-                        <TableCell className="text-center text-xs">₱{(request.amount || (request as any).estimatedCost || 0).toLocaleString()}</TableCell>
+                        <TableCell className="text-center text-xs">{formatAmount(request.amount || (request as any).estimatedCost)}</TableCell>
                         <TableCell className="text-center">
                           <span
                             className={`px-2 py-1 rounded text-xs font-medium ${
@@ -657,14 +688,8 @@ export default function PurchaseRequestPage() {
                             {request.status}
                           </span>
                         </TableCell>
-                        <TableCell
-                          className={`text-center text-xs wrap-break-word whitespace-normal ${
-                            request.status === 'Completed' ? 'text-green-600 font-medium' : request.status === 'Rejected' ? 'text-red-600 font-medium' : ''
-                          }`}
-                        >
-                          {request.status === 'Completed'
-                            ? request.timeOutRemarks || request.remarks || '-'
-                            : request.remarks || '-'}
+                        <TableCell className="text-center text-xs">
+                          {getOriginalRemarks(request.remarks)}
                         </TableCell>
                         <TableCell className="text-center">
                           <ActionButtons
@@ -673,7 +698,8 @@ export default function PurchaseRequestPage() {
                             onTimeOut={() => handleTimeOut(request.id)}
                             onReject={() => handleRejectRequest(request.id)}
                             hidden={request.status === 'Rejected'}
-                            rejectDisabledReason={request.status === 'Rejected' ? 'Cannot edit rejected records' : undefined}
+                            canEdit={request.status !== 'Rejected'}
+                            canReject={request.status !== 'Rejected'}
                             showTimeOut={request.status !== 'Completed' && request.status !== 'Rejected'}
                             showEdit={request.status !== 'Completed'}
                             showReject={request.status !== 'Completed'}
@@ -823,7 +849,7 @@ export default function PurchaseRequestPage() {
                   </div>
                   <div>
                     <p className="text-xs font-medium text-gray-600 uppercase">Amount</p>
-                    <p className="text-sm font-semibold text-gray-900 mt-1">₱{(selectedRequest.amount || (selectedRequest as any).estimatedCost || 0).toLocaleString()}</p>
+                    <p className="text-sm font-semibold text-gray-900 mt-1">{formatAmount(selectedRequest.amount || (selectedRequest as any).estimatedCost)}</p>
                   </div>
                 </div>
               </div>

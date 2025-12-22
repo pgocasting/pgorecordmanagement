@@ -332,12 +332,14 @@ export default function LeavePage() {
     }
 
     try {
+      const leave = leaves.find(l => l.id === leaveToDelete);
       const now = new Date();
       const dateTimeStr = now.toLocaleString();
-      const remarksWithDateTime = `[${dateTimeStr}] [${user?.name || 'Unknown'}] ${rejectData.remarks}`;
+      const newRemarks = `[${dateTimeStr}] [REJECTED by ${user?.name || 'Unknown'}] ${rejectData.remarks}`;
+      const updatedRemarks = leave?.remarks ? `${leave.remarks}\n${newRemarks}` : newRemarks;
       
-      await leaveService.updateLeave(leaveToDelete, { status: 'Rejected', remarks: remarksWithDateTime });
-      const updatedLeaves = leaves.map(l => l.id === leaveToDelete ? { ...l, status: 'Rejected', remarks: remarksWithDateTime } : l);
+      await leaveService.updateLeave(leaveToDelete, { status: 'Rejected', remarks: updatedRemarks });
+      const updatedLeaves = leaves.map(l => l.id === leaveToDelete ? { ...l, status: 'Rejected', remarks: updatedRemarks } : l);
       setLeaves(updatedLeaves);
       setLeaveToDelete(null);
       setRejectData({ remarks: '' });
@@ -399,11 +401,17 @@ export default function LeavePage() {
 
     setIsLoading(true);
     try {
-      const timeOutRemarksWithUser = `[${user?.name || 'Unknown'}] ${timeOutData.timeOutRemarks}`;
+      const leave = leaves.find(l => l.id === leaveToTimeOut);
+      const now = new Date();
+      const dateTimeStr = now.toLocaleString();
+      const newRemarks = `[${dateTimeStr}] [COMPLETED by ${user?.name || 'Unknown'}] ${timeOutData.timeOutRemarks}`;
+      const updatedRemarks = leave?.remarks ? `${leave.remarks}\n${newRemarks}` : newRemarks;
+      
       const result = await leaveService.updateLeave(leaveToTimeOut, {
         dateTimeOut: timeOutData.dateTimeOut,
-        timeOutRemarks: timeOutRemarksWithUser,
-        status: 'Completed'
+        status: 'Completed',
+        remarks: updatedRemarks,
+        timeOutRemarks: newRemarks
       });
       
       if (!result) {
@@ -446,7 +454,7 @@ export default function LeavePage() {
       </Sheet>
 
       {/* Desktop Sidebar */}
-      <div className="hidden md:block w-64 bg-white border-r border-gray-200 shadow-sm">
+      <div className="hidden md:block bg-white border-r border-gray-200 shadow-sm">
         <Sidebar recordTypes={recordTypes} onNavigate={undefined} />
       </div>
 
@@ -697,7 +705,28 @@ export default function LeavePage() {
                             {item.status || 'Pending'}
                           </span>
                         </TableCell>
-                        <TableCell className={`text-xs py-1 px-1 text-center wrap-break-word whitespace-normal ${item.status === 'Completed' ? 'text-green-600 font-medium' : item.status === 'Rejected' ? 'text-red-600 font-medium' : ''}`}>{item.status === 'Completed' ? (item.timeOutRemarks || item.remarks || '-') : (item.remarks || '-')}</TableCell>
+                        <TableCell className="text-xs py-1 px-1 text-center wrap-break-word whitespace-normal">
+                          {(item.status === 'Completed' ? (item.timeOutRemarks || item.remarks) : item.remarks) ? (
+                            <div className="whitespace-pre-line text-center space-y-2">
+                              {(item.status === 'Completed' ? (item.timeOutRemarks || item.remarks) : item.remarks)!.split('\n').map((line, index) => {
+                                const isRejected = line.includes('[REJECTED by');
+                                const isCompleted = line.includes('[COMPLETED by');
+                                return (
+                                  <div 
+                                    key={index}
+                                    className={`p-2 rounded border ${
+                                      isRejected ? 'bg-red-50 border-red-200 text-red-600 font-medium' :
+                                      isCompleted ? 'bg-green-50 border-green-200 text-green-600 font-medium' :
+                                      'bg-gray-50 border-gray-200 text-black'
+                                    }`}
+                                  >
+                                    {line}
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          ) : '-'}
+                        </TableCell>
                         <TableCell className="py-1 px-1 text-center wrap-break-word whitespace-normal">
                           <ActionButtons
                             onView={() => handleViewLeave(item.id)}

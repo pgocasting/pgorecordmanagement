@@ -373,12 +373,18 @@ export default function AdminToPGOPage() {
         throw new Error('Admin to PGO record not found. It may have been deleted or the data is out of sync.');
       }
 
+      const record = records.find(r => r.id === recordToTimeOut);
+      const now = new Date();
+      const dateTimeStr = now.toLocaleString();
+      const newRemarks = `[${dateTimeStr}] [COMPLETED by ${user?.name || 'Unknown'}] ${timeOutData.timeOutRemarks}`;
+      const updatedRemarks = record?.remarks ? `${record.remarks}\n${newRemarks}` : newRemarks;
+      
       // Update in Firestore
-      const timeOutRemarksWithUser = `[${user?.name || 'Unknown'}] ${timeOutData.timeOutRemarks}`;
       await adminToPGOService.updateRecord(recordToTimeOut, {
         dateTimeOut: timeOutData.dateTimeOut,
-        timeOutRemarks: timeOutRemarksWithUser,
-        status: 'Completed'
+        status: 'Completed',
+        remarks: updatedRemarks,
+        timeOutRemarks: newRemarks
       });
 
       // Reload from Firestore to ensure consistency
@@ -425,7 +431,7 @@ export default function AdminToPGOPage() {
       </Sheet>
 
       {/* Desktop Sidebar */}
-      <div className="hidden md:block w-64 bg-white border-r border-gray-200 shadow-sm">
+      <div className="hidden md:block bg-white border-r border-gray-200 shadow-sm">
         <Sidebar recordTypes={recordTypes} onNavigate={undefined} />
       </div>
 
@@ -645,7 +651,28 @@ export default function AdminToPGOPage() {
                             {record.status || 'Pending'}
                           </span>
                         </TableCell>
-                        <TableCell className={`text-xs py-1 px-1 text-center wrap-break-word whitespace-normal ${record.status === 'Completed' ? 'text-green-600 font-medium' : record.status === 'Rejected' ? 'text-red-600 font-medium' : ''}`}>{record.status === 'Completed' ? (record.timeOutRemarks || record.remarks || '-') : (record.remarks || '-')}</TableCell>
+                        <TableCell className="text-xs py-1 px-1 text-center wrap-break-word whitespace-normal">
+                          {(record.status === 'Completed' ? (record.timeOutRemarks || record.remarks) : record.remarks) ? (
+                            <div className="whitespace-pre-line text-center space-y-2">
+                              {(record.status === 'Completed' ? (record.timeOutRemarks || record.remarks) : record.remarks)!.split('\n').map((line, index) => {
+                                const isRejected = line.includes('[REJECTED by');
+                                const isCompleted = line.includes('[COMPLETED by');
+                                return (
+                                  <div 
+                                    key={index}
+                                    className={`p-2 rounded border ${
+                                      isRejected ? 'bg-red-50 border-red-200 text-red-600 font-medium' :
+                                      isCompleted ? 'bg-green-50 border-green-200 text-green-600 font-medium' :
+                                      'bg-gray-50 border-gray-200 text-black'
+                                    }`}
+                                  >
+                                    {line}
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          ) : '-'}
+                        </TableCell>
                         <TableCell className="py-1 px-1 text-center wrap-break-word whitespace-normal">
                           <ActionButtons
                             onView={() => handleViewRecord(record.id)}

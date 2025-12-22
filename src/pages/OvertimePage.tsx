@@ -13,6 +13,13 @@ const getCurrentDateTime = (): string => {
   return `${year}-${month}-${day}T${hours}:${minutes}`;
 };
 
+const getOriginalRemarks = (remarks: string | undefined): string => {
+  if (!remarks) return '-';
+  const lines = remarks.split('\n');
+  const originalLines = lines.filter(line => !line.match(/^\[.*\]\s*\[(REJECTED|COMPLETED)\s+by\s+.*\]/));
+  return originalLines.join('\n').trim() || '-';
+};
+
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -443,7 +450,7 @@ export default function OvertimePage() {
       </Sheet>
 
       {/* Desktop Sidebar */}
-      <div className="hidden md:block w-64 bg-white border-r border-gray-200 shadow-sm">
+      <div className="hidden md:block bg-white border-r border-gray-200 shadow-sm">
         <Sidebar recordTypes={recordTypes} onNavigate={undefined} />
       </div>
 
@@ -712,7 +719,9 @@ export default function OvertimePage() {
                             {item.status || 'Pending'}
                           </span>
                         </TableCell>
-                        <TableCell className={`text-xs py-1 px-1 text-center wrap-break-word whitespace-normal ${item.status === 'Completed' ? 'text-green-600 font-medium' : item.status === 'Rejected' ? 'text-red-600 font-medium' : ''}`}>{item.status === 'Completed' ? (item.timeOutRemarks || item.remarks || '-') : (item.remarks || '-')}</TableCell>
+                        <TableCell className="text-xs py-1 px-1 text-center wrap-break-word whitespace-normal">
+                          {getOriginalRemarks(item.remarks)}
+                        </TableCell>
                         <TableCell className="py-1 px-1 text-center wrap-break-word whitespace-normal">
                           <ActionButtons
                             onView={() => handleViewOvertime(item.id)}

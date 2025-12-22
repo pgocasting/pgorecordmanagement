@@ -402,11 +402,17 @@ export default function LocatorPage() {
         throw new Error('Locator record not found. It may have been deleted or the data is out of sync.');
       }
 
-      const timeOutRemarksWithUser = `[${user?.name || 'Unknown'}] ${timeOutData.timeOutRemarks}`;
+      const locator = locators.find(l => l.id === locatorToTimeOut);
+      const now = new Date();
+      const dateTimeStr = now.toLocaleString();
+      const newRemarks = `[${dateTimeStr}] [COMPLETED by ${user?.name || 'Unknown'}] ${timeOutData.timeOutRemarks}`;
+      const updatedRemarks = locator?.remarks ? `${locator.remarks}\n${newRemarks}` : newRemarks;
+      
       await locatorService.updateLocator(locatorToTimeOut, {
         dateTimeOut: timeOutData.dateTimeOut,
-        timeOutRemarks: timeOutRemarksWithUser,
-        status: 'Completed'
+        status: 'Completed',
+        remarks: updatedRemarks,
+        timeOutRemarks: newRemarks
       });
       
       // Reload from Firestore
@@ -445,7 +451,7 @@ export default function LocatorPage() {
       </Sheet>
 
       {/* Desktop Sidebar */}
-      <div className="hidden md:block w-64 bg-white border-r border-gray-200 shadow-sm">
+      <div className="hidden md:block bg-white border-r border-gray-200 shadow-sm">
         <Sidebar recordTypes={recordTypes} onNavigate={undefined} />
       </div>
 
@@ -714,7 +720,28 @@ export default function LocatorPage() {
                             {item.status || 'Pending'}
                           </span>
                         </TableCell>
-                        <TableCell className={`text-xs py-1 px-1 text-center wrap-break-word whitespace-normal ${item.status === 'Completed' ? 'text-green-600 font-medium' : item.status === 'Rejected' ? 'text-red-600 font-medium' : ''}`}>{item.status === 'Completed' ? (item.timeOutRemarks || item.remarks || '-') : (item.remarks || '-')}</TableCell>
+                        <TableCell className="text-xs py-1 px-1 text-center wrap-break-word whitespace-normal">
+                          {(item.status === 'Completed' ? (item.timeOutRemarks || item.remarks) : item.remarks) ? (
+                            <div className="whitespace-pre-line text-center space-y-2">
+                              {(item.status === 'Completed' ? (item.timeOutRemarks || item.remarks) : item.remarks)!.split('\n').map((line, index) => {
+                                const isRejected = line.includes('[REJECTED by');
+                                const isCompleted = line.includes('[COMPLETED by');
+                                return (
+                                  <div 
+                                    key={index}
+                                    className={`p-2 rounded border ${
+                                      isRejected ? 'bg-red-50 border-red-200 text-red-600 font-medium' :
+                                      isCompleted ? 'bg-green-50 border-green-200 text-green-600 font-medium' :
+                                      'bg-gray-50 border-gray-200 text-black'
+                                    }`}
+                                  >
+                                    {line}
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          ) : '-'}
+                        </TableCell>
                         <TableCell className="py-1 px-1 text-center wrap-break-word whitespace-normal">
                           <ActionButtons
                             onView={() => handleViewLocator(item.id)}

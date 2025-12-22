@@ -62,7 +62,13 @@ interface Processing {
   purpose: string;
   amount?: number;
   status: string;
-  remarks?: string;
+  remarks: string;
+  remarksHistory: Array<{
+    remarks: string;
+    status: string;
+    timestamp: string;
+    updatedBy: string;
+  }>;
   timeOutRemarks?: string;
   linkAttachments?: string;
 }
@@ -122,7 +128,7 @@ export default function ProcessingPage() {
     loadDesignations();
   }, []);
 
-  const [formData, setFormData] = useState({
+  const initialFormData = () => ({
     receivedBy: '',
     dateTimeIn: getCurrentDateTime(),
     dateTimeOut: '',
@@ -132,7 +138,16 @@ export default function ProcessingPage() {
     amount: '',
     remarks: '',
     linkAttachments: '',
+    isEdited: false,
+    remarksHistory: [] as Array<{
+      remarks: string;
+      status: string;
+      timestamp: string;
+      updatedBy: string;
+    }>
   });
+
+  const [formData, setFormData] = useState(initialFormData());
 
   // Load records from Firestore on mount
   useEffect(() => {
@@ -169,6 +184,24 @@ export default function ProcessingPage() {
     return `(P) ${year}/${month}/${day}-${count}`;
   }, [records.length]);
 
+  const formatAmount = (amount: string | number | undefined): string => {
+    if (amount === undefined || amount === null || amount === '') return '-';
+    
+    const num = typeof amount === 'string' ? 
+      parseFloat(amount.replace(/[^0-9.-]+/g, '')) : 
+      Number(amount);
+      
+    if (isNaN(num)) return '-';
+    
+    return new Intl.NumberFormat('en-PH', {
+      style: 'currency',
+      currency: 'PHP',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    }).format(num).replace('₱', '₱ ');
+  };
+
+
   const handleLogout = () => {
     logout();
     navigate('/login');
@@ -194,18 +227,47 @@ export default function ProcessingPage() {
 
     setIsLoading(true);
     try {
+      const now = new Date().toISOString();
+      const currentUser = user?.name || 'Unknown';
+      
       if (editingId) {
         // Update existing record
+        const existingRecord = records.find(r => r.id === editingId);
+        const newRemarksHistory = [
+          ...(existingRecord?.remarksHistory || []),
+          {
+            remarks: formData.remarks,
+            status: 'Edited',
+            timestamp: now,
+            updatedBy: currentUser
+          }
+        ];
+        
+        // Keep the status as Pending if it was Pending before
+        const newStatus = existingRecord?.status === 'Rejected' ? 'Rejected' : 'Pending';
+        
         const updateData = {
           ...formData,
           amount: formData.amount ? parseFloat(formData.amount) : undefined,
+          remarksHistory: newRemarksHistory,
+          status: newStatus, // Use the determined status
+          updatedAt: now
         };
+        
         await processingService.updateRecord(editingId, updateData);
-        const updatedRecords = records.map(r => r.id === editingId ? { 
-          ...r, 
-          ...formData,
-          amount: formData.amount ? parseFloat(formData.amount) : undefined 
-        } : r);
+        
+        const updatedRecords = records.map(r => 
+          r.id === editingId 
+            ? { 
+                ...r, 
+                ...formData,
+                amount: formData.amount ? parseFloat(formData.amount) : undefined,
+                remarksHistory: newRemarksHistory,
+                updatedAt: now
+              } 
+            : r
+        );
+        
         setRecords(updatedRecords);
         setSuccess('Record updated successfully');
         setEditingId(null);
@@ -214,27 +276,27 @@ export default function ProcessingPage() {
         const newRecord = {
           trackingId: nextTrackingId,
           ...formData,
-          receivedBy: user?.name || 'Unknown',
+          receivedBy: currentUser,
           amount: formData.amount ? parseFloat(formData.amount) : undefined,
           status: 'Pending',
           timeOutRemarks: '',
+          remarks: formData.remarks || 'Record created',
+          remarksHistory: [{
+            remarks: formData.remarks || 'Record created',
+            status: 'Pending',
+            timestamp: now,
+            updatedBy: currentUser
+          }],
+          createdAt: now,
+          updatedAt: now
         };
+        
         const result = await processingService.addRecord(newRecord);
         setRecords([result as Processing, ...records]);
         setSuccess('Record added successfully');
       }
 
-      setFormData({
-        receivedBy: '',
-        dateTimeIn: getCurrentDateTime(),
-        dateTimeOut: '',
-        fullName: '',
-        designationOffice: '',
-        purpose: '',
-        amount: '',
-        remarks: '',
-        linkAttachments: '',
-      });
+setFormData(initialFormData());
       setIsDialogOpen(false);
       setSuccessModalOpen(true);
     } catch (err) {
@@ -246,40 +308,43 @@ export default function ProcessingPage() {
     }
   };
 
-  const handleEditRecord = (id: string) => {
-    const record = records.find((item) => item.id === id);
-    if (record) {
-      setFormData({
-        receivedBy: record.receivedBy || '',
-        dateTimeIn: record.dateTimeIn,
-        dateTimeOut: record.dateTimeOut || '',
-        fullName: record.fullName,
-        designationOffice: record.designationOffice,
-        purpose: record.purpose,
-        amount: record.amount?.toString() || '',
-        remarks: record.remarks || '',
-        linkAttachments: record.linkAttachments || '',
-      });
-      setEditingId(id);
-      setIsDialogOpen(true);
-    }
+  const handleEditRecord = (record: Processing) => {
+    setFormData({
+      ...initialFormData(),
+      receivedBy: record.receivedBy || '',
+      dateTimeIn: record.dateTimeIn,
+      dateTimeOut: record.dateTimeOut || '',
+      fullName: record.fullName,
+      designationOffice: record.designationOffice,
+      purpose: record.purpose,
+      amount: record.amount?.toString() || '',
+      remarks: record.remarks || '',
+      linkAttachments: record.linkAttachments || '',
+      remarksHistory: record.remarksHistory || [],
+      isEdited: true // Add flag to indicate this is an edit
+    });
+    setEditingId(record.id);
+    setIsDialogOpen(true);
+  };
+
+  const [remarksHistoryOpen, setRemarksHistoryOpen] = useState(false);
+  const [currentRemarksHistory, setCurrentRemarksHistory] = useState<Array<{
+    remarks: string;
+    status: string;
+    timestamp: string;
+    updatedBy: string;
+  }>>([]);
+
+  const viewRemarksHistory = (record: Processing) => {
+    setCurrentRemarksHistory(record.remarksHistory || []);
+    setRemarksHistoryOpen(true);
   };
 
   const handleDialogOpenChange = (open: boolean) => {
     setIsDialogOpen(open);
     if (!open) {
       setEditingId(null);
-      setFormData({
-        receivedBy: '',
-        dateTimeIn: getCurrentDateTime(),
-        dateTimeOut: '',
-        fullName: '',
-        designationOffice: '',
-        purpose: '',
-        amount: '',
-        remarks: '',
-        linkAttachments: '',
-      });
+setFormData(initialFormData());
     }
   };
 
@@ -295,13 +360,41 @@ export default function ProcessingPage() {
     setIsLoading(true);
     try {
       const record = records.find(r => r.id === recordToDelete);
-      const now = new Date();
-      const dateTimeStr = now.toLocaleString();
-      const newRemarks = `[${dateTimeStr}] [REJECTED by ${user?.name || 'Unknown'}] ${rejectData.remarks}`;
-      const updatedRemarks = record?.remarks ? `${record.remarks}\n${newRemarks}` : newRemarks;
+      if (!record) return;
       
-      await processingService.updateRecord(recordToDelete, { status: 'Rejected', remarks: updatedRemarks });
-      const updatedRecords = records.map(r => r.id === recordToDelete ? { ...r, status: 'Rejected', remarks: updatedRemarks } : r);
+      const now = new Date().toISOString();
+      const currentUser = user?.name || 'Unknown';
+      const newRemarks = rejectData.remarks;
+      
+      const updatedRemarksHistory = [
+        ...(record.remarksHistory || []),
+        {
+          remarks: newRemarks,
+          status: 'Rejected',
+          timestamp: now,
+          updatedBy: currentUser
+        }
+      ];
+      
+      await processingService.updateRecord(recordToDelete, { 
+        status: 'Rejected', 
+        remarks: newRemarks,
+        remarksHistory: updatedRemarksHistory,
+        updatedAt: now
+      });
+      
+      const updatedRecords = records.map(r => 
+        r.id === recordToDelete 
+          ? { 
+              ...r, 
+              status: 'Rejected', 
+              remarks: newRemarks,
+              remarksHistory: updatedRemarksHistory,
+              updatedAt: now
+            } 
+          : r
+      );
+      
       setRecords(updatedRecords);
       setSuccess('Record rejected successfully');
       setRecordToDelete(null);
@@ -351,16 +444,29 @@ export default function ProcessingPage() {
       }
 
       const record = records.find(r => r.id === recordToTimeOut);
-      const now = new Date();
-      const dateTimeStr = now.toLocaleString();
-      const newRemarks = `[${dateTimeStr}] [COMPLETED by ${user?.name || 'Unknown'}] ${timeOutData.timeOutRemarks}`;
-      const updatedRemarks = record?.remarks ? `${record.remarks}\n${newRemarks}` : newRemarks;
+      if (!record) return;
+      
+      const now = new Date().toISOString();
+      const currentUser = user?.name || 'Unknown';
+      const newRemarks = timeOutData.timeOutRemarks;
+      
+      const updatedRemarksHistory = [
+        ...(record.remarksHistory || []),
+        {
+          remarks: newRemarks,
+          status: 'Completed',
+          timestamp: now,
+          updatedBy: currentUser
+        }
+      ];
       
       await processingService.updateRecord(recordToTimeOut, {
         dateTimeOut: timeOutData.dateTimeOut,
         status: 'Completed',
-        remarks: updatedRemarks,
-        timeOutRemarks: newRemarks
+        remarks: newRemarks,
+        remarksHistory: updatedRemarksHistory,
+        timeOutRemarks: newRemarks,
+        updatedAt: now
       });
       // Reload from Firestore
       const updatedRecords = await processingService.getRecords();
@@ -394,7 +500,7 @@ export default function ProcessingPage() {
       </Sheet>
 
       {/* Desktop Sidebar */}
-      <div className="hidden md:block w-64 bg-white border-r border-gray-200 shadow-sm">
+      <div className="hidden md:block bg-white border-r border-gray-200 shadow-sm">
         <Sidebar recordTypes={recordTypes} onNavigate={undefined} />
       </div>
 
@@ -417,7 +523,7 @@ export default function ProcessingPage() {
         </div>
 
         {/* Content Area */}
-        <div className="flex-1 overflow-auto p-6 bg-gradient-to-br from-gray-100 via-gray-50 to-gray-100" style={{backgroundImage: 'linear-gradient(0deg, transparent 24%, rgba(200, 200, 200, 0.05) 25%, rgba(200, 200, 200, 0.05) 26%, transparent 27%, transparent 74%, rgba(200, 200, 200, 0.05) 75%, rgba(200, 200, 200, 0.05) 76%, transparent 77%, transparent), linear-gradient(90deg, transparent 24%, rgba(200, 200, 200, 0.05) 25%, rgba(200, 200, 200, 0.05) 26%, transparent 27%, transparent 74%, rgba(200, 200, 200, 0.05) 75%, rgba(200, 200, 200, 0.05) 76%, transparent 77%, transparent)', backgroundSize: '50px 50px'}}>
+        <div className="flex-1 overflow-auto p-6 bg-linear-to-br from-gray-100 via-gray-50 to-gray-100" style={{backgroundImage: 'linear-gradient(0deg, transparent 24%, rgba(200, 200, 200, 0.05) 25%, rgba(200, 200, 200, 0.05) 26%, transparent 27%, transparent 74%, rgba(200, 200, 200, 0.05) 75%, rgba(200, 200, 200, 0.05) 76%, transparent 77%, transparent), linear-gradient(90deg, transparent 24%, rgba(200, 200, 200, 0.05) 25%, rgba(200, 200, 200, 0.05) 26%, transparent 27%, transparent 74%, rgba(200, 200, 200, 0.05) 75%, rgba(200, 200, 200, 0.05) 76%, transparent 77%, transparent)', backgroundSize: '50px 50px'}}>
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
             {/* Header */}
             <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
@@ -607,47 +713,55 @@ export default function ProcessingPage() {
                         <TableCell className="wrap-break-word whitespace-normal text-center text-xs">{record.designationOffice}</TableCell>
                         <TableCell className="wrap-break-word whitespace-normal text-center text-xs">{record.purpose}</TableCell>
                         <TableCell className="wrap-break-word whitespace-normal text-center text-xs">
-                          {record.amount ? new Intl.NumberFormat('en-PH', {
-                            style: 'currency',
-                            currency: 'PHP'
-                          }).format(record.amount) : '-'}
+                          {formatAmount(record.amount)}
                         </TableCell>
                         <TableCell className="wrap-break-word whitespace-normal text-center text-xs">
                           <span className={`px-2 py-1 rounded text-xs font-medium ${
                             record.status === 'Completed' ? 'bg-green-100 text-green-800' :
-                            record.status === 'Pending' ? 'bg-yellow-100 text-yellow-800' :
                             record.status === 'Rejected' ? 'bg-red-100 text-red-800' :
+                            record.status === 'Pending' ? 'bg-yellow-100 text-yellow-800' :
                             'bg-gray-100 text-gray-800'
                           }`}>
                             {record.status}
                           </span>
                         </TableCell>
-                        <TableCell className="wrap-break-word whitespace-normal text-center text-xs">
+                        <TableCell 
+                          className="wrap-break-word whitespace-normal text-xs cursor-pointer hover:bg-gray-50"
+                          onClick={() => viewRemarksHistory(record)}
+                        >
                           {record.remarks ? (
-                            <div className="whitespace-pre-line text-center space-y-2">
-                              {record.remarks.split('\n').map((line, index) => {
-                                const isRejected = line.includes('[REJECTED by');
-                                const isCompleted = line.includes('[COMPLETED by');
-                                return (
-                                  <div 
-                                    key={index}
-                                    className={`p-2 rounded border ${
-                                      isRejected ? 'bg-red-50 border-red-200 text-red-600 font-medium' :
-                                      isCompleted ? 'bg-green-50 border-green-200 text-green-600 font-medium' :
-                                      'bg-gray-50 border-gray-200 text-black'
-                                    }`}
-                                  >
-                                    {line}
-                                  </div>
-                                );
-                              })}
+                            <div className="space-y-1 relative">
+                              {record.remarksHistory?.some(h => h.status === 'Edited') && (
+                                <span className="absolute -top-2 -right-1 bg-yellow-100 text-yellow-800 text-[10px] px-1.5 py-0.5 rounded-full">
+                                  Edited
+                                </span>
+                              )}
+                              <div className="text-black">
+                                {record.remarks}
+                              </div>
+                              {record.remarksHistory?.length > 0 && (
+                                <div className={`${record.status === 'Completed' ? 'text-green-600' : record.status === 'Rejected' ? 'text-red-600' : 'text-yellow-600'}`}>
+                                  {record.remarksHistory[0]?.timestamp && (
+                                    <span>[{new Date(record.remarksHistory[0].timestamp).toLocaleString()}] </span>
+                                  )}
+                                  [{record.status} by {record.receivedBy}]
+                                </div>
+                              )}
+                              <div className="text-xs text-blue-600 mt-1">
+                                Click to view full history
+                              </div>
                             </div>
                           ) : '-'}
                         </TableCell>
                         <TableCell className="py-1 px-1 text-center wrap-break-word whitespace-normal">
                           <ActionButtons
                             onView={() => handleViewRecord(record.id)}
-                            onEdit={() => handleEditRecord(record.id)}
+                            onEdit={() => {
+                              const recordToEdit = records.find(r => r.id === record.id);
+                              if (recordToEdit) {
+                                handleEditRecord(recordToEdit);
+                              }
+                            }}
                             onTimeOut={() => handleTimeOut(record.id)}
                             onReject={() => {
                               setRecordToDelete(record.id);
@@ -791,10 +905,7 @@ export default function ProcessingPage() {
                 <div className="space-y-1">
                   <p className="text-sm font-medium text-gray-500">Amount</p>
                   <p className="text-lg font-semibold text-gray-900">
-                    {new Intl.NumberFormat('en-PH', {
-                      style: 'currency',
-                      currency: 'PHP'
-                    }).format(selectedRecord.amount)}
+                    {formatAmount(selectedRecord.amount)}
                   </p>
                 </div>
               )}
@@ -835,6 +946,61 @@ export default function ProcessingPage() {
               </div>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Remarks History Dialog */}
+      <Dialog open={remarksHistoryOpen} onOpenChange={setRemarksHistoryOpen}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Remarks History</DialogTitle>
+            <DialogDescription>
+              View the complete history of remarks for this record
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            {currentRemarksHistory.length === 0 ? (
+              <p className="text-center text-gray-500 py-4">No remarks history available</p>
+            ) : (
+              <div className="space-y-2">
+                {[...currentRemarksHistory].reverse().map((item, index) => (
+                  <div key={index} className="border-l-4 border-blue-200 pl-4 py-2 bg-gray-50 rounded">
+                    <div className="flex justify-between items-center">
+                      <div className="flex items-center space-x-2">
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                          item.status === 'Completed' ? 'bg-green-100 text-green-800' :
+                          item.status === 'Rejected' ? 'bg-red-100 text-red-800' :
+                          'bg-blue-100 text-blue-800'
+                        }`}>
+                          {item.status}
+                        </span>
+                        <span className="text-sm font-medium text-gray-700">
+                          {item.updatedBy}
+                        </span>
+                      </div>
+                      <span className="text-xs text-gray-500">
+                        {new Date(item.timestamp).toLocaleString(undefined, {
+                          year: 'numeric',
+                          month: 'short',
+                          day: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })}
+                      </span>
+                    </div>
+                    <div className="mt-1 text-sm text-gray-800">
+                      {item.remarks.split('\n').map((line, i) => (
+                        <div key={i} className="flex">
+                          <span className="mr-2">•</span>
+                          <span>{line}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </DialogContent>
       </Dialog>
     </div>

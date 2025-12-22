@@ -485,7 +485,13 @@ interface Processing {
   purpose: string;
   amount?: number;
   status: string;
-  remarks?: string;
+  remarks: string;
+  remarksHistory: Array<{
+    remarks: string;
+    status: string;
+    timestamp: string;
+    updatedBy: string;
+  }>;
   timeOutRemarks?: string;
   linkAttachments?: string;
   createdAt: string;

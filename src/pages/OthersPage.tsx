@@ -71,11 +71,21 @@ interface Others {
   linkAttachments?: string;
 }
 
-const formatCurrency = (amount: string | number | undefined): string => {
-  if (!amount) return '-';
-  const num = typeof amount === 'string' ? parseFloat(amount) : amount;
+const formatAmount = (amount: string | number | undefined): string => {
+  if (amount === undefined || amount === null || amount === '') return '-';
+  
+  const num = typeof amount === 'string' ? 
+    parseFloat(amount.replace(/[^0-9.-]+/g, '')) : 
+    Number(amount);
+    
   if (isNaN(num)) return '-';
-  return `₱${num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  
+  return new Intl.NumberFormat('en-PH', {
+    style: 'currency',
+    currency: 'PHP',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  }).format(num).replace('₱', '₱ ');
 };
 
 const recordTypes = [
@@ -144,6 +154,7 @@ export default function OthersPage() {
     purpose: '',
     amount: '',
     linkAttachments: '',
+    remarks: '',
   });
 
   // Load records from Firestore on mount
@@ -245,6 +256,7 @@ export default function OthersPage() {
         purpose: '',
         amount: '',
         linkAttachments: '',
+        remarks: '',
       });
       setIsDialogOpen(false);
       setSuccessModalOpen(true);
@@ -281,6 +293,7 @@ export default function OthersPage() {
         purpose: '',
         amount: '',
         linkAttachments: '',
+        remarks: '',
       });
       setIsDialogOpen(false);
       setEditConfirmOpen(false);
@@ -309,6 +322,7 @@ export default function OthersPage() {
         purpose: record.purpose,
         amount: record.amount || '',
         linkAttachments: record.linkAttachments || '',
+        remarks: record.remarks || '',
       });
       setEditingId(id);
       setIsDialogOpen(true);
@@ -331,6 +345,7 @@ export default function OthersPage() {
         purpose: '',
         amount: '',
         linkAttachments: '',
+        remarks: '',
       });
     }
   };
@@ -444,7 +459,7 @@ export default function OthersPage() {
       </Sheet>
 
       {/* Desktop Sidebar */}
-      <div className="hidden md:block w-64 bg-white border-r border-gray-200 shadow-sm">
+      <div className="hidden md:block bg-white border-r border-gray-200 shadow-sm">
         <Sidebar recordTypes={recordTypes} onNavigate={undefined} />
       </div>
 
@@ -503,6 +518,7 @@ export default function OthersPage() {
                           purpose: '',
                           amount: '',
                           linkAttachments: '',
+                          remarks: '',
                         });
                       }}
                     >
@@ -635,6 +651,16 @@ export default function OthersPage() {
                           rows={3}
                         />
                       </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="remarks">Remarks</Label>
+                        <Input
+                          id="remarks"
+                          name="remarks"
+                          value={formData.remarks}
+                          onChange={handleInputChange}
+                          placeholder="Enter remarks"
+                        />
+                      </div>
                     </div>
                     <Button 
                       onClick={handleAddRecord} 
@@ -693,7 +719,28 @@ export default function OthersPage() {
                             {record.status}
                           </span>
                         </TableCell>
-                        <TableCell className={`wrap-break-word whitespace-normal text-center text-xs ${record.status === 'Completed' ? 'text-green-600 font-medium' : record.status === 'Rejected' ? 'text-red-600 font-medium' : ''}`}>{record.status === 'Completed' ? (record.timeOutRemarks || record.remarks || '-') : (record.remarks || '-')}</TableCell>
+                        <TableCell className="wrap-break-word whitespace-normal text-center text-xs">
+                          {(record.status === 'Completed' ? (record.timeOutRemarks || record.remarks) : record.remarks) ? (
+                            <div className="whitespace-pre-line text-center space-y-2">
+                              {(record.status === 'Completed' ? (record.timeOutRemarks || record.remarks) : record.remarks)!.split('\n').map((line, index) => {
+                                const isRejected = line.includes('[REJECTED by');
+                                const isCompleted = line.includes('[COMPLETED by');
+                                return (
+                                  <div 
+                                    key={index}
+                                    className={`p-2 rounded border ${
+                                      isRejected ? 'bg-red-50 border-red-200 text-red-600 font-medium' :
+                                      isCompleted ? 'bg-green-50 border-green-200 text-green-600 font-medium' :
+                                      'bg-gray-50 border-gray-200 text-black'
+                                    }`}
+                                  >
+                                    {line}
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          ) : '-'}
+                        </TableCell>
                         <TableCell className="py-1 px-1 text-center wrap-break-word whitespace-normal">
                           <ActionButtons
                             onView={() => handleViewRecord(record.id)}
@@ -823,7 +870,7 @@ export default function OthersPage() {
                 <div className="grid grid-cols-2 gap-6">
                   <div>
                     <p className="text-xs font-medium text-gray-600 uppercase">Amount</p>
-                    <p className="text-sm font-semibold text-gray-900 mt-1">{formatCurrency(selectedRecord.amount)}</p>
+                    <p className="text-sm font-semibold text-gray-900 mt-1">{formatAmount(selectedRecord.amount)}</p>
                   </div>
                   <div>
                     <p className="text-xs font-medium text-gray-600 uppercase">Link / Attachments</p>

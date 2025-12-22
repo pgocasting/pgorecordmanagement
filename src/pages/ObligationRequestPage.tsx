@@ -175,6 +175,30 @@ export default function ObligationRequestPage() {
       .reduce((sum, request) => sum + (request.amount || 0), 0);
   }, [obligationRequests]);
 
+  const formatAmount = (amount: string | number | undefined): string => {
+    if (amount === undefined || amount === null || amount === '') return '-';
+    
+    const num = typeof amount === 'string' ? 
+      parseFloat(amount.replace(/[^0-9.-]+/g, '')) : 
+      Number(amount);
+      
+    if (isNaN(num)) return '-';
+    
+    return new Intl.NumberFormat('en-PH', {
+      style: 'currency',
+      currency: 'PHP',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    }).format(num).replace('₱', '₱ ');
+  };
+
+  const getOriginalRemarks = (remarks: string | undefined): string => {
+    if (!remarks) return '-';
+    const lines = remarks.split('\n');
+    const originalLines = lines.filter(line => !line.match(/^\[.*\]\s*\[(REJECTED|COMPLETED)\s+by\s+.*\]/));
+    return originalLines.join('\n').trim() || '-';
+  };
+
   const handleLogout = () => {
     logout();
     navigate('/login');
@@ -434,7 +458,7 @@ export default function ObligationRequestPage() {
       </Sheet>
 
       {/* Desktop Sidebar */}
-      <div className="hidden md:block w-64 bg-white border-r border-gray-200 shadow-sm">
+      <div className="hidden md:block bg-white border-r border-gray-200 shadow-sm">
         <Sidebar recordTypes={recordTypes} onNavigate={undefined} />
       </div>
 
@@ -657,7 +681,7 @@ export default function ObligationRequestPage() {
                         </TableCell>
                         <TableCell className="text-center text-xs">{request.fullName}</TableCell>
                         <TableCell className="text-center text-xs">{request.obligationType}</TableCell>
-                        <TableCell className="text-center text-xs">₱{request.amount.toLocaleString()}</TableCell>
+                        <TableCell className="text-center text-xs">{formatAmount(request.amount)}</TableCell>
                         <TableCell className="text-center">
                           <span
                             className={`px-2 py-1 rounded text-xs font-medium ${
@@ -673,12 +697,8 @@ export default function ObligationRequestPage() {
                             {request.status}
                           </span>
                         </TableCell>
-                        <TableCell
-                          className={`text-center text-xs ${
-                            request.status === 'Completed' ? 'text-green-600 font-medium' : request.status === 'Rejected' ? 'text-red-600 font-medium' : ''
-                          }`}
-                        >
-                          {request.status === 'Completed' ? (request.timeOutRemarks || request.remarks || '-') : (request.remarks || '-')}
+                        <TableCell className="text-center text-xs">
+                          {getOriginalRemarks(request.remarks)}
                         </TableCell>
                         <TableCell className="text-center">
                           <ActionButtons
@@ -879,7 +899,7 @@ export default function ObligationRequestPage() {
                   </div>
                   <div>
                     <p className="text-xs font-medium text-gray-600 uppercase">Amount</p>
-                    <p className="text-sm font-semibold text-gray-900 mt-1">₱{selectedRequest.amount.toLocaleString()}</p>
+                    <p className="text-sm font-semibold text-gray-900 mt-1">{formatAmount(selectedRequest.amount)}</p>
                   </div>
                 </div>
               </div>

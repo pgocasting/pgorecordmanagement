@@ -32,6 +32,7 @@ interface RecordItem {
   purpose?: string;
   placeOfAssignment?: string;
   recordType?: string;
+  remarks?: string;
 }
 
 const recordTypes = [
@@ -50,7 +51,7 @@ const recordTypes = [
 
 export default function ReceivingCopyPage() {
   const navigate = useNavigate();
-  const { logout } = useAuth();
+  const { logout, user } = useAuth();
   const [allRecords, setAllRecords] = useState<RecordItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -298,7 +299,7 @@ export default function ReceivingCopyPage() {
         </SheetContent>
       </Sheet>
 
-      <div className="hidden lg:block w-64 border-r border-gray-200">
+      <div className="hidden lg:block border-r border-gray-200">
         <Sidebar recordTypes={recordTypes} />
       </div>
 
@@ -307,8 +308,8 @@ export default function ReceivingCopyPage() {
         {/* Header */}
         <div className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
           <div>
-            <h2 className="text-xl font-bold text-gray-900">Receiving Copy</h2>
-            <p className="text-sm text-gray-600">Printable record of all received documents</p>
+            <h1 className="text-2xl font-bold text-gray-900">Records Management</h1>
+            <p className="text-sm text-gray-600">Welcome back, {user?.name}</p>
           </div>
           <div className="flex items-center gap-3">
             <Button
@@ -318,13 +319,14 @@ export default function ReceivingCopyPage() {
               <Printer className="h-4 w-4" />
               Print
             </Button>
-            <button
+            <Button
+              variant="outline"
+              className="gap-2 text-red-600 hover:text-red-700 hover:bg-red-50"
               onClick={handleLogout}
-              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-              title="Logout"
             >
-              <LogOut className="h-5 w-5 text-gray-600" />
-            </button>
+              <LogOut className="h-4 w-4" />
+              Logout
+            </Button>
           </div>
         </div>
 
@@ -377,12 +379,13 @@ export default function ReceivingCopyPage() {
                 <table className="w-full h-full border-collapse table-fixed">
                   <colgroup>
                     <col style={{ width: '3%' }} />
-                    <col style={{ width: '11%' }} />
+                    <col style={{ width: '10%' }} />
                     <col style={{ width: '8%' }} />
                     <col style={{ width: '7%' }} />
-                    <col style={{ width: '11%' }} />
-                    <col style={{ width: '23%' }} />
-                    <col style={{ width: '17%' }} />
+                    <col style={{ width: '10%' }} />
+                    <col style={{ width: '18%' }} />
+                    <col style={{ width: '15%' }} />
+                    <col style={{ width: '9%' }} />
                     <col style={{ width: '10%' }} />
                     <col style={{ width: '10%' }} />
                   </colgroup>
@@ -403,6 +406,7 @@ export default function ReceivingCopyPage() {
                       <th className="border border-gray-300 px-2 py-2 text-left text-sm font-semibold text-gray-900">Requesting Office</th>
                       <th className="border border-gray-300 px-2 py-2 text-left text-sm font-semibold text-gray-900">Particulars</th>
                       <th className="border border-gray-300 px-2 py-2 text-left text-sm font-semibold text-gray-900">Amount</th>
+                      <th className="border border-gray-300 px-2 py-2 text-left text-sm font-semibold text-gray-900">Remarks</th>
                       <th className="border border-gray-300 px-2 py-2 text-left text-sm font-semibold text-gray-900 whitespace-nowrap">Received By</th>
                     </tr>
                   </thead>
@@ -437,6 +441,9 @@ export default function ReceivingCopyPage() {
                         </td>
                         <td className="border border-gray-300 px-2 py-2 text-sm text-gray-900 text-right whitespace-nowrap">
                           {formatAmount(record.amount)}
+                        </td>
+                        <td className="border border-gray-300 px-2 py-2 text-sm text-gray-900 break-words">
+                          {record.remarks || '-'}
                         </td>
                         <td className="border border-gray-300 px-2 py-2 text-sm text-gray-900 text-center">
                           -

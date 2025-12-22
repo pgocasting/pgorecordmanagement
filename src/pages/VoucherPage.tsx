@@ -59,11 +59,28 @@ interface Voucher {
   timeOutRemarks?: string;
 }
 
-const formatCurrency = (amount: string | number | undefined): string => {
-  if (!amount) return '-';
-  const num = typeof amount === 'string' ? parseFloat(amount) : amount;
+const formatAmount = (amount: string | number | undefined): string => {
+  if (amount === undefined || amount === null || amount === '') return '-';
+  
+  const num = typeof amount === 'string' ? 
+    parseFloat(amount.replace(/[^0-9.-]+/g, '')) : 
+    Number(amount);
+    
   if (isNaN(num)) return '-';
-  return `₱${num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  
+  return new Intl.NumberFormat('en-PH', {
+    style: 'currency',
+    currency: 'PHP',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  }).format(num).replace('₱', '₱ ');
+};
+
+const getOriginalRemarks = (remarks: string | undefined): string => {
+  if (!remarks) return '-';
+  const lines = remarks.split('\n');
+  const originalLines = lines.filter(line => !line.match(/^\[.*\]\s*\[(REJECTED|COMPLETED)\s+by\s+.*\]/));
+  return originalLines.join('\n').trim() || '-';
 };
 
 const getCurrentDateTime = (): string => {
@@ -462,7 +479,7 @@ export default function VoucherPage() {
       </Sheet>
 
       {/* Desktop Sidebar */}
-      <div className="hidden md:block w-64 bg-white border-r border-gray-200 shadow-sm">
+      <div className="hidden md:block bg-white border-r border-gray-200 shadow-sm">
         <Sidebar recordTypes={recordTypes} onNavigate={undefined} />
       </div>
 
@@ -715,7 +732,7 @@ export default function VoucherPage() {
                           <TableCell className={`wrap-break-word whitespace-normal text-center text-xs ${voucher.status === 'Completed' ? 'text-green-600 font-medium' : 'text-red-600'}`}>{voucher.dateTimeOut ? new Date(voucher.dateTimeOut).toLocaleString() : '-'}</TableCell>
                           <TableCell className="wrap-break-word whitespace-normal text-center text-xs">{voucher.dvNo}</TableCell>
                           <TableCell className="wrap-break-word whitespace-normal text-center text-xs">{voucher.payee}</TableCell>
-                          <TableCell className="wrap-break-word whitespace-normal text-center text-xs">{formatCurrency(voucher.amount)}</TableCell>
+                          <TableCell className="wrap-break-word whitespace-normal text-center text-xs">{formatAmount(voucher.amount)}</TableCell>
                           <TableCell className="wrap-break-word whitespace-normal text-center text-xs">{voucher.voucherType}</TableCell>
                           <TableCell className="wrap-break-word whitespace-normal text-center text-xs">
                             <span className={`px-2 py-1 rounded text-xs font-medium ${
@@ -727,7 +744,9 @@ export default function VoucherPage() {
                               {voucher.status}
                             </span>
                           </TableCell>
-                          <TableCell className={`wrap-break-word whitespace-normal text-center text-xs ${voucher.status === 'Completed' ? 'text-green-600 font-medium' : voucher.status === 'Rejected' ? 'text-red-600 font-medium' : ''}`}>{voucher.status === 'Completed' ? (voucher.timeOutRemarks || voucher.remarks || '-') : (voucher.remarks || '-')}</TableCell>
+                          <TableCell className="wrap-break-word whitespace-normal text-center text-xs">
+                            {getOriginalRemarks(voucher.remarks)}
+                          </TableCell>
                           <TableCell className="text-center">
                             <ActionButtons
                               onView={() => handleViewVoucher(voucher.id)}
@@ -814,7 +833,7 @@ export default function VoucherPage() {
                   </div>
                   <div>
                     <p className="text-xs font-medium text-gray-600 uppercase">Amount</p>
-                    <p className="text-sm font-semibold text-gray-900 mt-1">{formatCurrency(selectedVoucher.amount)}</p>
+                    <p className="text-sm font-semibold text-gray-900 mt-1">{formatAmount(selectedVoucher.amount)}</p>
                   </div>
                   <div>
                     <p className="text-xs font-medium text-gray-600 uppercase">Type</p>
