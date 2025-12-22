@@ -28,12 +28,18 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from '@/components/ui/command';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
 import {
   Plus,
   Menu,
@@ -161,6 +167,7 @@ export default function VoucherPage() {
     updatedBy: string;
   }>>([]);
   const [designationOptions, setDesignationOptions] = useState<string[]>([]);
+  const [designationDropdownOpen, setDesignationDropdownOpen] = useState(false);
 
   useEffect(() => {
     const loadDesignations = async () => {
@@ -169,7 +176,34 @@ export default function VoucherPage() {
         setDesignationOptions(designations);
       } catch (error) {
         console.error('Error loading designations:', error);
-        setDesignationOptions(['Admin', 'Manager', 'Staff', 'Officer']);
+        setDesignationOptions([
+          'Office of the Provincial Governor (PGO)',
+          'Office of the Vice Governor (OVG)',
+          'Provincial Administrator\'s Office (PAO)',
+          'Provincial Legal Office (PLO)',
+          'Provincial Treasury Office (PTO)',
+          'Provincial Accounting Office (PAccO)',
+          'Provincial Budget Office (PBO)',
+          'Provincial Assessor\'s Office (PAO)',
+          'Provincial Engineer\'s Office (PEO)',
+          'Provincial Health Office (PHO)',
+          'Provincial Social Welfare and Development Office (PSWDO)',
+          'Provincial Agriculture Office (PAgrO)',
+          'Provincial Veterinary Office (PVO)',
+          'Provincial Environment and Natural Resources Office (PENRO)',
+          'Provincial Planning and Development Office (PPDO)',
+          'Provincial Human Resource Management Office (PHRMO)',
+          'Provincial General Services Office (PGSO)',
+          'Provincial Information and Communications Technology Office (PICTO)',
+          'Provincial Disaster Risk Reduction and Management Office (PDRRMO)',
+          'Provincial Tourism Office (PTO)',
+          'Provincial Youth, Sports, and Development Office (PYSDO)',
+          'Sangguniang Panlalawigan Secretariat (SPS)',
+          'Admin',
+          'Manager',
+          'Staff',
+          'Officer'
+        ]);
       }
     };
     loadDesignations();
@@ -593,14 +627,14 @@ export default function VoucherPage() {
             </div>
             
             {/* User Info and Logout */}
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
               {user?.name && (
-                <div className="flex items-center gap-3 px-4 py-2 bg-gray-50 rounded-lg border border-gray-200">
-                  <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center shrink-0">
-                    <User className="h-4 w-4 text-indigo-600" />
+                <div className="flex items-center gap-2 px-3 py-2 bg-gray-50 rounded-lg border border-gray-200">
+                  <div className="w-6 h-6 rounded-full bg-indigo-100 flex items-center justify-center shrink-0">
+                    <User className="h-3 w-3 text-indigo-600" />
                   </div>
                   <div className="flex flex-col min-w-0">
-                    <p className="text-sm font-medium text-gray-900 truncate">{user.name}</p>
+                    <p className="text-xs font-medium text-gray-900 truncate">{user.name}</p>
                     <p className="text-xs text-gray-500 truncate capitalize">{user.role}</p>
                   </div>
                 </div>
@@ -608,7 +642,7 @@ export default function VoucherPage() {
               
               <Button
                 variant="outline"
-                className="gap-2 text-red-600 hover:text-red-700 hover:bg-red-50"
+                className="gap-2 text-red-600 hover:text-red-700 hover:bg-red-50 h-9"
                 onClick={handleLogout}
               >
                 <LogOut className="h-4 w-4" />
@@ -754,18 +788,41 @@ export default function VoucherPage() {
                       <div className="grid grid-cols-2 gap-3">
                         <div className="space-y-1">
                           <Label htmlFor="designationOffice" className="text-xs font-medium text-gray-700">Designation / Office *</Label>
-                          <Select value={formData.designationOffice} onValueChange={(value) => handleSelectChange('designationOffice', value)}>
-                            <SelectTrigger id="designationOffice" className="w-full h-8 text-xs">
-                              <SelectValue placeholder="Select" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {designationOptions.map((option) => (
-                                <SelectItem key={option} value={option}>
-                                  {option}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
+                          <Popover open={designationDropdownOpen} onOpenChange={setDesignationDropdownOpen}>
+                            <PopoverTrigger asChild>
+                              <Button
+                                variant="outline"
+                                role="combobox"
+                                aria-expanded={designationDropdownOpen}
+                                className="w-full h-8 text-xs justify-between"
+                              >
+                                {formData.designationOffice || "Select office..."}
+                                <Search className="ml-2 h-3 w-3 shrink-0 opacity-50" />
+                              </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-full p-0" align="start">
+                              <Command>
+                                <CommandInput placeholder="Search office..." />
+                                <CommandList>
+                                  <CommandEmpty>No office found.</CommandEmpty>
+                                  <CommandGroup>
+                                    {designationOptions.map((option) => (
+                                      <CommandItem
+                                        key={option}
+                                        value={option}
+                                        onSelect={(currentValue) => {
+                                          handleSelectChange('designationOffice', currentValue);
+                                          setDesignationDropdownOpen(false);
+                                        }}
+                                      >
+                                        {option}
+                                      </CommandItem>
+                                    ))}
+                                  </CommandGroup>
+                                </CommandList>
+                              </Command>
+                            </PopoverContent>
+                          </Popover>
                         </div>
 
                         <div className="space-y-1">

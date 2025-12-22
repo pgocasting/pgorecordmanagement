@@ -19,7 +19,6 @@ import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { 
   Menu,
   LogOut, 
-  User,
   Printer 
 } from 'lucide-react';
 import { Sidebar } from '@/components/Sidebar';
@@ -38,6 +37,7 @@ interface RecordItem {
   placeOfAssignment?: string;
   recordType?: string;
   remarks?: string;
+  status?: string;
 }
 
 const recordTypes = [
@@ -56,7 +56,7 @@ const recordTypes = [
 
 export default function ReceivingCopyPage() {
   const navigate = useNavigate();
-  const { logout, user } = useAuth();
+  const { logout } = useAuth();
   const [allRecords, setAllRecords] = useState<RecordItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -204,7 +204,7 @@ export default function ReceivingCopyPage() {
   };
 
   const filteredRecords = allRecords.filter(record => 
-    selectedCategories.has(record.recordType || '')
+    selectedCategories.has(record.recordType || '') && record.status === 'Completed'
   ).sort((a, b) => new Date(b.dateTimeIn).getTime() - new Date(a.dateTimeIn).getTime());
 
   const totalPages = Math.ceil(filteredRecords.length / itemsPerPage);
@@ -318,37 +318,23 @@ export default function ReceivingCopyPage() {
               <p className="text-sm text-gray-600">Welcome back</p>
             </div>
             
-            {/* User Info and Actions */}
-            <div className="flex items-center gap-4">
-              {user?.name && (
-                <div className="flex items-center gap-3 px-4 py-2 bg-gray-50 rounded-lg border border-gray-200">
-                  <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center shrink-0">
-                    <User className="h-4 w-4 text-indigo-600" />
-                  </div>
-                  <div className="flex flex-col min-w-0">
-                    <p className="text-sm font-medium text-gray-900 truncate">{user.name}</p>
-                    <p className="text-xs text-gray-500 truncate capitalize">{user.role}</p>
-                  </div>
-                </div>
-              )}
-              
-              <div className="flex items-center gap-3">
-                <Button
-                  onClick={handlePrint}
-                  className="gap-2 bg-indigo-600 hover:bg-indigo-700"
-                >
-                  <Printer className="h-4 w-4" />
-                  Print
-                </Button>
-                <Button
-                  variant="outline"
-                  className="gap-2 text-red-600 hover:text-red-700 hover:bg-red-50"
-                  onClick={handleLogout}
-                >
-                  <LogOut className="h-4 w-4" />
-                  Logout
-                </Button>
-              </div>
+            {/* Actions */}
+            <div className="flex items-center gap-2">
+              <Button
+                onClick={handlePrint}
+                className="gap-2 bg-indigo-600 hover:bg-indigo-700 h-9"
+              >
+                <Printer className="h-4 w-4" />
+                Print
+              </Button>
+              <Button
+                variant="outline"
+                className="gap-2 text-red-600 hover:text-red-700 hover:bg-red-50 h-9"
+                onClick={handleLogout}
+              >
+                <LogOut className="h-4 w-4" />
+                Logout
+              </Button>
             </div>
           </div>
         </div>
@@ -409,8 +395,7 @@ export default function ReceivingCopyPage() {
                     <col style={{ width: '18%' }} />
                     <col style={{ width: '15%' }} />
                     <col style={{ width: '9%' }} />
-                    <col style={{ width: '10%' }} />
-                    <col style={{ width: '10%' }} />
+                    <col style={{ width: '20%' }} />
                   </colgroup>
                   <thead>
                     <tr className="bg-gray-50 border-b border-gray-300">
@@ -429,7 +414,7 @@ export default function ReceivingCopyPage() {
                       <th className="border border-gray-300 px-2 py-2 text-left text-sm font-semibold text-gray-900">Requesting Office</th>
                       <th className="border border-gray-300 px-2 py-2 text-left text-sm font-semibold text-gray-900">Particulars</th>
                       <th className="border border-gray-300 px-2 py-2 text-left text-sm font-semibold text-gray-900">Amount</th>
-                      <th className="border border-gray-300 px-2 py-2 text-left text-sm font-semibold text-gray-900">Remarks</th>
+                      <th className="border border-gray-300 px-2 py-2 text-left text-sm font-semibold text-gray-900 print-hide">Remarks</th>
                       <th className="border border-gray-300 px-2 py-2 text-left text-sm font-semibold text-gray-900 whitespace-nowrap">Received By</th>
                     </tr>
                   </thead>
@@ -465,10 +450,10 @@ export default function ReceivingCopyPage() {
                         <td className="border border-gray-300 px-2 py-2 text-sm text-gray-900 text-right whitespace-nowrap">
                           {formatAmount(record.amount)}
                         </td>
-                        <td className="border border-gray-300 px-2 py-2 text-sm text-gray-900 break-words">
+                        <td className="border border-gray-300 px-2 py-2 text-sm text-gray-900 break-words print-hide">
                           {record.remarks || '-'}
                         </td>
-                        <td className="border border-gray-300 px-2 py-2 text-sm text-gray-900 text-center">
+                        <td className="border border-gray-300 px-2 py-2 text-sm text-black text-center">
                           -
                         </td>
                       </tr>
@@ -585,7 +570,7 @@ export default function ReceivingCopyPage() {
             border: 1px solid #000 !important;
             padding: 4px 5px !important;
             text-align: left;
-            font-size: 10px !important;
+            font-size: 12px !important;
             line-height: 1.2 !important;
             word-break: break-word;
             overflow-wrap: break-word;
@@ -594,7 +579,7 @@ export default function ReceivingCopyPage() {
           th {
             background-color: #f3f4f6 !important;
             font-weight: bold !important;
-            font-size: 9px !important;
+            font-size: 12px !important;
             padding: 4px 5px !important;
           }
           tr:nth-child(even) {
