@@ -739,7 +739,7 @@ setFormData(initialFormData());
                                 </span>
                               )}
                               <div className="text-black">
-                                {record.remarks}
+                                {record.remarksHistory?.length > 0 ? record.remarksHistory[0].remarks : record.remarks}
                               </div>
                               {record.remarksHistory?.length > 0 && (
                                 <div className={`${record.status === 'Completed' ? 'text-green-600' : record.status === 'Rejected' ? 'text-red-600' : 'text-yellow-600'}`}>

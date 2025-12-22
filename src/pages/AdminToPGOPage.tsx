@@ -570,48 +570,46 @@ export default function AdminToPGOPage() {
                     Add Record
                   </Button>
                 </DialogTrigger>
-                <DialogContent className="sm:max-w-lg z-50 max-h-[90vh] overflow-y-auto overflow-x-hidden">
+                <DialogContent className="max-w-2xl">
                   <DialogHeader>
-                    <DialogTitle className="text-lg font-semibold">{editingId ? 'Edit Record' : 'Add New Record'}</DialogTitle>
+                    <DialogTitle>{editingId ? 'Edit' : 'Add New'} Admin to PGO Record</DialogTitle>
                     <DialogDescription>
-                      {editingId ? 'Update the record details' : 'Fill in the form to add a new record'}
+                      Fill in the form to {editingId ? 'update' : 'add'} an admin to PGO record
                     </DialogDescription>
                   </DialogHeader>
-                  <div className="space-y-3">
+                  <div className="grid gap-4 py-4">
                     {!editingId && (
-                      <div className="space-y-1">
-                        <Label htmlFor="trackingId" className="text-xs font-medium text-gray-700">Tracking ID</Label>
+                      <div className="space-y-2">
+                        <Label htmlFor="trackingId">Tracking ID</Label>
                         <Input
                           id="trackingId"
-                          type="text"
                           value={nextTrackingId}
                           disabled
-                          className="bg-gray-100 h-8 text-xs"
+                          className="bg-gray-50"
                         />
                       </div>
                     )}
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="space-y-1">
-                        <Label htmlFor="dateTimeIn" className="text-xs font-medium text-gray-700">Date/Time IN *</Label>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="dateTimeIn">Date/Time IN *</Label>
                         <Input
                           id="dateTimeIn"
-                          name="dateTimeIn"
                           type="datetime-local"
+                          name="dateTimeIn"
                           value={formData.dateTimeIn}
                           onChange={handleInputChange}
-                          className="h-8 text-xs"
+                          required
                         />
                       </div>
-
-                      <div className="space-y-1">
-                        <Label htmlFor="fullName" className="text-xs font-medium text-gray-700">Full Name *</Label>
+                      <div className="space-y-2">
+                        <Label htmlFor="fullName">Full Name *</Label>
                         <Input
                           id="fullName"
                           name="fullName"
-                          placeholder="Full Name"
                           value={formData.fullName}
                           onChange={handleInputChange}
-                          className="h-8 text-xs"
+                          placeholder="Full Name"
+                          required
                         />
                       </div>
                     </div>
@@ -630,15 +628,15 @@ export default function AdminToPGOPage() {
                     )}
 
                     <div className="space-y-2">
-                      <Label htmlFor="officeAddress">Office / Address *</Label>
-                      <Select value={formData.officeAddress} onValueChange={(value) => handleSelectChange('officeAddress', value)}>
-                        <SelectTrigger 
-                          id="officeAddress" 
-                          className="w-full"
-                          title={formData.officeAddress || "Select office or designation"}
-                        >
-                          <SelectValue placeholder="Select office or designation">
-                            {formData.officeAddress ? getAcronym(formData.officeAddress) : 'Select office or designation'}
+                      <Label htmlFor="officeAddress">Office *</Label>
+                      <Select
+                        value={formData.officeAddress}
+                        onValueChange={(value) => handleSelectChange('officeAddress', value)}
+                        required
+                      >
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="Select office">
+                            {formData.officeAddress ? getAcronym(formData.officeAddress) : 'Select office'}
                           </SelectValue>
                         </SelectTrigger>
                         <SelectContent>
@@ -653,14 +651,24 @@ export default function AdminToPGOPage() {
 
                     <div className="space-y-2">
                       <Label htmlFor="particulars">Particulars *</Label>
-                      <textarea
+                      <Input
                         id="particulars"
                         name="particulars"
-                        placeholder="Enter particulars"
                         value={formData.particulars}
                         onChange={handleInputChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                        rows={3}
+                        placeholder="Enter particulars"
+                        required
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="remarks">Remarks</Label>
+                      <Input
+                        id="remarks"
+                        name="remarks"
+                        value={formData.remarks}
+                        onChange={handleInputChange}
+                        placeholder="Enter remarks"
                       />
                     </div>
 
@@ -669,7 +677,7 @@ export default function AdminToPGOPage() {
                       disabled={isLoading}
                       className="w-full bg-indigo-600 hover:bg-indigo-700"
                     >
-                      {isLoading ? (editingId ? 'Updating...' : 'Adding...') : (editingId ? 'Update Record' : 'Add Record')}
+                      {isLoading ? 'Saving...' : editingId ? 'Update Admin to PGO' : 'Add Admin to PGO'}
                     </Button>
                   </div>
                 </DialogContent>
@@ -741,12 +749,12 @@ export default function AdminToPGOPage() {
                                 </span>
                               )}
                               <div className="text-black">
-                                {record.remarks}
+                                {record.remarksHistory?.length > 0 ? record.remarksHistory[record.remarksHistory.length - 1].remarks : record.remarks}
                               </div>
                               {record.remarksHistory?.length > 0 && (
                                 <div className={`${record.status === 'Completed' ? 'text-green-600' : record.status === 'Rejected' ? 'text-red-600' : 'text-yellow-600'}`}>
-                                  {record.remarksHistory[0]?.timestamp && record.status !== 'Completed' && record.status !== 'Pending' && (
-                                    <span>[{new Date(record.remarksHistory[0].timestamp).toLocaleString()}] </span>
+                                  {record.remarksHistory[record.remarksHistory.length - 1]?.timestamp && record.status !== 'Completed' && record.status !== 'Pending' && (
+                                    <span>[{new Date(record.remarksHistory[record.remarksHistory.length - 1].timestamp).toLocaleString()}] </span>
                                   )}
                                   [{record.status} by {record.receivedBy}]
                                 </div>

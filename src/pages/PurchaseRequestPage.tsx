@@ -765,7 +765,7 @@ export default function PurchaseRequestPage() {
                                 </span>
                               )}
                               <div className="text-black">
-                                {request.remarks}
+                                {request.remarksHistory?.length > 0 ? request.remarksHistory[0].remarks : request.remarks}
                               </div>
                               {request.remarksHistory?.length > 0 && (
                                 <div className={`${request.status === 'Completed' ? 'text-green-600' : request.status === 'Rejected' ? 'text-red-600' : 'text-yellow-600'}`}>

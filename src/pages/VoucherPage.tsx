@@ -822,7 +822,7 @@ export default function VoucherPage() {
         </span>
       )}
       <div className="text-black">
-        {voucher.remarks}
+        {voucher.remarksHistory?.length > 0 ? voucher.remarksHistory[0].remarks : voucher.remarks}
       </div>
       {voucher.remarksHistory?.length > 0 && (
         <div className={`${voucher.status === 'Completed' ? 'text-green-600' : voucher.status === 'Rejected' ? 'text-red-600' : 'text-yellow-600'}`}>

@@ -844,7 +844,7 @@ export default function LocatorPage() {
                                 </span>
                               )}
                               <div className="text-black">
-                                {item.remarks}
+                                {item.remarksHistory?.length > 0 ? item.remarksHistory[0].remarks : item.remarks}
                               </div>
                               {item.remarksHistory?.length > 0 && (
                                 <div className={`${item.status === 'Completed' ? 'text-green-600' : item.status === 'Rejected' ? 'text-red-600' : 'text-yellow-600'}`}>

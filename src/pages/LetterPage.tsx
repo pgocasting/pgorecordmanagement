@@ -664,7 +664,7 @@ export default function LetterPage() {
         </span>
       )}
       <div className="text-black">
-        {letter.remarks}
+        {letter.remarksHistory?.length > 0 ? letter.remarksHistory[0].remarks : letter.remarks}
       </div>
       {letter.remarksHistory?.length > 0 && (
         <div className={`${letter.status === 'Completed' ? 'text-green-600' : letter.status === 'Rejected' ? 'text-red-600' : 'text-yellow-600'}`}>
