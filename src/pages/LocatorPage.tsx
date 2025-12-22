@@ -848,7 +848,7 @@ export default function LocatorPage() {
                               </div>
                               {item.remarksHistory?.length > 0 && (
                                 <div className={`${item.status === 'Completed' ? 'text-green-600' : item.status === 'Rejected' ? 'text-red-600' : 'text-yellow-600'}`}>
-                                  {item.remarksHistory[0]?.timestamp && item.status !== 'Completed' && (
+                                  {item.remarksHistory[0]?.timestamp && item.status !== 'Completed' && item.status !== 'Pending' && (
                                     <span>[{new Date(item.remarksHistory[0].timestamp).toLocaleString()}] </span>
                                   )}
                                   [{item.status} by {item.receivedBy}]

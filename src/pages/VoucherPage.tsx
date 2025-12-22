@@ -826,7 +826,7 @@ export default function VoucherPage() {
       </div>
       {voucher.remarksHistory?.length > 0 && (
         <div className={`${voucher.status === 'Completed' ? 'text-green-600' : voucher.status === 'Rejected' ? 'text-red-600' : 'text-yellow-600'}`}>
-          {voucher.remarksHistory[0]?.timestamp && voucher.status !== 'Completed' && (
+          {voucher.remarksHistory[0]?.timestamp && voucher.status !== 'Completed' && voucher.status !== 'Pending' && (
             <span>[{new Date(voucher.remarksHistory[0].timestamp).toLocaleString()}] </span>
           )}
           [{voucher.status} by {voucher.receivedBy}]

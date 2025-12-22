@@ -745,7 +745,7 @@ export default function AdminToPGOPage() {
                               </div>
                               {record.remarksHistory?.length > 0 && (
                                 <div className={`${record.status === 'Completed' ? 'text-green-600' : record.status === 'Rejected' ? 'text-red-600' : 'text-yellow-600'}`}>
-                                  {record.remarksHistory[0]?.timestamp && record.status !== 'Completed' && (
+                                  {record.remarksHistory[0]?.timestamp && record.status !== 'Completed' && record.status !== 'Pending' && (
                                     <span>[{new Date(record.remarksHistory[0].timestamp).toLocaleString()}] </span>
                                   )}
                                   [{record.status} by {record.receivedBy}]
