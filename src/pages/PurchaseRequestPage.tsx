@@ -769,7 +769,7 @@ export default function PurchaseRequestPage() {
                               </div>
                               {request.remarksHistory?.length > 0 && (
                                 <div className={`${request.status === 'Completed' ? 'text-green-600' : request.status === 'Rejected' ? 'text-red-600' : 'text-yellow-600'}`}>
-                                  {request.remarksHistory[0]?.timestamp && (
+                                  {request.remarksHistory[0]?.timestamp && request.status !== 'Completed' && (
                                     <span>[{new Date(request.remarksHistory[0].timestamp).toLocaleString()}] </span>
                                   )}
                                   [{request.status} by {request.receivedBy}]

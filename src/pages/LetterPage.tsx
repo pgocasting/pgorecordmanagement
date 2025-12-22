@@ -668,7 +668,7 @@ export default function LetterPage() {
       </div>
       {letter.remarksHistory?.length > 0 && (
         <div className={`${letter.status === 'Completed' ? 'text-green-600' : letter.status === 'Rejected' ? 'text-red-600' : 'text-yellow-600'}`}>
-          {letter.remarksHistory[0]?.timestamp && (
+          {letter.remarksHistory[0]?.timestamp && letter.status !== 'Completed' && (
             <span>[{new Date(letter.remarksHistory[0].timestamp).toLocaleString()}] </span>
           )}
           [{letter.status} by {letter.receivedBy}]
