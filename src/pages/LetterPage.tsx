@@ -49,13 +49,6 @@ const getCurrentDateTime = (): string => {
   return `${year}-${month}-${day}T${hours}:${minutes}`;
 };
 
-const getOriginalRemarks = (remarks: string | undefined): string => {
-  if (!remarks) return '-';
-  const lines = remarks.split('\n');
-  const originalLines = lines.filter(line => !line.match(/^\[.*\]\s*\[(REJECTED|COMPLETED)\s+by\s+.*\]/));
-  return originalLines.join('\n').trim() || '-';
-};
-
 interface Letter {
   id: string;
   trackingId: string;
@@ -931,6 +924,14 @@ export default function LetterPage() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Success Modal */}
+      <SuccessModal
+        open={successModalOpen}
+        onOpenChange={setSuccessModalOpen}
+        message={success}
+        isError={success.includes('Error')}
+      />
     </div>
   );
 }

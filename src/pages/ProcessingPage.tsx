@@ -557,6 +557,8 @@ setFormData(initialFormData());
                           amount: '',
                           remarks: '',
                           linkAttachments: '',
+                          isEdited: false,
+                          remarksHistory: []
                         });
                       }}
                     >

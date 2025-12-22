@@ -622,6 +622,7 @@ export default function LocatorPage() {
                           placeOfAssignment: '',
                           receivedBy: '',
                           remarks: '',
+                          remarksHistory: []
                         });
                       }}
                     >

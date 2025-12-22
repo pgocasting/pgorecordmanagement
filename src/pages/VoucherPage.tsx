@@ -84,13 +84,6 @@ const formatAmount = (amount: string | number | undefined): string => {
   }).format(num).replace('₱', '₱ ');
 };
 
-const getOriginalRemarks = (remarks: string | undefined): string => {
-  if (!remarks) return '-';
-  const lines = remarks.split('\n');
-  const originalLines = lines.filter(line => !line.match(/^\[.*\]\s*\[(REJECTED|COMPLETED)\s+by\s+.*\]/));
-  return originalLines.join('\n').trim() || '-';
-};
-
 const getCurrentDateTime = (): string => {
   const now = new Date();
   const year = now.getFullYear();
@@ -393,6 +386,7 @@ export default function VoucherPage() {
         voucherType: voucher.voucherType,
         funds: voucher.funds,
         remarks: voucher.remarks || '',
+        remarksHistory: voucher.remarksHistory || []
       });
       setEditingId(id);
       setIsDialogOpen(true);
@@ -609,6 +603,7 @@ export default function VoucherPage() {
                           voucherType: '',
                           funds: '',
                           remarks: '',
+                          remarksHistory: []
                         });
                       }}
                     >
