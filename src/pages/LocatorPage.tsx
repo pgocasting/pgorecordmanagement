@@ -66,7 +66,15 @@ interface Locator {
   placeOfAssignment: string;
   status: string;
   remarks: string;
+  remarksHistory: Array<{
+    remarks: string;
+    status: string;
+    timestamp: string;
+    updatedBy: string;
+  }>;
   timeOutRemarks?: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export default function LocatorPage() {
@@ -95,6 +103,14 @@ export default function LocatorPage() {
   const [viewModalOpen, setViewModalOpen] = useState(false);
   const [selectedLocator, setSelectedLocator] = useState<Locator | null>(null);
 
+  const [remarksHistoryOpen, setRemarksHistoryOpen] = useState(false);
+  const [currentRemarksHistory, setCurrentRemarksHistory] = useState<Array<{
+    remarks: string;
+    status: string;
+    timestamp: string;
+    updatedBy: string;
+  }>>([]);
+
   // Form states
   const [formData, setFormData] = useState({
     dateTimeIn: '',
@@ -109,6 +125,12 @@ export default function LocatorPage() {
     placeOfAssignment: '',
     receivedBy: '',
     remarks: '',
+    remarksHistory: [] as Array<{
+      remarks: string;
+      status: string;
+      timestamp: string;
+      updatedBy: string;
+    }>
   });
 
   const recordTypes = [
@@ -172,7 +194,12 @@ export default function LocatorPage() {
     const month = String(now.getMonth() + 1).padStart(2, '0');
     const day = String(now.getDate()).padStart(2, '0');
     const count = String(locators.length + 1).padStart(3, '0');
-    return `(LS) ${year}/${month}/${day}-${count}`;
+    return `(LOC) ${year}/${month}/${day}-${count}`;
+  };
+
+  const viewRemarksHistory = (locator: Locator) => {
+    setCurrentRemarksHistory(locator.remarksHistory || []);
+    setRemarksHistoryOpen(true);
   };
 
   const handleLogout = () => {
@@ -212,12 +239,23 @@ export default function LocatorPage() {
     // If adding new, proceed directly
     setIsLoading(true);
     try {
+      const now = new Date().toISOString();
+      const currentUser = user?.name || 'Unknown';
       const newLocator = {
         trackingId: generateTrackingId(),
         status: 'Pending',
         timeOutRemarks: '',
         ...formData,
-        receivedBy: formData.receivedBy || user?.name || '',
+        receivedBy: formData.receivedBy || currentUser,
+        remarks: formData.remarks || 'Locator record created',
+        remarksHistory: [{
+          remarks: formData.remarks || 'Locator record created',
+          status: 'Pending',
+          timestamp: now,
+          updatedBy: currentUser
+        }],
+        createdAt: now,
+        updatedAt: now
       };
       const result = await locatorService.addLocator(newLocator);
       setSuccess('Locator added successfully');
@@ -237,6 +275,7 @@ export default function LocatorPage() {
         placeOfAssignment: '',
         receivedBy: '',
         remarks: '',
+        remarksHistory: []
       });
       setIsDialogOpen(false);
       setSuccessModalOpen(true);
@@ -254,11 +293,38 @@ export default function LocatorPage() {
 
     setIsLoading(true);
     try {
-      await locatorService.updateLocator(editingId, formData);
+      const now = new Date().toISOString();
+      const currentUser = user?.name || 'Unknown';
+      const existingLocator = locators.find(l => l.id === editingId);
+      
+      const newRemarksHistory = [
+        ...(existingLocator?.remarksHistory || []),
+        {
+          remarks: formData.remarks,
+          status: 'Edited',
+          timestamp: now,
+          updatedBy: currentUser
+        }
+      ];
+      
+      const updateData = {
+        ...formData,
+        remarksHistory: newRemarksHistory,
+        updatedAt: now
+      };
+      
+      await locatorService.updateLocator(editingId, updateData);
       setSuccess('Locator updated successfully');
       setEditingId(null);
 
-      const updatedLocators = locators.map(l => l.id === editingId ? { ...l, ...formData } : l);
+      const updatedLocators = locators.map(l => 
+        l.id === editingId 
+          ? { 
+              ...l, 
+              ...updateData
+            } 
+          : l
+      );
       setLocators(updatedLocators);
 
       setFormData({
@@ -274,6 +340,7 @@ export default function LocatorPage() {
         placeOfAssignment: '',
         receivedBy: '',
         remarks: '',
+        remarksHistory: []
       });
       setIsDialogOpen(false);
       setEditConfirmOpen(false);
@@ -303,6 +370,7 @@ export default function LocatorPage() {
         placeOfAssignment: locator.placeOfAssignment,
         receivedBy: locator.receivedBy || '',
         remarks: locator.remarks || '',
+        remarksHistory: locator.remarksHistory || []
       });
       setEditingId(id);
       setIsDialogOpen(true);
@@ -325,12 +393,41 @@ export default function LocatorPage() {
     }
     
     try {
-      const now = new Date();
-      const dateTimeStr = now.toLocaleString();
-      const remarksWithDateTime = `[${dateTimeStr}] [${user?.name || 'Unknown'}] ${rejectData.remarks}`;
+      const locator = locators.find(l => l.id === locatorToDelete);
+      if (!locator) return;
       
-      await locatorService.updateLocator(locatorToDelete, { status: 'Rejected', remarks: remarksWithDateTime });
-      const updatedLocators = locators.map(l => l.id === locatorToDelete ? { ...l, status: 'Rejected', remarks: remarksWithDateTime } : l);
+      const now = new Date().toISOString();
+      const currentUser = user?.name || 'Unknown';
+      const newRemarks = rejectData.remarks;
+      
+      const updatedRemarksHistory = [
+        ...(locator.remarksHistory || []),
+        {
+          remarks: newRemarks,
+          status: 'Rejected',
+          timestamp: now,
+          updatedBy: currentUser
+        }
+      ];
+      
+      await locatorService.updateLocator(locatorToDelete, { 
+        status: 'Rejected', 
+        remarks: newRemarks,
+        remarksHistory: updatedRemarksHistory,
+        updatedAt: now
+      });
+      
+      const updatedLocators = locators.map(l => 
+        l.id === locatorToDelete 
+          ? { 
+              ...l, 
+              status: 'Rejected', 
+              remarks: newRemarks,
+              remarksHistory: updatedRemarksHistory,
+              updatedAt: now
+            } 
+          : l
+      );
       setLocators(updatedLocators);
       setSuccess('Locator rejected successfully');
       setDeleteConfirmOpen(false);
@@ -362,6 +459,7 @@ export default function LocatorPage() {
         placeOfAssignment: '',
         receivedBy: '',
         remarks: '',
+        remarksHistory: []
       });
     }
   };
@@ -403,16 +501,29 @@ export default function LocatorPage() {
       }
 
       const locator = locators.find(l => l.id === locatorToTimeOut);
-      const now = new Date();
-      const dateTimeStr = now.toLocaleString();
-      const newRemarks = `[${dateTimeStr}] [COMPLETED by ${user?.name || 'Unknown'}] ${timeOutData.timeOutRemarks}`;
-      const updatedRemarks = locator?.remarks ? `${locator.remarks}\n${newRemarks}` : newRemarks;
+      if (!locator) return;
+      
+      const now = new Date().toISOString();
+      const currentUser = user?.name || 'Unknown';
+      const newRemarks = timeOutData.timeOutRemarks;
+      
+      const updatedRemarksHistory = [
+        ...(locator.remarksHistory || []),
+        {
+          remarks: newRemarks,
+          status: 'Completed',
+          timestamp: now,
+          updatedBy: currentUser
+        }
+      ];
       
       await locatorService.updateLocator(locatorToTimeOut, {
         dateTimeOut: timeOutData.dateTimeOut,
         status: 'Completed',
-        remarks: updatedRemarks,
-        timeOutRemarks: newRemarks
+        remarks: newRemarks,
+        remarksHistory: updatedRemarksHistory,
+        timeOutRemarks: newRemarks,
+        updatedAt: now
       });
       
       // Reload from Firestore
@@ -720,29 +831,35 @@ export default function LocatorPage() {
                             {item.status || 'Pending'}
                           </span>
                         </TableCell>
-                        <TableCell className="text-xs py-1 px-1 text-center wrap-break-word whitespace-normal">
-                          {(item.status === 'Completed' ? (item.timeOutRemarks || item.remarks) : item.remarks) ? (
-                            <div className="whitespace-pre-line text-center space-y-2">
-                              {(item.status === 'Completed' ? (item.timeOutRemarks || item.remarks) : item.remarks)!.split('\n').map((line, index) => {
-                                const isRejected = line.includes('[REJECTED by');
-                                const isCompleted = line.includes('[COMPLETED by');
-                                return (
-                                  <div 
-                                    key={index}
-                                    className={`p-2 rounded border ${
-                                      isRejected ? 'bg-red-50 border-red-200 text-red-600 font-medium' :
-                                      isCompleted ? 'bg-green-50 border-green-200 text-green-600 font-medium' :
-                                      'bg-gray-50 border-gray-200 text-black'
-                                    }`}
-                                  >
-                                    {line}
-                                  </div>
-                                );
-                              })}
+                        <TableCell 
+                          className="wrap-break-word whitespace-normal text-xs cursor-pointer hover:bg-gray-50"
+                          onClick={() => viewRemarksHistory(item)}
+                        >
+                          {item.remarks ? (
+                            <div className="space-y-1 relative">
+                              {item.status === 'Pending' && item.remarksHistory?.some(h => h.status === 'Edited') && (
+                                <span className="absolute -top-2 -right-1 bg-yellow-100 text-yellow-800 text-[10px] px-1.5 py-0.5 rounded-full">
+                                  Edited
+                                </span>
+                              )}
+                              <div className="text-black">
+                                {item.remarks}
+                              </div>
+                              {item.remarksHistory?.length > 0 && (
+                                <div className={`${item.status === 'Completed' ? 'text-green-600' : item.status === 'Rejected' ? 'text-red-600' : 'text-yellow-600'}`}>
+                                  {item.remarksHistory[0]?.timestamp && (
+                                    <span>[{new Date(item.remarksHistory[0].timestamp).toLocaleString()}] </span>
+                                  )}
+                                  [{item.status} by {item.receivedBy}]
+                                </div>
+                              )}
+                              <div className="text-xs text-blue-600 mt-1">
+                                Click to view full history
+                              </div>
                             </div>
                           ) : '-'}
                         </TableCell>
-                        <TableCell className="py-1 px-1 text-center wrap-break-word whitespace-normal">
+                        <TableCell className="text-xs py-1 px-1 text-center wrap-break-word whitespace-normal">
                           <ActionButtons
                             onView={() => handleViewLocator(item.id)}
                             onEdit={() => handleEditLocator(item.id)}
@@ -990,6 +1107,68 @@ export default function LocatorPage() {
               </div>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Remarks History Dialog */}
+      <Dialog open={remarksHistoryOpen} onOpenChange={setRemarksHistoryOpen}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Remarks History</DialogTitle>
+            <DialogDescription>
+              View the complete history of remarks for this record
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            {currentRemarksHistory.length === 0 ? (
+              <p className="text-center text-gray-500 py-4">No remarks history available</p>
+            ) : (
+              <div className="space-y-3">
+                {[...currentRemarksHistory].reverse().map((item, index) => (
+                  <div key={index} className={`border-l-4 ${
+                    item.status === 'Completed' ? 'border-green-200' :
+                    item.status === 'Rejected' ? 'border-red-200' :
+                    'border-blue-200'
+                  } pl-4 py-3 bg-gray-50 rounded-r-lg`}>
+                    {/* Header with status, user, and timestamp */}
+                    <div className="flex justify-between items-start mb-2">
+                      <div className="flex items-center space-x-3">
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                          item.status === 'Completed' ? 'bg-green-100 text-green-800' :
+                          item.status === 'Rejected' ? 'bg-red-100 text-red-800' :
+                          item.status === 'Edited' ? 'bg-yellow-100 text-yellow-800' :
+                          'bg-blue-100 text-blue-800'
+                        }`}>
+                          {item.status}
+                        </span>
+                        <span className="text-sm text-gray-700 font-medium">
+                          {item.updatedBy}
+                        </span>
+                      </div>
+                      <span className="text-xs text-gray-500 whitespace-nowrap">
+                        {new Date(item.timestamp).toLocaleString(undefined, {
+                          year: 'numeric',
+                          month: 'short',
+                          day: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })}
+                      </span>
+                    </div>
+                    {/* Remarks content */}
+                    <div className="text-sm text-gray-800 bg-white p-3 rounded border border-gray-200">
+                      {item.remarks.split('\n').map((line, i) => (
+                        <div key={i} className="flex items-start">
+                          <span className="mr-2 text-gray-400 mt-0.5">•</span>
+                          <span className="flex-1">{line}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </DialogContent>
       </Dialog>
     </div>

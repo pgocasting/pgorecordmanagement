@@ -13,13 +13,6 @@ const getCurrentDateTime = (): string => {
   return `${year}-${month}-${day}T${hours}:${minutes}`;
 };
 
-const getOriginalRemarks = (remarks: string | undefined): string => {
-  if (!remarks) return '-';
-  const lines = remarks.split('\n');
-  const originalLines = lines.filter(line => !line.match(/^\[.*\]\s*\[(REJECTED|COMPLETED)\s+by\s+.*\]/));
-  return originalLines.join('\n').trim() || '-';
-};
-
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -73,6 +66,12 @@ interface TravelOrder {
   placeOfAssignment: string;
   status: string;
   remarks: string;
+  remarksHistory: Array<{
+    remarks: string;
+    status: string;
+    timestamp: string;
+    updatedBy: string;
+  }>;
   timeOutRemarks?: string;
   createdAt: string;
   updatedAt: string;
@@ -114,6 +113,13 @@ export default function TravelOrderPage() {
   const [rejectData, setRejectData] = useState({
     remarks: '',
   });
+  const [remarksHistoryOpen, setRemarksHistoryOpen] = useState(false);
+  const [currentRemarksHistory, setCurrentRemarksHistory] = useState<Array<{
+    remarks: string;
+    status: string;
+    timestamp: string;
+    updatedBy: string;
+  }>>([]);
 
   const [formData, setFormData] = useState({
     dateTimeIn: '',
@@ -128,7 +134,18 @@ export default function TravelOrderPage() {
     placeOfAssignment: '',
     receivedBy: '',
     remarks: '',
+    remarksHistory: [] as Array<{
+      remarks: string;
+      status: string;
+      timestamp: string;
+      updatedBy: string;
+    }>
   });
+
+  const viewRemarksHistory = (travelOrder: TravelOrder) => {
+    setCurrentRemarksHistory(travelOrder.remarksHistory || []);
+    setRemarksHistoryOpen(true);
+  };
 
   const recordTypes = [
     'Leave',
@@ -224,8 +241,23 @@ export default function TravelOrderPage() {
     if (editingId) {
       setIsLoading(true);
       try {
+        const now = new Date().toISOString();
+        const currentUser = user?.name || 'Unknown';
+        const existingTravelOrder = travelOrders.find(t => t.id === editingId);
+        const newRemarksHistory = [
+          ...(existingTravelOrder?.remarksHistory || []),
+          {
+            remarks: formData.remarks,
+            status: 'Edited',
+            timestamp: now,
+            updatedBy: currentUser
+          }
+        ];
         const updateData = {
           ...formData,
+          remarks: formData.remarks || '',
+          remarksHistory: newRemarksHistory,
+          updatedAt: now
         };
         await travelOrderService.updateTravelOrder(editingId, updateData);
         setSuccess('Travel order updated successfully');
@@ -247,6 +279,7 @@ export default function TravelOrderPage() {
           placeOfAssignment: '',
           receivedBy: '',
           remarks: '',
+          remarksHistory: []
         });
         setIsDialogOpen(false);
         setSuccessModalOpen(true);
@@ -262,12 +295,21 @@ export default function TravelOrderPage() {
 
     setIsLoading(true);
     try {
+      const now = new Date().toISOString();
+      const currentUser = user?.name || 'Unknown';
       const newTravelOrder = {
         trackingId: generateTrackingId(),
-        status: 'Pending',
-        timeOutRemarks: '',
         ...formData,
-        receivedBy: formData.receivedBy || user?.name || '',
+        remarks: formData.remarks || 'Travel order created',
+        remarksHistory: [{
+          remarks: formData.remarks || 'Travel order created',
+          status: 'Pending',
+          timestamp: now,
+          updatedBy: currentUser
+        }],
+        status: 'Pending',
+        createdAt: now,
+        updatedAt: now
       };
       const result = await travelOrderService.addTravelOrder(newTravelOrder);
       setSuccess('Travel order added successfully');
@@ -287,6 +329,7 @@ export default function TravelOrderPage() {
         placeOfAssignment: '',
         receivedBy: '',
         remarks: '',
+        remarksHistory: []
       });
       setIsDialogOpen(false);
       setSuccessModalOpen(true);
@@ -315,6 +358,7 @@ export default function TravelOrderPage() {
         placeOfAssignment: travelOrder.placeOfAssignment,
         receivedBy: travelOrder.receivedBy || '',
         remarks: travelOrder.remarks || '',
+        remarksHistory: travelOrder.remarksHistory || []
       });
       setEditingId(id);
       setIsDialogOpen(true);
@@ -338,6 +382,7 @@ export default function TravelOrderPage() {
         placeOfAssignment: '',
         receivedBy: '',
         remarks: '',
+        remarksHistory: []
       });
     }
   };
@@ -377,13 +422,22 @@ export default function TravelOrderPage() {
     setIsLoading(true);
     try {
       const travelOrder = travelOrders.find(t => t.id === travelOrderToDelete);
-      const now = new Date();
-      const dateTimeStr = now.toLocaleString();
-      const newRemarks = `[${dateTimeStr}] [REJECTED by ${user?.name || 'Unknown'}] ${rejectData.remarks}`;
-      const updatedRemarks = travelOrder?.remarks ? `${travelOrder.remarks}\n${newRemarks}` : newRemarks;
+      if (!travelOrder) return;
+      const now = new Date().toISOString();
+      const currentUser = user?.name || 'Unknown';
+      const newRemarks = rejectData.remarks;
+      const updatedRemarksHistory = [
+        ...(travelOrder.remarksHistory || []),
+        {
+          remarks: newRemarks,
+          status: 'Rejected',
+          timestamp: now,
+          updatedBy: currentUser
+        }
+      ];
       
-      await travelOrderService.updateTravelOrder(travelOrderToDelete, { status: 'Rejected', remarks: updatedRemarks });
-      const updatedTravelOrders = travelOrders.map(t => t.id === travelOrderToDelete ? { ...t, status: 'Rejected', remarks: updatedRemarks } : t);
+      await travelOrderService.updateTravelOrder(travelOrderToDelete, { status: 'Rejected', remarks: newRemarks, remarksHistory: updatedRemarksHistory, updatedAt: now });
+      const updatedTravelOrders = travelOrders.map(t => t.id === travelOrderToDelete ? { ...t, status: 'Rejected', remarks: newRemarks, remarksHistory: updatedRemarksHistory, updatedAt: now } : t);
       setTravelOrders(updatedTravelOrders);
       setSuccess('Travel order rejected successfully');
       setTravelOrderToDelete(null);
@@ -419,16 +473,27 @@ export default function TravelOrderPage() {
       }
 
       const travelOrder = travelOrders.find(t => t.id === travelOrderToTimeOut);
-      const now = new Date();
-      const dateTimeStr = now.toLocaleString();
-      const newRemarks = `[${dateTimeStr}] [COMPLETED by ${user?.name || 'Unknown'}] ${timeOutData.timeOutRemarks}`;
-      const updatedRemarks = travelOrder?.remarks ? `${travelOrder.remarks}\n${newRemarks}` : newRemarks;
+      if (!travelOrder) return;
+      const now = new Date().toISOString();
+      const currentUser = user?.name || 'Unknown';
+      const newRemarks = timeOutData.timeOutRemarks;
+      const updatedRemarksHistory = [
+        ...(travelOrder.remarksHistory || []),
+        {
+          remarks: newRemarks,
+          status: 'Completed',
+          timestamp: now,
+          updatedBy: currentUser
+        }
+      ];
       
       await travelOrderService.updateTravelOrder(travelOrderToTimeOut, {
         dateTimeOut: timeOutData.dateTimeOut,
-        remarks: updatedRemarks,
+        remarks: newRemarks,
+        remarksHistory: updatedRemarksHistory,
         timeOutRemarks: newRemarks,
-        status: 'Completed'
+        status: 'Completed',
+        updatedAt: now
       });
       
       const updatedTravelOrders = await travelOrderService.getTravelOrders();
@@ -526,6 +591,7 @@ export default function TravelOrderPage() {
                         placeOfAssignment: '',
                         receivedBy: '',
                         remarks: '',
+                        remarksHistory: []
                       });
                     }}
                   >
@@ -765,8 +831,34 @@ export default function TravelOrderPage() {
                             {item.status || 'Pending'}
                           </span>
                         </TableCell>
-                        <TableCell className="text-xs py-1 px-1 text-center wrap-break-word whitespace-normal">
-                          {getOriginalRemarks(item.remarks)}
+                        <TableCell 
+                          className="py-1 px-1 text-center wrap-break-word whitespace-normal text-xs cursor-pointer hover:bg-gray-50"
+                          onClick={() => viewRemarksHistory(item)}
+                        >
+                          {item.remarks ? (
+                            <div className="space-y-1 relative">
+                              {item.status === 'Pending' && item.remarksHistory?.some(h => h.status === 'Edited') && (
+                                <span className="absolute -top-2 -right-1 bg-yellow-100 text-yellow-800 text-[10px] px-1.5 py-0.5 rounded-full">
+                                  Edited
+                                </span>
+                              )}
+                              <div className="text-black">
+                                {item.remarks}
+                              </div>
+                              {item.remarksHistory?.length > 0 && (
+                                <div className={`${item.status === 'Completed' ? 'text-green-600' : item.status === 'Rejected' ? 'text-red-600' : 'text-yellow-600'}`}>
+                                  {item.remarksHistory[0]?.timestamp && (
+                                    <span>[{new Date(item.remarksHistory[0].timestamp).toLocaleString()}] </span>
+                                  )}
+                                  [{item.status} by {item.receivedBy}]
+                                </div>
+                              )}
+                              <div className="text-xs text-blue-600 mt-1">
+                                Click to view full history
+                              </div>
+                            </div>
+                          ) : '-'}
+
                         </TableCell>
                         <TableCell className="py-1 px-1 text-center wrap-break-word whitespace-normal">
                           <ActionButtons
@@ -952,6 +1044,70 @@ export default function TravelOrderPage() {
         message={success}
         isError={success.includes('Error')}
       />
+
+      {/* Remarks History Modal */}
+      <Dialog open={remarksHistoryOpen} onOpenChange={setRemarksHistoryOpen}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Remarks History</DialogTitle>
+            <DialogDescription>
+              View the complete history of remarks for this record
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            {currentRemarksHistory.length === 0 ? (
+              <p className="text-center text-gray-500 py-4">No remarks history available</p>
+            ) : (
+              <div className="space-y-3">
+                {[...currentRemarksHistory].reverse().map((item, index) => (
+                  <div key={index} className={`border-l-4 ${
+                    item.status === 'Completed' ? 'border-green-200' :
+                    item.status === 'Rejected' ? 'border-red-200' :
+                    'border-blue-200'
+                  } pl-4 py-3 bg-gray-50 rounded-r-lg`}>
+
+                    {/* Header with status, user, and timestamp */}
+                    <div className="flex justify-between items-start mb-2">
+                      <div className="flex items-center space-x-3">
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                          item.status === 'Completed' ? 'bg-green-100 text-green-800' :
+                          item.status === 'Rejected' ? 'bg-red-100 text-red-800' :
+                          item.status === 'Edited' ? 'bg-yellow-100 text-yellow-800' :
+                          'bg-blue-100 text-blue-800'
+                        }`}>
+                          {item.status}
+                        </span>
+                        <span className="text-sm text-gray-700 font-medium">
+                          {item.updatedBy}
+                        </span>
+                      </div>
+                      <span className="text-xs text-gray-500 whitespace-nowrap">
+                        {new Date(item.timestamp).toLocaleString(undefined, {
+                          year: 'numeric',
+                          month: 'short',
+                          day: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })}
+                      </span>
+                    </div>
+
+                    {/* Remarks content */}
+                    <div className="text-sm text-gray-800 bg-white p-3 rounded border border-gray-200">
+                      {item.remarks.split('\n').map((line, i) => (
+                        <div key={i} className="flex items-start">
+                          <span className="mr-2 text-gray-400 mt-0.5">•</span>
+                          <span className="flex-1">{line}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

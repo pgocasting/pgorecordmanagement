@@ -51,13 +51,6 @@ const getCurrentDateTime = (): string => {
   return `${year}-${month}-${day}T${hours}:${minutes}`;
 };
 
-const getOriginalRemarks = (remarks: string | undefined): string => {
-  if (!remarks) return '-';
-  const lines = remarks.split('\n');
-  const originalLines = lines.filter(line => !line.match(/^\[.*\]\s*\[(REJECTED|COMPLETED)\s+by\s+.*\]/));
-  return originalLines.join('\n').trim() || '-';
-};
-
 interface PurchaseRequest {
   id: string;
   trackingId: string;
@@ -71,7 +64,15 @@ interface PurchaseRequest {
   purpose: string;
   status: string;
   remarks: string;
+  remarksHistory: Array<{
+    remarks: string;
+    status: string;
+    timestamp: string;
+    updatedBy: string;
+  }>;
   timeOutRemarks?: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 const recordTypes = [
@@ -113,6 +114,13 @@ export default function PurchaseRequestPage() {
   const [rejectData, setRejectData] = useState({
     remarks: '',
   });
+  const [remarksHistoryOpen, setRemarksHistoryOpen] = useState(false);
+  const [currentRemarksHistory, setCurrentRemarksHistory] = useState<Array<{
+    remarks: string;
+    status: string;
+    timestamp: string;
+    updatedBy: string;
+  }>>([]);
   const [designationOptions, setDesignationOptions] = useState<string[]>([]);
 
   const [formData, setFormData] = useState({
@@ -124,7 +132,18 @@ export default function PurchaseRequestPage() {
     amount: '',
     purpose: '',
     remarks: '',
+    remarksHistory: [] as Array<{
+      remarks: string;
+      status: string;
+      timestamp: string;
+      updatedBy: string;
+    }>
   });
+
+  const viewRemarksHistory = (request: PurchaseRequest) => {
+    setCurrentRemarksHistory(request.remarksHistory || []);
+    setRemarksHistoryOpen(true);
+  };
 
   useEffect(() => {
     const loadDesignations = async () => {
@@ -143,7 +162,7 @@ export default function PurchaseRequestPage() {
     const loadRequests = async () => {
       try {
         const data = await purchaseRequestService.getPurchaseRequests();
-        setPurchaseRequests(data);
+        setPurchaseRequests(data as unknown as PurchaseRequest[]);
       } catch (error) {
         console.error('Error loading purchase requests:', error);
         setSuccess('Error loading purchase requests');
@@ -198,13 +217,6 @@ export default function PurchaseRequestPage() {
     }).format(num).replace('₱', '₱ ');
   };
 
-  const getOriginalRemarks = (remarks: string | undefined): string => {
-    if (!remarks) return '-';
-    const lines = remarks.split('\n');
-    const originalLines = lines.filter(line => !line.match(/^\[.*\]\s*\[(REJECTED|COMPLETED)\s+by\s+.*\]/));
-    return originalLines.join('\n').trim() || '-';
-  };
-
   const handleLogout = () => {
     logout();
     navigate('/login');
@@ -242,16 +254,27 @@ export default function PurchaseRequestPage() {
 
     setIsLoading(true);
     try {
+      const now = new Date().toISOString();
+      const currentUser = user?.name || 'Unknown';
       const newRequest = {
         trackingId: nextTrackingId,
-        receivedBy: user?.name || '',
+        receivedBy: currentUser,
         ...formData,
         amount: parseFloat(formData.amount),
+        remarks: formData.remarks || 'Purchase request created',
+        remarksHistory: [{
+          remarks: formData.remarks || 'Purchase request created',
+          status: 'Pending',
+          timestamp: now,
+          updatedBy: currentUser
+        }],
         status: 'Pending',
+        createdAt: now,
+        updatedAt: now
       };
       const result = await purchaseRequestService.addPurchaseRequest(newRequest);
       setSuccess('Purchase request added successfully');
-      setPurchaseRequests([result, ...purchaseRequests]);
+      setPurchaseRequests([result as unknown as PurchaseRequest, ...purchaseRequests]);
 
       setFormData({
         dateTimeIn: '',
@@ -262,6 +285,7 @@ export default function PurchaseRequestPage() {
         amount: '',
         purpose: '',
         remarks: '',
+        remarksHistory: []
       });
       setIsDialogOpen(false);
       setSuccessModalOpen(true);
@@ -279,9 +303,24 @@ export default function PurchaseRequestPage() {
 
     setIsLoading(true);
     try {
+      const now = new Date().toISOString();
+      const currentUser = user?.name || 'Unknown';
+      const existingRequest = purchaseRequests.find(r => r.id === editingId);
+      const newRemarksHistory = [
+        ...(existingRequest?.remarksHistory || []),
+        {
+          remarks: formData.remarks,
+          status: 'Edited',
+          timestamp: now,
+          updatedBy: currentUser
+        }
+      ];
       const updateData = {
         ...formData,
         amount: parseFloat(formData.amount),
+        remarks: formData.remarks || '',
+        remarksHistory: newRemarksHistory,
+        updatedAt: now
       };
       await purchaseRequestService.updatePurchaseRequest(editingId, updateData);
       setSuccess('Purchase request updated successfully');
@@ -299,6 +338,7 @@ export default function PurchaseRequestPage() {
         amount: '',
         purpose: '',
         remarks: '',
+        remarksHistory: []
       });
       setIsDialogOpen(false);
       setEditConfirmOpen(false);
@@ -324,6 +364,7 @@ export default function PurchaseRequestPage() {
         amount: (request.amount || (request as any).estimatedCost || 0).toString(),
         purpose: request.purpose,
         remarks: request.remarks,
+        remarksHistory: request.remarksHistory || []
       });
       setEditingId(id);
       setIsDialogOpen(true);
@@ -345,15 +386,24 @@ export default function PurchaseRequestPage() {
       return;
     }
 
+    setIsLoading(true);
     try {
       const request = purchaseRequests.find(r => r.id === requestToDelete);
-      const now = new Date();
-      const dateTimeStr = now.toLocaleString();
-      const newRemarks = `[${dateTimeStr}] [REJECTED by ${user?.name || 'Unknown'}] ${rejectData.remarks}`;
-      const updatedRemarks = request?.remarks ? `${request.remarks}\n${newRemarks}` : newRemarks;
-      
-      await purchaseRequestService.updatePurchaseRequest(requestToDelete, { status: 'Rejected', remarks: updatedRemarks });
-      const updatedRequests = purchaseRequests.map(r => r.id === requestToDelete ? { ...r, status: 'Rejected', remarks: updatedRemarks } : r);
+      if (!request) return;
+      const now = new Date().toISOString();
+      const currentUser = user?.name || 'Unknown';
+      const newRemarks = rejectData.remarks;
+      const updatedRemarksHistory = [
+        ...(request.remarksHistory || []),
+        {
+          remarks: newRemarks,
+          status: 'Rejected',
+          timestamp: now,
+          updatedBy: currentUser
+        }
+      ];
+      await purchaseRequestService.updatePurchaseRequest(requestToDelete, { status: 'Rejected', remarks: newRemarks, remarksHistory: updatedRemarksHistory, updatedAt: now });
+      const updatedRequests = purchaseRequests.map(r => r.id === requestToDelete ? { ...r, status: 'Rejected', remarks: newRemarks, remarksHistory: updatedRemarksHistory, updatedAt: now } : r);
       setPurchaseRequests(updatedRequests);
       setSuccess('Purchase request rejected successfully');
       setRequestToDelete(null);
@@ -364,6 +414,8 @@ export default function PurchaseRequestPage() {
       console.error('Failed to reject purchase request:', err);
       setSuccess('Error rejecting purchase request');
       setSuccessModalOpen(true);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -380,6 +432,7 @@ export default function PurchaseRequestPage() {
         amount: '',
         purpose: '',
         remarks: '',
+        remarksHistory: []
       });
     }
   };
@@ -410,16 +463,27 @@ export default function PurchaseRequestPage() {
     setIsLoading(true);
     try {
       const request = purchaseRequests.find(r => r.id === requestToTimeOut);
-      const now = new Date();
-      const dateTimeStr = now.toLocaleString();
-      const newRemarks = `[${dateTimeStr}] [COMPLETED by ${user?.name || 'Unknown'}] ${timeOutData.timeOutRemarks}`;
-      const updatedRemarks = request?.remarks ? `${request.remarks}\n${newRemarks}` : newRemarks;
+      if (!request) return;
+      const now = new Date().toISOString();
+      const currentUser = user?.name || 'Unknown';
+      const newRemarks = timeOutData.timeOutRemarks;
+      const updatedRemarksHistory = [
+        ...(request.remarksHistory || []),
+        {
+          remarks: newRemarks,
+          status: 'Completed',
+          timestamp: now,
+          updatedBy: currentUser
+        }
+      ];
       
       const result = await purchaseRequestService.updatePurchaseRequest(requestToTimeOut, {
         dateTimeOut: timeOutData.dateTimeOut,
-        remarks: updatedRemarks,
+        remarks: newRemarks,
+        remarksHistory: updatedRemarksHistory,
         timeOutRemarks: newRemarks,
-        status: 'Completed'
+        status: 'Completed',
+        updatedAt: now
       });
 
       if (!result) {
@@ -427,7 +491,7 @@ export default function PurchaseRequestPage() {
       }
 
       const updatedRequests = await purchaseRequestService.getPurchaseRequests();
-      setPurchaseRequests(updatedRequests);
+      setPurchaseRequests(updatedRequests as unknown as PurchaseRequest[]);
 
       setSuccess('Time out recorded successfully');
       setTimeOutConfirmOpen(false);
@@ -518,6 +582,7 @@ export default function PurchaseRequestPage() {
                           amount: '',
                           purpose: '',
                           remarks: '',
+                          remarksHistory: []
                         });
                       }}
                     >
@@ -688,8 +753,33 @@ export default function PurchaseRequestPage() {
                             {request.status}
                           </span>
                         </TableCell>
-                        <TableCell className="text-center text-xs">
-                          {getOriginalRemarks(request.remarks)}
+                        <TableCell 
+                          className="wrap-break-word whitespace-normal text-xs cursor-pointer hover:bg-gray-50"
+                          onClick={() => viewRemarksHistory(request)}
+                        >
+                          {request.remarks ? (
+                            <div className="space-y-1 relative">
+                              {request.status === 'Pending' && request.remarksHistory?.some(h => h.status === 'Edited') && (
+                                <span className="absolute -top-2 -right-1 bg-yellow-100 text-yellow-800 text-[10px] px-1.5 py-0.5 rounded-full">
+                                  Edited
+                                </span>
+                              )}
+                              <div className="text-black">
+                                {request.remarks}
+                              </div>
+                              {request.remarksHistory?.length > 0 && (
+                                <div className={`${request.status === 'Completed' ? 'text-green-600' : request.status === 'Rejected' ? 'text-red-600' : 'text-yellow-600'}`}>
+                                  {request.remarksHistory[0]?.timestamp && (
+                                    <span>[{new Date(request.remarksHistory[0].timestamp).toLocaleString()}] </span>
+                                  )}
+                                  [{request.status} by {request.receivedBy}]
+                                </div>
+                              )}
+                              <div className="text-xs text-blue-600 mt-1">
+                                Click to view full history
+                              </div>
+                            </div>
+                          ) : '-'}
                         </TableCell>
                         <TableCell className="text-center">
                           <ActionButtons
@@ -703,6 +793,8 @@ export default function PurchaseRequestPage() {
                             showTimeOut={request.status !== 'Completed' && request.status !== 'Rejected'}
                             showEdit={request.status !== 'Completed'}
                             showReject={request.status !== 'Completed'}
+                            editDisabledReason={request.status === 'Rejected' ? 'Cannot edit rejected records' : undefined}
+                            rejectDisabledReason={request.status === 'Rejected' ? 'Record already rejected' : (request.status === 'Completed' ? 'Cannot reject completed records' : (user?.role !== 'admin' && (!!request.dateTimeOut || request.status !== 'Pending') ? 'Users can only reject pending records' : undefined))}
                           />
                         </TableCell>
                       </TableRow>
@@ -890,6 +982,70 @@ export default function PurchaseRequestPage() {
         message={success}
         isError={success.includes('Error')}
       />
+
+      {/* Remarks History Modal */}
+      <Dialog open={remarksHistoryOpen} onOpenChange={setRemarksHistoryOpen}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Remarks History</DialogTitle>
+            <DialogDescription>
+              View the complete history of remarks for this record
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            {currentRemarksHistory.length === 0 ? (
+              <p className="text-center text-gray-500 py-4">No remarks history available</p>
+            ) : (
+              <div className="space-y-3">
+                {[...currentRemarksHistory].reverse().map((item, index) => (
+                  <div key={index} className={`border-l-4 ${
+                    item.status === 'Completed' ? 'border-green-200' :
+                    item.status === 'Rejected' ? 'border-red-200' :
+                    'border-blue-200'
+                  } pl-4 py-3 bg-gray-50 rounded-r-lg`}>
+
+                    {/* Header with status, user, and timestamp */}
+                    <div className="flex justify-between items-start mb-2">
+                      <div className="flex items-center space-x-3">
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                          item.status === 'Completed' ? 'bg-green-100 text-green-800' :
+                          item.status === 'Rejected' ? 'bg-red-100 text-red-800' :
+                          item.status === 'Edited' ? 'bg-yellow-100 text-yellow-800' :
+                          'bg-blue-100 text-blue-800'
+                        }`}>
+                          {item.status}
+                        </span>
+                        <span className="text-sm text-gray-700 font-medium">
+                          {item.updatedBy}
+                        </span>
+                      </div>
+                      <span className="text-xs text-gray-500 whitespace-nowrap">
+                        {new Date(item.timestamp).toLocaleString(undefined, {
+                          year: 'numeric',
+                          month: 'short',
+                          day: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })}
+                      </span>
+                    </div>
+
+                    {/* Remarks content */}
+                    <div className="text-sm text-gray-800 bg-white p-3 rounded border border-gray-200">
+                      {item.remarks.split('\n').map((line, i) => (
+                        <div key={i} className="flex items-start">
+                          <span className="mr-2 text-gray-400 mt-0.5">•</span>
+                          <span className="flex-1">{line}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

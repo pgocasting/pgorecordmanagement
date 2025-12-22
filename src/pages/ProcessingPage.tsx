@@ -731,7 +731,7 @@ setFormData(initialFormData());
                         >
                           {record.remarks ? (
                             <div className="space-y-1 relative">
-                              {record.remarksHistory?.some(h => h.status === 'Edited') && (
+                              {record.status === 'Pending' && record.remarksHistory?.some(h => h.status === 'Edited') && (
                                 <span className="absolute -top-2 -right-1 bg-yellow-100 text-yellow-800 text-[10px] px-1.5 py-0.5 rounded-full">
                                   Edited
                                 </span>
@@ -958,27 +958,34 @@ setFormData(initialFormData());
               View the complete history of remarks for this record
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4">
+          <div className="space-y-3">
             {currentRemarksHistory.length === 0 ? (
               <p className="text-center text-gray-500 py-4">No remarks history available</p>
             ) : (
-              <div className="space-y-2">
+              <div className="space-y-3">
                 {[...currentRemarksHistory].reverse().map((item, index) => (
-                  <div key={index} className="border-l-4 border-blue-200 pl-4 py-2 bg-gray-50 rounded">
-                    <div className="flex justify-between items-center">
-                      <div className="flex items-center space-x-2">
+                  <div key={index} className={`border-l-4 ${
+                    item.status === 'Completed' ? 'border-green-200' :
+                    item.status === 'Rejected' ? 'border-red-200' :
+                    'border-blue-200'
+                  } pl-4 py-3 bg-gray-50 rounded-r-lg`}>
+
+                    {/* Header with status, user, and timestamp */}
+                    <div className="flex justify-between items-start mb-2">
+                      <div className="flex items-center space-x-3">
                         <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                           item.status === 'Completed' ? 'bg-green-100 text-green-800' :
                           item.status === 'Rejected' ? 'bg-red-100 text-red-800' :
+                          item.status === 'Edited' ? 'bg-yellow-100 text-yellow-800' :
                           'bg-blue-100 text-blue-800'
                         }`}>
                           {item.status}
                         </span>
-                        <span className="text-sm font-medium text-gray-700">
+                        <span className="text-sm text-gray-700 font-medium">
                           {item.updatedBy}
                         </span>
                       </div>
-                      <span className="text-xs text-gray-500">
+                      <span className="text-xs text-gray-500 whitespace-nowrap">
                         {new Date(item.timestamp).toLocaleString(undefined, {
                           year: 'numeric',
                           month: 'short',
@@ -988,11 +995,13 @@ setFormData(initialFormData());
                         })}
                       </span>
                     </div>
-                    <div className="mt-1 text-sm text-gray-800">
+
+                    {/* Remarks content */}
+                    <div className="text-sm text-gray-800 bg-white p-3 rounded border border-gray-200">
                       {item.remarks.split('\n').map((line, i) => (
-                        <div key={i} className="flex">
-                          <span className="mr-2">•</span>
-                          <span>{line}</span>
+                        <div key={i} className="flex items-start">
+                          <span className="mr-2 text-gray-400 mt-0.5">•</span>
+                          <span className="flex-1">{line}</span>
                         </div>
                       ))}
                     </div>

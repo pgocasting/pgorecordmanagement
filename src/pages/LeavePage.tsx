@@ -62,8 +62,16 @@ interface Leave {
   inclusiveDateEnd: string;
   purpose: string;
   status: string;
-  remarks?: string;
+  remarks: string;
+  remarksHistory: Array<{
+    remarks: string;
+    status: string;
+    timestamp: string;
+    updatedBy: string;
+  }>;
   timeOutRemarks?: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export default function LeavePage() {
@@ -92,6 +100,14 @@ export default function LeavePage() {
     remarks: '',
   });
 
+  const [remarksHistoryOpen, setRemarksHistoryOpen] = useState(false);
+  const [currentRemarksHistory, setCurrentRemarksHistory] = useState<Array<{
+    remarks: string;
+    status: string;
+    timestamp: string;
+    updatedBy: string;
+  }>>([]);
+
   const [designationOptions, setDesignationOptions] = useState<string[]>([]);
 
   // Form states
@@ -106,6 +122,12 @@ export default function LeavePage() {
     purpose: '',
     status: '',
     remarks: '',
+    remarksHistory: [] as Array<{
+      remarks: string;
+      status: string;
+      timestamp: string;
+      updatedBy: string;
+    }>
   });
 
   useEffect(() => {
@@ -199,6 +221,11 @@ export default function LeavePage() {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
+  const viewRemarksHistory = (leave: Leave) => {
+    setCurrentRemarksHistory(leave.remarksHistory || []);
+    setRemarksHistoryOpen(true);
+  };
+
   const handleAddLeave = async () => {
     setSuccess('');
 
@@ -222,13 +249,23 @@ export default function LeavePage() {
     // If adding new, proceed directly
     setIsLoading(true);
     try {
+      const now = new Date().toISOString();
+      const currentUser = user?.name || 'Unknown';
       const newLeave = {
         trackingId: generateTrackingId(),
-        receivedBy: user?.name || '',
+        receivedBy: currentUser,
         ...formData,
         status: 'Pending',
-        remarks: '',
+        remarks: formData.remarks || 'Leave record created',
+        remarksHistory: [{
+          remarks: formData.remarks || 'Leave record created',
+          status: 'Pending',
+          timestamp: now,
+          updatedBy: currentUser
+        }],
         timeOutRemarks: '',
+        createdAt: now,
+        updatedAt: now
       };
       const result = await leaveService.addLeave(newLeave);
       console.log('Leave added successfully with ID:', result);
@@ -247,6 +284,7 @@ export default function LeavePage() {
         purpose: '',
         status: '',
         remarks: '',
+        remarksHistory: []
       });
       setIsDialogOpen(false);
       setSuccessModalOpen(true);
@@ -265,11 +303,40 @@ export default function LeavePage() {
 
     setIsLoading(true);
     try {
-      await leaveService.updateLeave(editingId, formData);
+      const now = new Date().toISOString();
+      const currentUser = user?.name || 'Unknown';
+      const existingLeave = leaves.find(l => l.id === editingId);
+      
+      const newRemarksHistory = [
+        ...(existingLeave?.remarksHistory || []),
+        {
+          remarks: formData.remarks,
+          status: 'Edited',
+          timestamp: now,
+          updatedBy: currentUser
+        }
+      ];
+      
+      const updateData = {
+        ...formData,
+        remarksHistory: newRemarksHistory,
+        updatedAt: now
+      };
+      
+      await leaveService.updateLeave(editingId, updateData);
       setSuccess('Leave record updated successfully');
       setEditingId(null);
 
-      const updatedLeaves = leaves.map(l => l.id === editingId ? { ...l, ...formData } : l);
+      const updatedLeaves = leaves.map(l => 
+        l.id === editingId 
+          ? { 
+              ...l, 
+              ...formData,
+              remarksHistory: newRemarksHistory,
+              updatedAt: now
+            } 
+          : l
+      );
       setLeaves(updatedLeaves);
 
       setFormData({
@@ -283,6 +350,7 @@ export default function LeavePage() {
         purpose: '',
         status: '',
         remarks: '',
+        remarksHistory: []
       });
       setIsDialogOpen(false);
       setEditConfirmOpen(false);
@@ -310,6 +378,7 @@ export default function LeavePage() {
         purpose: leave.purpose,
         status: leave.status || '',
         remarks: leave.remarks || '',
+        remarksHistory: leave.remarksHistory || []
       });
       setEditingId(id);
       setIsDialogOpen(true);
@@ -333,13 +402,40 @@ export default function LeavePage() {
 
     try {
       const leave = leaves.find(l => l.id === leaveToDelete);
-      const now = new Date();
-      const dateTimeStr = now.toLocaleString();
-      const newRemarks = `[${dateTimeStr}] [REJECTED by ${user?.name || 'Unknown'}] ${rejectData.remarks}`;
-      const updatedRemarks = leave?.remarks ? `${leave.remarks}\n${newRemarks}` : newRemarks;
+      if (!leave) return;
       
-      await leaveService.updateLeave(leaveToDelete, { status: 'Rejected', remarks: updatedRemarks });
-      const updatedLeaves = leaves.map(l => l.id === leaveToDelete ? { ...l, status: 'Rejected', remarks: updatedRemarks } : l);
+      const now = new Date().toISOString();
+      const currentUser = user?.name || 'Unknown';
+      const newRemarks = rejectData.remarks;
+      
+      const updatedRemarksHistory = [
+        ...(leave.remarksHistory || []),
+        {
+          remarks: newRemarks,
+          status: 'Rejected',
+          timestamp: now,
+          updatedBy: currentUser
+        }
+      ];
+      
+      await leaveService.updateLeave(leaveToDelete, { 
+        status: 'Rejected', 
+        remarks: newRemarks,
+        remarksHistory: updatedRemarksHistory,
+        updatedAt: now
+      });
+      
+      const updatedLeaves = leaves.map(l => 
+        l.id === leaveToDelete 
+          ? { 
+              ...l, 
+              status: 'Rejected', 
+              remarks: newRemarks,
+              remarksHistory: updatedRemarksHistory,
+              updatedAt: now
+            } 
+          : l
+      );
       setLeaves(updatedLeaves);
       setLeaveToDelete(null);
       setRejectData({ remarks: '' });
@@ -369,6 +465,7 @@ export default function LeavePage() {
         purpose: '',
         status: '',
         remarks: '',
+        remarksHistory: []
       });
     }
   };
@@ -402,16 +499,29 @@ export default function LeavePage() {
     setIsLoading(true);
     try {
       const leave = leaves.find(l => l.id === leaveToTimeOut);
-      const now = new Date();
-      const dateTimeStr = now.toLocaleString();
-      const newRemarks = `[${dateTimeStr}] [COMPLETED by ${user?.name || 'Unknown'}] ${timeOutData.timeOutRemarks}`;
-      const updatedRemarks = leave?.remarks ? `${leave.remarks}\n${newRemarks}` : newRemarks;
+      if (!leave) return;
+      
+      const now = new Date().toISOString();
+      const currentUser = user?.name || 'Unknown';
+      const newRemarks = timeOutData.timeOutRemarks;
+      
+      const updatedRemarksHistory = [
+        ...(leave.remarksHistory || []),
+        {
+          remarks: newRemarks,
+          status: 'Completed',
+          timestamp: now,
+          updatedBy: currentUser
+        }
+      ];
       
       const result = await leaveService.updateLeave(leaveToTimeOut, {
         dateTimeOut: timeOutData.dateTimeOut,
         status: 'Completed',
-        remarks: updatedRemarks,
-        timeOutRemarks: newRemarks
+        remarks: newRemarks,
+        remarksHistory: updatedRemarksHistory,
+        timeOutRemarks: newRemarks,
+        updatedAt: now
       });
       
       if (!result) {
@@ -502,17 +612,18 @@ export default function LeavePage() {
                       onClick={() => {
                         setEditingId(null);
                         setFormData({
-                          dateTimeIn: getCurrentDateTime(),
-                          dateTimeOut: '',
-                          fullName: '',
-                          designation: '',
-                          leaveType: '',
-                          inclusiveDateStart: '',
-                          inclusiveDateEnd: '',
-                          purpose: '',
-                          status: 'Pending',
-                          remarks: '',
-                        });
+        dateTimeIn: getCurrentDateTime(),
+        dateTimeOut: '',
+        fullName: '',
+        designation: '',
+        leaveType: '',
+        inclusiveDateStart: '',
+        inclusiveDateEnd: '',
+        purpose: '',
+        status: 'Pending',
+        remarks: '',
+        remarksHistory: []
+      });
                       }}
                     >
                       <Plus className="h-4 w-4" />
@@ -705,25 +816,31 @@ export default function LeavePage() {
                             {item.status || 'Pending'}
                           </span>
                         </TableCell>
-                        <TableCell className="text-xs py-1 px-1 text-center wrap-break-word whitespace-normal">
-                          {(item.status === 'Completed' ? (item.timeOutRemarks || item.remarks) : item.remarks) ? (
-                            <div className="whitespace-pre-line text-center space-y-2">
-                              {(item.status === 'Completed' ? (item.timeOutRemarks || item.remarks) : item.remarks)!.split('\n').map((line, index) => {
-                                const isRejected = line.includes('[REJECTED by');
-                                const isCompleted = line.includes('[COMPLETED by');
-                                return (
-                                  <div 
-                                    key={index}
-                                    className={`p-2 rounded border ${
-                                      isRejected ? 'bg-red-50 border-red-200 text-red-600 font-medium' :
-                                      isCompleted ? 'bg-green-50 border-green-200 text-green-600 font-medium' :
-                                      'bg-gray-50 border-gray-200 text-black'
-                                    }`}
-                                  >
-                                    {line}
-                                  </div>
-                                );
-                              })}
+                        <TableCell 
+                          className="wrap-break-word whitespace-normal text-xs cursor-pointer hover:bg-gray-50"
+                          onClick={() => viewRemarksHistory(item)}
+                        >
+                          {item.remarks ? (
+                            <div className="space-y-1 relative">
+                              {item.status === 'Pending' && item.remarksHistory?.some(h => h.status === 'Edited') && (
+                                <span className="absolute -top-2 -right-1 bg-yellow-100 text-yellow-800 text-[10px] px-1.5 py-0.5 rounded-full">
+                                  Edited
+                                </span>
+                              )}
+                              <div className="text-black">
+                                {item.remarks}
+                              </div>
+                              {item.remarksHistory?.length > 0 && (
+                                <div className={`${item.status === 'Completed' ? 'text-green-600' : item.status === 'Rejected' ? 'text-red-600' : 'text-yellow-600'}`}>
+                                  {item.remarksHistory[0]?.timestamp && (
+                                    <span>[{new Date(item.remarksHistory[0].timestamp).toLocaleString()}] </span>
+                                  )}
+                                  [{item.status} by {item.receivedBy}]
+                                </div>
+                              )}
+                              <div className="text-xs text-blue-600 mt-1">
+                                Click to view full history
+                              </div>
                             </div>
                           ) : '-'}
                         </TableCell>
@@ -1057,6 +1174,70 @@ export default function LeavePage() {
         onRemarksChange={(value) => setTimeOutData({ ...timeOutData, timeOutRemarks: value })}
         isLoading={isLoading}
       />
+
+      {/* Remarks History Dialog */}
+      <Dialog open={remarksHistoryOpen} onOpenChange={setRemarksHistoryOpen}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Remarks History</DialogTitle>
+            <DialogDescription>
+              View the complete history of remarks for this record
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            {currentRemarksHistory.length === 0 ? (
+              <p className="text-center text-gray-500 py-4">No remarks history available</p>
+            ) : (
+              <div className="space-y-3">
+                {[...currentRemarksHistory].reverse().map((item, index) => (
+                  <div key={index} className={`border-l-4 ${
+                    item.status === 'Completed' ? 'border-green-200' :
+                    item.status === 'Rejected' ? 'border-red-200' :
+                    'border-blue-200'
+                  } pl-4 py-3 bg-gray-50 rounded-r-lg`}>
+
+                    {/* Header with status, user, and timestamp */}
+                    <div className="flex justify-between items-start mb-2">
+                      <div className="flex items-center space-x-3">
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                          item.status === 'Completed' ? 'bg-green-100 text-green-800' :
+                          item.status === 'Rejected' ? 'bg-red-100 text-red-800' :
+                          item.status === 'Edited' ? 'bg-yellow-100 text-yellow-800' :
+                          'bg-blue-100 text-blue-800'
+                        }`}>
+                          {item.status}
+                        </span>
+                        <span className="text-sm text-gray-700 font-medium">
+                          {item.updatedBy}
+                        </span>
+                      </div>
+                      <span className="text-xs text-gray-500 whitespace-nowrap">
+                        {new Date(item.timestamp).toLocaleString(undefined, {
+                          year: 'numeric',
+                          month: 'short',
+                          day: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })}
+                      </span>
+                    </div>
+
+                    {/* Remarks content */}
+                    <div className="text-sm text-gray-800 bg-white p-3 rounded border border-gray-200">
+                      {item.remarks.split('\n').map((line, i) => (
+                        <div key={i} className="flex items-start">
+                          <span className="mr-2 text-gray-400 mt-0.5">•</span>
+                          <span className="flex-1">{line}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

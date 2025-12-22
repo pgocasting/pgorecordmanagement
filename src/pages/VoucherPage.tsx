@@ -56,7 +56,15 @@ interface Voucher {
   funds: string;
   status: string;
   remarks?: string;
+  remarksHistory: Array<{
+    remarks: string;
+    status: string;
+    timestamp: string;
+    updatedBy: string;
+  }>;
   timeOutRemarks?: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 const formatAmount = (amount: string | number | undefined): string => {
@@ -132,6 +140,13 @@ export default function VoucherPage() {
   const [rejectData, setRejectData] = useState({
     remarks: '',
   });
+  const [remarksHistoryOpen, setRemarksHistoryOpen] = useState(false);
+  const [currentRemarksHistory, setCurrentRemarksHistory] = useState<Array<{
+    remarks: string;
+    status: string;
+    timestamp: string;
+    updatedBy: string;
+  }>>([]);
   const [designationOptions, setDesignationOptions] = useState<string[]>([]);
 
   useEffect(() => {
@@ -158,7 +173,18 @@ export default function VoucherPage() {
     voucherType: '',
     funds: '',
     remarks: '',
+    remarksHistory: [] as Array<{
+      remarks: string;
+      status: string;
+      timestamp: string;
+      updatedBy: string;
+    }>
   });
+
+  const viewRemarksHistory = (voucher: Voucher) => {
+    setCurrentRemarksHistory(voucher.remarksHistory || []);
+    setRemarksHistoryOpen(true);
+  };
 
   useEffect(() => {
     const loadVouchers = async () => {
@@ -249,14 +275,24 @@ export default function VoucherPage() {
 
     setIsLoading(true);
     try {
+      const now = new Date().toISOString();
+      const currentUser = user?.name || 'Unknown';
       const newVoucher = {
         trackingId: nextTrackingId,
         status: 'Pending',
         timeOutRemarks: '',
         ...formData,
         amount: parseFloat(formData.amount),
-        remarks: formData.remarks || '',
-        receivedBy: formData.receivedBy || user?.name || '',
+        remarks: formData.remarks || 'Voucher record created',
+        remarksHistory: [{
+          remarks: formData.remarks || 'Voucher record created',
+          status: 'Pending',
+          timestamp: now,
+          updatedBy: currentUser
+        }],
+        receivedBy: formData.receivedBy || currentUser,
+        createdAt: now,
+        updatedAt: now
       };
       const result = await voucherService.addVoucher(newVoucher);
       setSuccess('Voucher added successfully');
@@ -274,6 +310,7 @@ export default function VoucherPage() {
         voucherType: '',
         funds: '',
         remarks: '',
+        remarksHistory: []
       });
       setIsDialogOpen(false);
       setSuccessModalOpen(true);
@@ -291,10 +328,24 @@ export default function VoucherPage() {
 
     setIsLoading(true);
     try {
+      const now = new Date().toISOString();
+      const currentUser = user?.name || 'Unknown';
+      const existingVoucher = vouchers.find(v => v.id === editingId);
+      const newRemarksHistory = [
+        ...(existingVoucher?.remarksHistory || []),
+        {
+          remarks: formData.remarks,
+          status: 'Edited',
+          timestamp: now,
+          updatedBy: currentUser
+        }
+      ];
       const updateData = {
         ...formData,
         amount: parseFloat(formData.amount),
         remarks: formData.remarks || '',
+        remarksHistory: newRemarksHistory,
+        updatedAt: now
       };
       await voucherService.updateVoucher(editingId, updateData);
       setSuccess('Voucher updated successfully');
@@ -314,6 +365,7 @@ export default function VoucherPage() {
         voucherType: '',
         funds: '',
         remarks: '',
+        remarksHistory: []
       });
       setIsDialogOpen(false);
       setEditConfirmOpen(false);
@@ -368,6 +420,7 @@ export default function VoucherPage() {
         voucherType: '',
         funds: '',
         remarks: '',
+        remarksHistory: []
       });
     }
   };
@@ -384,13 +437,21 @@ export default function VoucherPage() {
     setIsLoading(true);
     try {
       const voucher = vouchers.find(v => v.id === voucherToDelete);
-      const now = new Date();
-      const dateTimeStr = now.toLocaleString();
-      const newRemarks = `[${dateTimeStr}] [REJECTED by ${user?.name || 'Unknown'}] ${rejectData.remarks}`;
-      const updatedRemarks = voucher?.remarks ? `${voucher.remarks}\n${newRemarks}` : newRemarks;
-      
-      await voucherService.updateVoucher(voucherToDelete, { status: 'Rejected', remarks: updatedRemarks });
-      const updatedVouchers = vouchers.map(v => v.id === voucherToDelete ? { ...v, status: 'Rejected', remarks: updatedRemarks } : v);
+      if (!voucher) return;
+      const now = new Date().toISOString();
+      const currentUser = user?.name || 'Unknown';
+      const newRemarks = rejectData.remarks;
+      const updatedRemarksHistory = [
+        ...(voucher.remarksHistory || []),
+        {
+          remarks: newRemarks,
+          status: 'Rejected',
+          timestamp: now,
+          updatedBy: currentUser
+        }
+      ];
+      await voucherService.updateVoucher(voucherToDelete, { status: 'Rejected', remarks: newRemarks, remarksHistory: updatedRemarksHistory, updatedAt: now });
+      const updatedVouchers = vouchers.map(v => v.id === voucherToDelete ? { ...v, status: 'Rejected', remarks: newRemarks, remarksHistory: updatedRemarksHistory, updatedAt: now } : v);
       setVouchers(updatedVouchers);
       setSuccess('Voucher rejected successfully');
       setVoucherToDelete(null);
@@ -432,16 +493,26 @@ export default function VoucherPage() {
     setIsLoading(true);
     try {
       const voucher = vouchers.find(v => v.id === voucherToTimeOut);
-      const now = new Date();
-      const dateTimeStr = now.toLocaleString();
-      const newRemarks = `[${dateTimeStr}] [COMPLETED by ${user?.name || 'Unknown'}] ${timeOutData.timeOutRemarks}`;
-      const updatedRemarks = voucher?.remarks ? `${voucher.remarks}\n${newRemarks}` : newRemarks;
-      
+      if (!voucher) return;
+      const now = new Date().toISOString();
+      const currentUser = user?.name || 'Unknown';
+      const newRemarks = timeOutData.timeOutRemarks;
+      const updatedRemarksHistory = [
+        ...(voucher.remarksHistory || []),
+        {
+          remarks: newRemarks,
+          status: 'Completed',
+          timestamp: now,
+          updatedBy: currentUser
+        }
+      ];
       await voucherService.updateVoucher(voucherToTimeOut, {
         dateTimeOut: timeOutData.dateTimeOut,
-        remarks: updatedRemarks,
+        remarks: newRemarks,
+        remarksHistory: updatedRemarksHistory,
         timeOutRemarks: newRemarks,
-        status: 'Completed'
+        status: 'Completed',
+        updatedAt: now
       });
 
       const updatedVouchers = await voucherService.getVouchers();
@@ -456,7 +527,7 @@ export default function VoucherPage() {
       console.error('Failed to record time out:', err);
       setSuccess(err instanceof Error ? err.message : 'Error recording time out');
       setSuccessModalOpen(true);
-      
+
       const updatedVouchers = await voucherService.getVouchers();
       setVouchers(updatedVouchers as Voucher[]);
     } finally {
@@ -744,9 +815,34 @@ export default function VoucherPage() {
                               {voucher.status}
                             </span>
                           </TableCell>
-                          <TableCell className="wrap-break-word whitespace-normal text-center text-xs">
-                            {getOriginalRemarks(voucher.remarks)}
-                          </TableCell>
+                          <TableCell 
+  className="wrap-break-word whitespace-normal text-xs cursor-pointer hover:bg-gray-50"
+  onClick={() => viewRemarksHistory(voucher)}
+>
+  {voucher.remarks ? (
+    <div className="space-y-1 relative">
+      {voucher.status === 'Pending' && voucher.remarksHistory?.some(h => h.status === 'Edited') && (
+        <span className="absolute -top-2 -right-1 bg-yellow-100 text-yellow-800 text-[10px] px-1.5 py-0.5 rounded-full">
+          Edited
+        </span>
+      )}
+      <div className="text-black">
+        {voucher.remarks}
+      </div>
+      {voucher.remarksHistory?.length > 0 && (
+        <div className={`${voucher.status === 'Completed' ? 'text-green-600' : voucher.status === 'Rejected' ? 'text-red-600' : 'text-yellow-600'}`}>
+          {voucher.remarksHistory[0]?.timestamp && (
+            <span>[{new Date(voucher.remarksHistory[0].timestamp).toLocaleString()}] </span>
+          )}
+          [{voucher.status} by {voucher.receivedBy}]
+        </div>
+      )}
+      <div className="text-xs text-blue-600 mt-1">
+        Click to view full history
+      </div>
+    </div>
+  ) : '-'}
+</TableCell>
                           <TableCell className="text-center">
                             <ActionButtons
                               onView={() => handleViewVoucher(voucher.id)}
@@ -971,6 +1067,66 @@ export default function VoucherPage() {
         message={success}
         isError={success.includes('Error')}
       />
+
+      {/* Remarks History Dialog */}
+      <Dialog open={remarksHistoryOpen} onOpenChange={setRemarksHistoryOpen}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Remarks History</DialogTitle>
+            <DialogDescription>
+              View the complete history of remarks for this record
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            {currentRemarksHistory.length === 0 ? (
+              <p className="text-center text-gray-500 py-4">No remarks history available</p>
+            ) : (
+              <div className="space-y-3">
+                {[...currentRemarksHistory].reverse().map((item, index) => (
+                  <div key={index} className={`border-l-4 ${
+                    item.status === 'Completed' ? 'border-green-200' :
+                    item.status === 'Rejected' ? 'border-red-200' :
+                    'border-blue-200'
+                  } pl-4 py-3 bg-gray-50 rounded-r-lg`}>
+                    <div className="flex justify-between items-start mb-2">
+                      <div className="flex items-center space-x-3">
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                          item.status === 'Completed' ? 'bg-green-100 text-green-800' :
+                          item.status === 'Rejected' ? 'bg-red-100 text-red-800' :
+                          item.status === 'Edited' ? 'bg-yellow-100 text-yellow-800' :
+                          'bg-blue-100 text-blue-800'
+                        }`}>
+                          {item.status}
+                        </span>
+                        <span className="text-sm text-gray-700 font-medium">
+                          {item.updatedBy}
+                        </span>
+                      </div>
+                      <span className="text-xs text-gray-500 whitespace-nowrap">
+                        {new Date(item.timestamp).toLocaleString(undefined, {
+                          year: 'numeric',
+                          month: 'short',
+                          day: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })}
+                      </span>
+                    </div>
+                    <div className="text-sm text-gray-800 bg-white p-3 rounded border border-gray-200">
+                      {item.remarks.split('\n').map((line, i) => (
+                        <div key={i} className="flex items-start">
+                          <span className="mr-2 text-gray-400 mt-0.5">•</span>
+                          <span className="flex-1">{line}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

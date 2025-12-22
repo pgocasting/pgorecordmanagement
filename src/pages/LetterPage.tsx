@@ -67,7 +67,15 @@ interface Letter {
   particulars: string;
   status: string;
   remarks: string;
+  remarksHistory: Array<{
+    remarks: string;
+    status: string;
+    timestamp: string;
+    updatedBy: string;
+  }>;
   timeOutRemarks?: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export default function LetterPage() {
@@ -93,6 +101,14 @@ export default function LetterPage() {
     remarks: '',
   });
 
+  const [remarksHistoryOpen, setRemarksHistoryOpen] = useState(false);
+  const [currentRemarksHistory, setCurrentRemarksHistory] = useState<Array<{
+    remarks: string;
+    status: string;
+    timestamp: string;
+    updatedBy: string;
+  }>>([]);
+
   // Form states
   const [formData, setFormData] = useState({
     dateTimeIn: '',
@@ -101,6 +117,12 @@ export default function LetterPage() {
     designationOffice: '',
     particulars: '',
     remarks: '',
+    remarksHistory: [] as Array<{
+      remarks: string;
+      status: string;
+      timestamp: string;
+      updatedBy: string;
+    }>
   });
 
   const [designationOptions, setDesignationOptions] = useState<string[]>([]);
@@ -153,6 +175,11 @@ export default function LetterPage() {
     return `(L) ${year}/${month}/${day} - ${sequenceNumber}`;
   };
 
+  const viewRemarksHistory = (letter: Letter) => {
+    setCurrentRemarksHistory(letter.remarksHistory || []);
+    setRemarksHistoryOpen(true);
+  };
+
   const handleAddOrUpdate = async () => {
     if (!formData.dateTimeIn || !formData.fullName || !formData.designationOffice || !formData.particulars) {
       setSuccess('Please fill in all required fields');
@@ -163,8 +190,22 @@ export default function LetterPage() {
     setIsLoading(true);
 
     try {
+      const now = new Date().toISOString();
+      const currentUser = user?.name || 'Unknown';
+      
       if (editingId) {
         // Update existing letter in Firestore
+        const existingLetter = letters.find(l => l.id === editingId);
+        const newRemarksHistory = [
+          ...(existingLetter?.remarksHistory || []),
+          {
+            remarks: formData.remarks,
+            status: 'Edited',
+            timestamp: now,
+            updatedBy: currentUser
+          }
+        ];
+        
         const updateData = {
           dateTimeIn: formData.dateTimeIn,
           dateTimeOut: formData.dateTimeOut,
@@ -172,20 +213,37 @@ export default function LetterPage() {
           designationOffice: formData.designationOffice,
           particulars: formData.particulars,
           remarks: formData.remarks,
+          remarksHistory: newRemarksHistory,
+          updatedAt: now
         };
         await letterService.updateLetter(editingId, updateData);
         setSuccess('Letter updated successfully');
-        setLetters(letters.map(l => l.id === editingId ? { ...l, ...updateData } : l));
+        setLetters(letters.map(l => 
+          l.id === editingId 
+            ? { 
+                ...l, 
+                ...updateData
+              } 
+            : l
+        ));
       } else {
         // Add new letter to Firestore
         const nextTrackingId = generateTrackingId();
         const newLetter = {
           trackingId: nextTrackingId,
-          receivedBy: user?.name || '',
+          receivedBy: currentUser,
           ...formData,
           status: 'Pending',
-          remarks: '',
+          remarks: formData.remarks || 'Letter record created',
+          remarksHistory: [{
+            remarks: formData.remarks || 'Letter record created',
+            status: 'Pending',
+            timestamp: now,
+            updatedBy: currentUser
+          }],
           timeOutRemarks: '',
+          createdAt: now,
+          updatedAt: now
         };
         const result = await letterService.addLetter(newLetter);
         setSuccess('Letter added successfully');
@@ -200,6 +258,7 @@ export default function LetterPage() {
         designationOffice: '',
         particulars: '',
         remarks: '',
+        remarksHistory: []
       });
       setEditingId(null);
       setIsDialogOpen(false);
@@ -221,6 +280,7 @@ export default function LetterPage() {
       designationOffice: letter.designationOffice,
       particulars: letter.particulars,
       remarks: letter.remarks || '',
+      remarksHistory: letter.remarksHistory || []
     });
     setEditingId(letter.id);
     setIsDialogOpen(true);
@@ -236,13 +296,40 @@ export default function LetterPage() {
 
       try {
         const letter = letters.find(l => l.id === letterToDelete);
-        const now = new Date();
-        const dateTimeStr = now.toLocaleString();
-        const newRemarks = `[${dateTimeStr}] [REJECTED by ${user?.name || 'Unknown'}] ${rejectData.remarks}`;
-        const updatedRemarks = letter?.remarks ? `${letter.remarks}\n${newRemarks}` : newRemarks;
+        if (!letter) return;
         
-        await letterService.updateLetter(letterToDelete, { status: 'Rejected', remarks: updatedRemarks });
-        const updatedLetters = letters.map(l => l.id === letterToDelete ? { ...l, status: 'Rejected', remarks: updatedRemarks } : l);
+        const now = new Date().toISOString();
+        const currentUser = user?.name || 'Unknown';
+        const newRemarks = rejectData.remarks;
+        
+        const updatedRemarksHistory = [
+          ...(letter.remarksHistory || []),
+          {
+            remarks: newRemarks,
+            status: 'Rejected',
+            timestamp: now,
+            updatedBy: currentUser
+          }
+        ];
+        
+        await letterService.updateLetter(letterToDelete, { 
+          status: 'Rejected', 
+          remarks: newRemarks,
+          remarksHistory: updatedRemarksHistory,
+          updatedAt: now
+        });
+        
+        const updatedLetters = letters.map(l => 
+          l.id === letterToDelete 
+            ? { 
+                ...l, 
+                status: 'Rejected', 
+                remarks: newRemarks,
+                remarksHistory: updatedRemarksHistory,
+                updatedAt: now
+              } 
+            : l
+        );
         setLetters(updatedLetters);
         setLetterToDelete(null);
         setRejectData({ remarks: '' });
@@ -269,6 +356,7 @@ export default function LetterPage() {
         designationOffice: '',
         particulars: '',
         remarks: '',
+        remarksHistory: []
       });
     }
   };
@@ -305,16 +393,29 @@ export default function LetterPage() {
       }
 
       const letter = letters.find(l => l.id === letterToTimeOut);
-      const now = new Date();
-      const dateTimeStr = now.toLocaleString();
-      const newRemarks = `[${dateTimeStr}] [COMPLETED by ${user?.name || 'Unknown'}] ${timeOutRemarks}`;
-      const updatedRemarks = letter?.remarks ? `${letter.remarks}\n${newRemarks}` : newRemarks;
+      if (!letter) return;
+      
+      const now = new Date().toISOString();
+      const currentUser = user?.name || 'Unknown';
+      const newRemarks = timeOutRemarks;
+      
+      const updatedRemarksHistory = [
+        ...(letter.remarksHistory || []),
+        {
+          remarks: newRemarks,
+          status: 'Completed',
+          timestamp: now,
+          updatedBy: currentUser
+        }
+      ];
       
       await letterService.updateLetter(letterToTimeOut, {
         dateTimeOut: timeOutDateTime,
         status: 'Completed',
-        remarks: updatedRemarks,
-        timeOutRemarks: newRemarks
+        remarks: newRemarks,
+        remarksHistory: updatedRemarksHistory,
+        timeOutRemarks: newRemarks,
+        updatedAt: now
       });
       // Reload letters from Firestore
       const updatedLetters = await letterService.getLetters();
@@ -423,6 +524,7 @@ export default function LetterPage() {
                           designationOffice: '',
                           particulars: '',
                           remarks: '',
+                          remarksHistory: []
                         });
                       }}
                     >
@@ -557,9 +659,34 @@ export default function LetterPage() {
                             {letter.status}
                           </span>
                         </TableCell>
-                        <TableCell className="wrap-break-word whitespace-normal text-center text-xs">
-                          {getOriginalRemarks(letter.remarks)}
-                        </TableCell>
+                        <TableCell 
+  className="wrap-break-word whitespace-normal text-xs cursor-pointer hover:bg-gray-50"
+  onClick={() => viewRemarksHistory(letter)}
+>
+  {letter.remarks ? (
+    <div className="space-y-1 relative">
+      {letter.status === 'Pending' && letter.remarksHistory?.some(h => h.status === 'Edited') && (
+        <span className="absolute -top-2 -right-1 bg-yellow-100 text-yellow-800 text-[10px] px-1.5 py-0.5 rounded-full">
+          Edited
+        </span>
+      )}
+      <div className="text-black">
+        {letter.remarks}
+      </div>
+      {letter.remarksHistory?.length > 0 && (
+        <div className={`${letter.status === 'Completed' ? 'text-green-600' : letter.status === 'Rejected' ? 'text-red-600' : 'text-yellow-600'}`}>
+          {letter.remarksHistory[0]?.timestamp && (
+            <span>[{new Date(letter.remarksHistory[0].timestamp).toLocaleString()}] </span>
+          )}
+          [{letter.status} by {letter.receivedBy}]
+        </div>
+      )}
+      <div className="text-xs text-blue-600 mt-1">
+        Click to view full history
+      </div>
+    </div>
+  ) : '-'}
+</TableCell>
                         <TableCell className="text-center">
                           <ActionButtons
                             onView={() => handleView(letter)}
@@ -743,13 +870,67 @@ export default function LetterPage() {
         isLoading={isLoading}
       />
 
-      {/* Success Modal */}
-      <SuccessModal
-        open={successModalOpen}
-        onOpenChange={setSuccessModalOpen}
-        message={success}
-        isError={success.includes('Error')}
-      />
+      {/* Remarks History Dialog */}
+      <Dialog open={remarksHistoryOpen} onOpenChange={setRemarksHistoryOpen}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Remarks History</DialogTitle>
+            <DialogDescription>
+              View the complete history of remarks for this record
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            {currentRemarksHistory.length === 0 ? (
+              <p className="text-center text-gray-500 py-4">No remarks history available</p>
+            ) : (
+              <div className="space-y-3">
+                {[...currentRemarksHistory].reverse().map((item, index) => (
+                  <div key={index} className={`border-l-4 ${
+                    item.status === 'Completed' ? 'border-green-200' :
+                    item.status === 'Rejected' ? 'border-red-200' :
+                    'border-blue-200'
+                  } pl-4 py-3 bg-gray-50 rounded-r-lg`}>
+                    {/* Header with status, user, and timestamp */}
+                    <div className="flex justify-between items-start mb-2">
+                      <div className="flex items-center space-x-3">
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                          item.status === 'Completed' ? 'bg-green-100 text-green-800' :
+                          item.status === 'Rejected' ? 'bg-red-100 text-red-800' :
+                          item.status === 'Edited' ? 'bg-yellow-100 text-yellow-800' :
+                          'bg-blue-100 text-blue-800'
+                        }`}>
+                          {item.status}
+                        </span>
+                        <span className="text-sm text-gray-700 font-medium">
+                          {item.updatedBy}
+                        </span>
+                      </div>
+                      <span className="text-xs text-gray-500 whitespace-nowrap">
+                        {new Date(item.timestamp).toLocaleString(undefined, {
+                          year: 'numeric',
+                          month: 'short',
+                          day: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })}
+                      </span>
+                    </div>
+                    {/* Remarks content */}
+                    <div className="text-sm text-gray-800 bg-white p-3 rounded border border-gray-200">
+                      {item.remarks.split('\n').map((line, i) => (
+                        <div key={i} className="flex items-start">
+                          <span className="mr-2 text-gray-400 mt-0.5">•</span>
+                          <span className="flex-1">{line}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

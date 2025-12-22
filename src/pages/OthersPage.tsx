@@ -67,6 +67,14 @@ interface Others {
   amount?: string;
   status: string;
   remarks: string;
+  remarksHistory: Array<{
+    remarks: string;
+    status: string;
+    timestamp: string;
+    updatedBy: string;
+  }>;
+  createdAt?: string;
+  updatedAt?: string;
   timeOutRemarks?: string;
   linkAttachments?: string;
 }
@@ -118,6 +126,13 @@ export default function OthersPage() {
   const [rejectData, setRejectData] = useState({
     remarks: '',
   });
+  const [remarksHistoryOpen, setRemarksHistoryOpen] = useState(false);
+  const [currentRemarksHistory, setCurrentRemarksHistory] = useState<Array<{
+    remarks: string;
+    status: string;
+    timestamp: string;
+    updatedBy: string;
+  }>>([]);
   const [editConfirmOpen, setEditConfirmOpen] = useState(false);
   const [timeOutConfirmOpen, setTimeOutConfirmOpen] = useState(false);
   const [recordToTimeOut, setRecordToTimeOut] = useState<string | null>(null);
@@ -155,7 +170,18 @@ export default function OthersPage() {
     amount: '',
     linkAttachments: '',
     remarks: '',
+    remarksHistory: [] as Array<{
+      remarks: string;
+      status: string;
+      timestamp: string;
+      updatedBy: string;
+    }>
   });
+
+  const viewRemarksHistory = (record: Others) => {
+    setCurrentRemarksHistory(record.remarksHistory || []);
+    setRemarksHistoryOpen(true);
+  };
 
   // Load records from Firestore on mount
   useEffect(() => {
@@ -231,13 +257,23 @@ export default function OthersPage() {
     // If adding new, proceed directly
     setIsLoading(true);
     try {
+      const now = new Date().toISOString();
+      const currentUser = user?.name || 'Unknown';
       const newRecord = {
         trackingId: nextTrackingId,
-        receivedBy: user?.name || '',
+        receivedBy: currentUser,
         ...formData,
         status: 'Pending',
-        remarks: '',
+        remarks: formData.remarks || 'Record created',
         timeOutRemarks: '',
+        remarksHistory: [{
+          remarks: formData.remarks || 'Record created',
+          status: 'Pending',
+          timestamp: now,
+          updatedBy: currentUser
+        }],
+        createdAt: now,
+        updatedAt: now
       };
       const result = await othersService.addRecord(newRecord);
       setSuccess('Record added successfully');
@@ -257,6 +293,7 @@ export default function OthersPage() {
         amount: '',
         linkAttachments: '',
         remarks: '',
+        remarksHistory: []
       });
       setIsDialogOpen(false);
       setSuccessModalOpen(true);
@@ -274,11 +311,45 @@ export default function OthersPage() {
 
     setIsLoading(true);
     try {
-      await othersService.updateRecord(editingId, formData);
+      const existingRecord = records.find(r => r.id === editingId);
+      const now = new Date().toISOString();
+      const currentUser = user?.name || 'Unknown';
+      
+      const newRemarksHistory = [
+        ...(existingRecord?.remarksHistory || []),
+        {
+          remarks: formData.remarks,
+          status: 'Edited',
+          timestamp: now,
+          updatedBy: currentUser
+        }
+      ];
+      
+      // Keep the status as Pending if it was Pending before
+      const newStatus = existingRecord?.status === 'Rejected' ? 'Rejected' : 'Pending';
+      
+      const updateData = {
+        ...formData,
+        remarksHistory: newRemarksHistory,
+        status: newStatus,
+        updatedAt: now
+      };
+      
+      await othersService.updateRecord(editingId, updateData);
       setSuccess('Record updated successfully');
       setEditingId(null);
 
-      const updatedRecords = records.map(r => r.id === editingId ? { ...r, ...formData } : r);
+      const updatedRecords = records.map(r => 
+        r.id === editingId 
+          ? { 
+              ...r, 
+              ...formData,
+              remarksHistory: newRemarksHistory,
+              status: newStatus,
+              updatedAt: now
+            } 
+          : r
+      );
       setRecords(updatedRecords);
 
       setFormData({
@@ -294,6 +365,7 @@ export default function OthersPage() {
         amount: '',
         linkAttachments: '',
         remarks: '',
+        remarksHistory: []
       });
       setIsDialogOpen(false);
       setEditConfirmOpen(false);
@@ -323,6 +395,7 @@ export default function OthersPage() {
         amount: record.amount || '',
         linkAttachments: record.linkAttachments || '',
         remarks: record.remarks || '',
+        remarksHistory: record.remarksHistory || []
       });
       setEditingId(id);
       setIsDialogOpen(true);
@@ -346,6 +419,7 @@ export default function OthersPage() {
         amount: '',
         linkAttachments: '',
         remarks: '',
+        remarksHistory: []
       });
     }
   };
@@ -361,12 +435,41 @@ export default function OthersPage() {
 
     setIsLoading(true);
     try {
-      const now = new Date();
-      const dateTimeStr = now.toLocaleString();
-      const remarksWithDateTime = `[${dateTimeStr}] [${user?.name || 'Unknown'}] ${rejectData.remarks}`;
+      const record = records.find(r => r.id === recordToDelete);
+      if (!record) return;
       
-      await othersService.updateRecord(recordToDelete, { status: 'Rejected', remarks: remarksWithDateTime });
-      const updatedRecords = records.map(r => r.id === recordToDelete ? { ...r, status: 'Rejected', remarks: remarksWithDateTime } : r);
+      const now = new Date().toISOString();
+      const currentUser = user?.name || 'Unknown';
+      const newRemarks = rejectData.remarks;
+      
+      const updatedRemarksHistory = [
+        ...(record.remarksHistory || []),
+        {
+          remarks: newRemarks,
+          status: 'Rejected',
+          timestamp: now,
+          updatedBy: currentUser
+        }
+      ];
+      
+      await othersService.updateRecord(recordToDelete, { 
+        status: 'Rejected', 
+        remarks: newRemarks,
+        remarksHistory: updatedRemarksHistory,
+        updatedAt: now
+      });
+      
+      const updatedRecords = records.map(r => 
+        r.id === recordToDelete 
+          ? { 
+              ...r, 
+              status: 'Rejected', 
+              remarks: newRemarks,
+              remarksHistory: updatedRemarksHistory,
+              updatedAt: now
+            } 
+          : r
+      );
       setRecords(updatedRecords);
       setSuccess('Record rejected successfully');
       setRecordToDelete(null);
@@ -416,16 +519,29 @@ export default function OthersPage() {
       }
 
       const record = records.find(r => r.id === recordToTimeOut);
-      const now = new Date();
-      const dateTimeStr = now.toLocaleString();
-      const newRemarks = `[${dateTimeStr}] [COMPLETED by ${user?.name || 'Unknown'}] ${timeOutData.timeOutRemarks}`;
-      const updatedRemarks = record?.remarks ? `${record.remarks}\n${newRemarks}` : newRemarks;
+      if (!record) return;
+      
+      const now = new Date().toISOString();
+      const currentUser = user?.name || 'Unknown';
+      const newRemarks = timeOutData.timeOutRemarks;
+      
+      const updatedRemarksHistory = [
+        ...(record.remarksHistory || []),
+        {
+          remarks: newRemarks,
+          status: 'Completed',
+          timestamp: now,
+          updatedBy: currentUser
+        }
+      ];
       
       await othersService.updateRecord(recordToTimeOut, {
         dateTimeOut: timeOutData.dateTimeOut,
         status: 'Completed',
-        remarks: updatedRemarks,
-        timeOutRemarks: newRemarks
+        remarks: newRemarks,
+        remarksHistory: updatedRemarksHistory,
+        timeOutRemarks: newRemarks,
+        updatedAt: now
       });
       // Reload from Firestore
       const updatedRecords = await othersService.getRecords();
@@ -519,6 +635,7 @@ export default function OthersPage() {
                           amount: '',
                           linkAttachments: '',
                           remarks: '',
+                          remarksHistory: []
                         });
                       }}
                     >
@@ -719,25 +836,31 @@ export default function OthersPage() {
                             {record.status}
                           </span>
                         </TableCell>
-                        <TableCell className="wrap-break-word whitespace-normal text-center text-xs">
-                          {(record.status === 'Completed' ? (record.timeOutRemarks || record.remarks) : record.remarks) ? (
-                            <div className="whitespace-pre-line text-center space-y-2">
-                              {(record.status === 'Completed' ? (record.timeOutRemarks || record.remarks) : record.remarks)!.split('\n').map((line, index) => {
-                                const isRejected = line.includes('[REJECTED by');
-                                const isCompleted = line.includes('[COMPLETED by');
-                                return (
-                                  <div 
-                                    key={index}
-                                    className={`p-2 rounded border ${
-                                      isRejected ? 'bg-red-50 border-red-200 text-red-600 font-medium' :
-                                      isCompleted ? 'bg-green-50 border-green-200 text-green-600 font-medium' :
-                                      'bg-gray-50 border-gray-200 text-black'
-                                    }`}
-                                  >
-                                    {line}
-                                  </div>
-                                );
-                              })}
+                        <TableCell 
+                          className="wrap-break-word whitespace-normal text-center text-xs cursor-pointer hover:bg-gray-50"
+                          onClick={() => viewRemarksHistory(record)}
+                        >
+                          {record.remarks ? (
+                            <div className="space-y-1 relative">
+                              {record.status === 'Pending' && record.remarksHistory?.some(h => h.status === 'Edited') && (
+                                <span className="absolute -top-2 -right-1 bg-yellow-100 text-yellow-800 text-[10px] px-1.5 py-0.5 rounded-full">
+                                  Edited
+                                </span>
+                              )}
+                              <div className="text-black">
+                                {record.remarks}
+                              </div>
+                              {record.remarksHistory?.length > 0 && (
+                                <div className={`${record.status === 'Completed' ? 'text-green-600' : record.status === 'Rejected' ? 'text-red-600' : 'text-yellow-600'}`}>
+                                  {record.remarksHistory[0]?.timestamp && (
+                                    <span>[{new Date(record.remarksHistory[0].timestamp).toLocaleString()}] </span>
+                                  )}
+                                  [{record.status} by {record.receivedBy}]
+                                </div>
+                              )}
+                              <div className="text-xs text-blue-600 mt-1">
+                                Click to view full history
+                              </div>
                             </div>
                           ) : '-'}
                         </TableCell>
@@ -1035,6 +1158,70 @@ export default function OthersPage() {
         message={success}
         isError={success.includes('Error')}
       />
+
+      {/* Remarks History Modal */}
+      <Dialog open={remarksHistoryOpen} onOpenChange={setRemarksHistoryOpen}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Remarks History</DialogTitle>
+            <DialogDescription>
+              View the complete history of remarks for this record
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            {currentRemarksHistory.length === 0 ? (
+              <p className="text-center text-gray-500 py-4">No remarks history available</p>
+            ) : (
+              <div className="space-y-3">
+                {[...currentRemarksHistory].reverse().map((item, index) => (
+                  <div key={index} className={`border-l-4 ${
+                    item.status === 'Completed' ? 'border-green-200' :
+                    item.status === 'Rejected' ? 'border-red-200' :
+                    'border-blue-200'
+                  } pl-4 py-3 bg-gray-50 rounded-r-lg`}>
+
+                    {/* Header with status, user, and timestamp */}
+                    <div className="flex justify-between items-start mb-2">
+                      <div className="flex items-center space-x-3">
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                          item.status === 'Completed' ? 'bg-green-100 text-green-800' :
+                          item.status === 'Rejected' ? 'bg-red-100 text-red-800' :
+                          item.status === 'Edited' ? 'bg-yellow-100 text-yellow-800' :
+                          'bg-blue-100 text-blue-800'
+                        }`}>
+                          {item.status}
+                        </span>
+                        <span className="text-sm text-gray-700 font-medium">
+                          {item.updatedBy}
+                        </span>
+                      </div>
+                      <span className="text-xs text-gray-500 whitespace-nowrap">
+                        {new Date(item.timestamp).toLocaleString(undefined, {
+                          year: 'numeric',
+                          month: 'short',
+                          day: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })}
+                      </span>
+                    </div>
+
+                    {/* Remarks content */}
+                    <div className="text-sm text-gray-800 bg-white p-3 rounded border border-gray-200">
+                      {item.remarks.split('\n').map((line, i) => (
+                        <div key={i} className="flex items-start">
+                          <span className="mr-2 text-gray-400 mt-0.5">•</span>
+                          <span className="flex-1">{line}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Time Out Modal */}
       <TimeOutModal
