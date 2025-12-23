@@ -93,23 +93,6 @@ interface Others {
   linkAttachments?: string;
 }
 
-const formatAmount = (amount: string | number | undefined): string => {
-  if (amount === undefined || amount === null || amount === '') return '-';
-  
-  const num = typeof amount === 'string' ? 
-    parseFloat(amount.replace(/[^0-9.-]+/g, '')) : 
-    Number(amount);
-    
-  if (isNaN(num)) return '-';
-  
-  return new Intl.NumberFormat('en-PH', {
-    style: 'currency',
-    currency: 'PHP',
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2
-  }).format(num).replace('₱', '₱ ');
-};
-
 const recordTypes = [
   'Leave',
   'Letter',
