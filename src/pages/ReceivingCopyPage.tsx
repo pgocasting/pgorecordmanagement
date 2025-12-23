@@ -329,7 +329,11 @@ export default function ReceivingCopyPage() {
       {/* Sidebar */}
       <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
         <SheetTrigger asChild>
-          <button className="lg:hidden fixed top-4 left-4 z-40 p-2 hover:bg-gray-200 rounded-lg">
+          <button
+            className="lg:hidden fixed top-4 left-4 z-40 p-2 hover:bg-gray-200 rounded-lg"
+            aria-label="Open sidebar"
+            title="Open sidebar"
+          >
             <Menu className="h-6 w-6" />
           </button>
         </SheetTrigger>
@@ -344,16 +348,16 @@ export default function ReceivingCopyPage() {
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Header */}
-        <div className="bg-white border-b border-gray-200 px-6 py-4">
-          <div className="flex items-center justify-between">
+        {/* Top Bar */}
+        <div className="bg-card border-b pl-14 pr-4 sm:px-6 py-3 sm:py-4">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Records Management</h1>
-              <p className="text-sm text-gray-600">Welcome back</p>
+              <h1 className="text-2xl font-bold text-foreground">Receiving Copy</h1>
+              <p className="text-sm text-muted-foreground">Welcome back</p>
             </div>
             
             {/* Actions */}
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <Button
                 onClick={handlePrint}
                 className="gap-2 bg-indigo-600 hover:bg-indigo-700 h-9"
@@ -363,11 +367,11 @@ export default function ReceivingCopyPage() {
               </Button>
               <Button
                 variant="outline"
-                className="gap-2 text-red-600 hover:text-red-700 hover:bg-red-50 h-9"
+                className="gap-2 text-destructive hover:text-destructive hover:bg-destructive/10 h-9"
                 onClick={handleLogout}
               >
                 <LogOut className="h-4 w-4" />
-                Logout
+                <span className="hidden sm:inline">Logout</span>
               </Button>
             </div>
           </div>

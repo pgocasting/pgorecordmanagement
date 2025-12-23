@@ -611,15 +611,15 @@ export default function TravelOrderPage() {
       {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Top Bar */}
-        <div className="bg-card border-b px-6 py-4">
-          <div className="flex items-center justify-between">
+        <div className="bg-card border-b pl-14 pr-4 sm:px-6 py-3 sm:py-4">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h1 className="text-2xl font-bold text-foreground">Travel Order Records</h1>
               <p className="text-sm text-muted-foreground">Welcome back</p>
             </div>
             
             {/* User Info and Logout */}
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               {user?.name && (
                 <div className="flex items-center gap-2 px-3 py-2 bg-secondary rounded-lg border">
                   <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
@@ -638,7 +638,7 @@ export default function TravelOrderPage() {
                 onClick={handleLogout}
               >
                 <LogOut className="h-4 w-4" />
-                Logout
+                <span className="hidden sm:inline">Logout</span>
               </Button>
             </div>
           </div>
@@ -648,16 +648,16 @@ export default function TravelOrderPage() {
         <div className="flex-1 overflow-auto p-6 bg-muted/30">
           <div className="bg-card rounded-lg shadow-sm border overflow-hidden">
             {/* Header */}
-            <div className="px-6 py-4 border-b flex items-center justify-between">
+            <div className="px-4 sm:px-6 py-4 border-b flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <h2 className="text-xl font-bold text-foreground">Travel Orders</h2>
                 <p className="text-sm text-muted-foreground">Manage and view all travel order records</p>
               </div>
-              <div className="flex items-center gap-3">
-                <div className="relative w-64">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                <div className="relative w-full sm:w-64">
                   <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                   <Input
-                    placeholder="Search by tracking ID, name, designation, purpose, remarks..."
+                    placeholder="Search by tracking ID, name..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="pl-10"
@@ -665,64 +665,63 @@ export default function TravelOrderPage() {
                 </div>
                 <Dialog open={isDialogOpen} onOpenChange={handleDialogOpenChange}>
                   <DialogTrigger asChild>
-                    <Button 
-                      className="gap-2 bg-indigo-600 hover:bg-indigo-700"
+                    <Button
+                      className="gap-2 bg-indigo-600 hover:bg-indigo-700 w-full sm:w-auto"
                       onClick={() => {
-                      setEditingId(null);
-                      setFormData({
-                        dateTimeIn: getCurrentDateTime(),
-                        dateTimeOut: '',
-                        fullName: '',
-                        designation: '',
-                        inclusiveDateStart: '',
-                        inclusiveDateEnd: '',
-                        inclusiveTimeStart: '',
-                        inclusiveTimeEnd: '',
-                        purpose: '',
-                        placeOfAssignment: '',
-                        receivedBy: '',
-                        remarks: '',
-                        remarksHistory: []
-                      });
-                    }}
-                  >
-                    <Plus className="h-4 w-4" />
-                    Add Record
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="sm:max-w-lg z-50 max-h-[90vh] overflow-y-auto overflow-x-hidden">
-                  <DialogHeader>
-                    <DialogTitle className="text-lg font-semibold">{editingId ? 'Edit Travel Order' : 'Add New Travel Order'}</DialogTitle>
-                    <DialogDescription>
-                      {editingId ? 'Update the travel order details' : 'Fill in the form to add a new travel order'}
-                    </DialogDescription>
-                  </DialogHeader>
-                  <div className="space-y-3">
-                    {!editingId && (
-                      <div className="space-y-1">
-                        <Label htmlFor="trackingId" className="text-xs font-medium">Tracking ID</Label>
-                        <Input
-                          id="trackingId"
-                          type="text"
-                          value={generateTrackingId()}
-                          disabled
-                          className="bg-gray-50"
-                        />
-                      </div>
-                    )}
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="space-y-1">
-                        <Label htmlFor="dateTimeIn" className="text-xs font-medium">Date/Time IN *</Label>
-                        <Input
-                          id="dateTimeIn"
-                          name="dateTimeIn"
-                          type="datetime-local"
-                          value={formData.dateTimeIn}
-                          onChange={handleInputChange}
-                          className="h-8 text-xs"
-                        />
-                      </div>
-
+                        setEditingId(null);
+                        setFormData({
+                          dateTimeIn: getCurrentDateTime(),
+                          dateTimeOut: '',
+                          fullName: '',
+                          designation: '',
+                          inclusiveDateStart: '',
+                          inclusiveDateEnd: '',
+                          inclusiveTimeStart: '',
+                          inclusiveTimeEnd: '',
+                          purpose: '',
+                          placeOfAssignment: '',
+                          receivedBy: '',
+                          remarks: '',
+                          remarksHistory: []
+                        });
+                      }}
+                    >
+                      <Plus className="h-4 w-4" />
+                      Add Record
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="sm:max-w-lg z-50 max-h-[90vh] overflow-y-auto overflow-x-hidden">
+                    <DialogHeader>
+                      <DialogTitle className="text-lg font-semibold">{editingId ? 'Edit Travel Order' : 'Add New Travel Order'}</DialogTitle>
+                      <DialogDescription>
+                        {editingId ? 'Update the travel order details' : 'Fill in the form to add a new travel order'}
+                      </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-3">
+                      {!editingId && (
+                        <div className="space-y-1">
+                          <Label htmlFor="trackingId" className="text-xs font-medium">Tracking ID</Label>
+                          <Input
+                            id="trackingId"
+                            type="text"
+                            value={generateTrackingId()}
+                            disabled
+                            className="bg-gray-50"
+                          />
+                        </div>
+                      )}
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-1">
+                          <Label htmlFor="dateTimeIn" className="text-xs font-medium">Date/Time IN *</Label>
+                          <Input
+                            id="dateTimeIn"
+                            name="dateTimeIn"
+                            type="datetime-local"
+                            value={formData.dateTimeIn}
+                            onChange={handleInputChange}
+                            className="h-8 text-xs"
+                          />
+                        </div>
                       <div className="space-y-1">
                         <Label htmlFor="fullName" className="text-xs font-medium">Full Name *</Label>
                         <Input

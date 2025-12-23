@@ -621,15 +621,15 @@ export default function AdminToPGOPage() {
       {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Top Bar */}
-        <div className="bg-card border-b px-6 py-4">
-          <div className="flex items-center justify-between">
+        <div className="bg-card border-b pl-14 pr-4 sm:px-6 py-3 sm:py-4">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h1 className="text-2xl font-bold text-foreground">Admin to PGO Records</h1>
               <p className="text-sm text-muted-foreground">Welcome back</p>
             </div>
             
             {/* User Info and Logout */}
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               {user?.name && (
                 <div className="flex items-center gap-2 px-3 py-2 bg-secondary rounded-lg border">
                   <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
@@ -648,23 +648,23 @@ export default function AdminToPGOPage() {
                 onClick={handleLogout}
               >
                 <LogOut className="h-4 w-4" />
-                Logout
+                <span className="hidden sm:inline">Logout</span>
               </Button>
             </div>
           </div>
         </div>
 
         {/* Content Area */}
-        <div className="flex-1 overflow-auto p-6 bg-muted/30">
+        <div className="flex-1 overflow-auto p-4 sm:p-6 bg-muted/30">
           <div className="bg-card rounded-lg shadow-sm border overflow-hidden">
             {/* Header */}
-            <div className="px-6 py-4 border-b flex items-center justify-between">
+            <div className="px-4 sm:px-6 py-4 border-b flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <h2 className="text-xl font-bold text-foreground">Admin to PGO</h2>
                 <p className="text-sm text-muted-foreground">Manage and view all admin to PGO records</p>
               </div>
-              <div className="flex items-center gap-3">
-                <div className="relative w-64">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                <div className="relative w-full sm:w-64">
                   <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                   <Input
                     placeholder="Search by tracking ID, name..."
@@ -675,155 +675,156 @@ export default function AdminToPGOPage() {
                 </div>
                 <Dialog open={isDialogOpen} onOpenChange={handleDialogOpenChange}>
                   <DialogTrigger asChild>
-                    <Button 
-                      className="gap-2 bg-indigo-600 hover:bg-indigo-700"
-                      onClick={() => {
-                      setEditingId(null);
-                      setFormData({
-                        dateTimeIn: getCurrentDateTime(),
-                        dateTimeOut: '',
-                        fullName: '',
-                        officeAddress: '',
-                        particulars: '',
-                        remarks: '',
-                        remarksHistory: []
-                      });
-                    }}
-                  >
-                    <Plus className="h-4 w-4" />
-                    Add Record
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="max-w-2xl">
-                  <DialogHeader>
-                    <DialogTitle>{editingId ? 'Edit' : 'Add New'} Admin to PGO Record</DialogTitle>
-                    <DialogDescription>
-                      Fill in the form to {editingId ? 'update' : 'add'} an admin to PGO record
-                    </DialogDescription>
-                  </DialogHeader>
-                  <div className="grid gap-4 py-4">
-                    {!editingId && (
-                      <div className="space-y-2">
-                        <Label htmlFor="trackingId">Tracking ID</Label>
-                        <Input
-                          id="trackingId"
-                          value={nextTrackingId}
-                          disabled
-                          className="bg-gray-50"
-                        />
-                      </div>
-                    )}
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="dateTimeIn">Date/Time IN *</Label>
-                        <Input
-                          id="dateTimeIn"
-                          type="datetime-local"
-                          name="dateTimeIn"
-                          value={formData.dateTimeIn}
-                          onChange={handleInputChange}
-                          required
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="fullName">Full Name *</Label>
-                        <Input
-                          id="fullName"
-                          name="fullName"
-                          value={formData.fullName}
-                          onChange={handleInputChange}
-                          placeholder="Full Name"
-                          required
-                        />
-                      </div>
-                    </div>
-
-                    {editingId && user?.role === 'admin' && (
-                      <div className="space-y-1">
-                        <Label htmlFor="dateTimeOut" className="text-xs font-medium">Date/Time OUT</Label>
-                        <Input
-                          id="dateTimeOut"
-                          name="dateTimeOut"
-                          type="datetime-local"
-                          value={formData.dateTimeOut || ''}
-                          onChange={handleInputChange}
-                        />
-                      </div>
-                    )}
-
-                    <div className="space-y-2">
-                      <Label htmlFor="officeAddress">Office Address *</Label>
-                      <Popover open={designationDropdownOpen} onOpenChange={setDesignationDropdownOpen}>
-                        <PopoverTrigger asChild>
-                          <Button
-                            variant="outline"
-                            role="combobox"
-                            aria-expanded={designationDropdownOpen}
-                            className="w-full justify-between truncate"
-                          >
-                            <span className="truncate flex-1 text-left">
-                              {formData.officeAddress || "Select office..."}
-                            </span>
-                            <Search className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-full p-0" align="start">
-                          <Command>
-                            <CommandInput placeholder="Search office..." />
-                            <CommandList>
-                              <CommandEmpty>No office found.</CommandEmpty>
-                              <CommandGroup>
-                                {designationOptions.map((option) => (
-                                  <CommandItem
-                                    key={option}
-                                    value={option}
-                                    onSelect={(currentValue) => {
-                                      handleSelectChange('officeAddress', currentValue);
-                                      setDesignationDropdownOpen(false);
-                                    }}
-                                  >
-                                    {option}
-                                  </CommandItem>
-                                ))}
-                              </CommandGroup>
-                            </CommandList>
-                          </Command>
-                        </PopoverContent>
-                      </Popover>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="particulars">Particulars *</Label>
-                      <Input
-                        id="particulars"
-                        name="particulars"
-                        value={formData.particulars}
-                        onChange={handleInputChange}
-                        placeholder="Enter particulars"
-                        required
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="remarks">Remarks</Label>
-                      <Input
-                        id="remarks"
-                        name="remarks"
-                        value={formData.remarks}
-                        onChange={handleInputChange}
-                        placeholder="Enter remarks"
-                      />
-                    </div>
-
                     <Button
-                      onClick={handleAddRecord}
-                      disabled={isLoading}
-                      className="w-full bg-indigo-600 hover:bg-indigo-700"
+                      className="gap-2 bg-indigo-600 hover:bg-indigo-700 w-full sm:w-auto"
+                      onClick={() => {
+                        setEditingId(null);
+                        setFormData({
+                          dateTimeIn: getCurrentDateTime(),
+                          dateTimeOut: '',
+                          fullName: '',
+                          officeAddress: '',
+                          particulars: '',
+                          remarks: '',
+                          remarksHistory: [],
+                        });
+                      }}
                     >
-                      {isLoading ? 'Saving...' : editingId ? 'Update Admin to PGO' : 'Add Admin to PGO'}
+                      <Plus className="h-4 w-4" />
+                      Add Record
                     </Button>
-                  </div>
-                </DialogContent>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-2xl">
+                    <DialogHeader>
+                      <DialogTitle>{editingId ? 'Edit' : 'Add New'} Admin to PGO Record</DialogTitle>
+                      <DialogDescription>
+                        Fill in the form to {editingId ? 'update' : 'add'} an admin to PGO record
+                      </DialogDescription>
+                    </DialogHeader>
+                    <div className="grid gap-4 py-4">
+                      {!editingId && (
+                        <div className="space-y-2">
+                          <Label htmlFor="trackingId">Tracking ID</Label>
+                          <Input
+                            id="trackingId"
+                            value={nextTrackingId}
+                            disabled
+                            className="bg-gray-50"
+                          />
+                        </div>
+                      )}
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="dateTimeIn">Date/Time IN *</Label>
+                          <Input
+                            id="dateTimeIn"
+                            type="datetime-local"
+                            name="dateTimeIn"
+                            value={formData.dateTimeIn}
+                            onChange={handleInputChange}
+                            required
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="fullName">Full Name *</Label>
+                          <Input
+                            id="fullName"
+                            name="fullName"
+                            value={formData.fullName}
+                            onChange={handleInputChange}
+                            placeholder="Full Name"
+                            required
+                          />
+                        </div>
+                      </div>
+
+                      {editingId && user?.role === 'admin' && (
+                        <div className="space-y-1">
+                          <Label htmlFor="dateTimeOut" className="text-xs font-medium">Date/Time OUT</Label>
+                          <Input
+                            id="dateTimeOut"
+                            name="dateTimeOut"
+                            type="datetime-local"
+                            value={formData.dateTimeOut || ''}
+                            onChange={handleInputChange}
+                          />
+                        </div>
+                      )}
+
+                      <div className="space-y-2">
+                        <Label htmlFor="officeAddress">Office Address *</Label>
+                        <Popover open={designationDropdownOpen} onOpenChange={setDesignationDropdownOpen}>
+                          <PopoverTrigger asChild>
+                            <Button
+                              variant="outline"
+                              role="combobox"
+                              aria-expanded={designationDropdownOpen}
+                              className="w-full justify-between truncate"
+                            >
+                              <span className="truncate flex-1 text-left">
+                                {formData.officeAddress || "Select office..."}
+                              </span>
+                              <Search className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-full p-0" align="start">
+                            <Command>
+                              <CommandInput placeholder="Search office..." />
+                              <CommandList>
+                                <CommandEmpty>No office found.</CommandEmpty>
+                                <CommandGroup>
+                                  {designationOptions.map((option) => (
+                                    <CommandItem
+                                      key={option}
+                                      value={option}
+                                      onSelect={(currentValue) => {
+                                        handleSelectChange('officeAddress', currentValue);
+                                        setDesignationDropdownOpen(false);
+                                      }}
+                                    >
+                                      {option}
+                                    </CommandItem>
+                                  ))}
+                                </CommandGroup>
+                              </CommandList>
+                            </Command>
+                          </PopoverContent>
+                        </Popover>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="particulars">Particulars *</Label>
+                        <Input
+                          id="particulars"
+                          name="particulars"
+                          value={formData.particulars}
+                          onChange={handleInputChange}
+                          placeholder="Enter particulars"
+                          required
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="remarks">Remarks</Label>
+                        <Input
+                          id="remarks"
+                          name="remarks"
+                          value={formData.remarks}
+                          onChange={handleInputChange}
+                          placeholder="Enter remarks"
+                        />
+                      </div>
+
+                      <Button
+                        onClick={handleAddRecord}
+                        disabled={isLoading}
+                        className="w-full bg-indigo-600 hover:bg-indigo-700"
+                      >
+                        {isLoading ? 'Saving...' : editingId ? 'Update Admin to PGO' : 'Add Admin to PGO'}
+                      </Button>
+                    </div>
+                  </DialogContent>
                 </Dialog>
               </div>
             </div>
@@ -1133,7 +1134,7 @@ export default function AdminToPGOPage() {
               <div className="space-y-4">
                 {/* Personal Information */}
                 <div className="bg-white border border-gray-200 rounded-lg p-4">
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <p className="text-xs font-medium text-gray-600 uppercase">Full Name</p>
                       <p className="text-sm font-semibold text-gray-900 mt-1">{selectedRecord.fullName}</p>
@@ -1185,7 +1186,7 @@ export default function AdminToPGOPage() {
                   <p className="text-sm font-semibold text-gray-900 whitespace-pre-wrap">{selectedRecord.remarks || '-'}</p>
                   {selectedRecord.timeOutRemarks && (
                     <div className="mt-3 pt-3 border-t border-gray-200">
-                      <div className="grid grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
                           <p className="text-xs font-semibold text-blue-600 uppercase">Date/Time Out</p>
                           <p className="text-sm font-semibold text-blue-900 mt-1">{selectedRecord.dateTimeOut ? formatDateTimeWithoutSeconds(selectedRecord.dateTimeOut) : '-'}</p>

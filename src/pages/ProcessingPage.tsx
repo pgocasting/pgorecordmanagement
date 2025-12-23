@@ -594,15 +594,15 @@ setFormData(initialFormData());
       {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Top Bar */}
-        <div className="bg-card border-b px-6 py-4">
-          <div className="flex items-center justify-between">
+        <div className="bg-card border-b pl-14 pr-4 sm:px-6 py-3 sm:py-4">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h1 className="text-2xl font-bold text-foreground">Processing Records</h1>
               <p className="text-sm text-muted-foreground">Welcome back</p>
             </div>
             
             {/* User Info and Logout */}
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               {user?.name && (
                 <div className="flex items-center gap-2 px-3 py-2 bg-secondary rounded-lg border">
                   <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
@@ -621,7 +621,7 @@ setFormData(initialFormData());
                 onClick={handleLogout}
               >
                 <LogOut className="h-4 w-4" />
-                Logout
+                <span className="hidden sm:inline">Logout</span>
               </Button>
             </div>
           </div>
@@ -631,16 +631,16 @@ setFormData(initialFormData());
         <div className="flex-1 overflow-auto p-6 bg-muted/30">
           <div className="bg-card rounded-lg shadow-sm border overflow-hidden">
             {/* Header */}
-            <div className="px-6 py-4 border-b flex items-center justify-between">
+            <div className="px-4 sm:px-6 py-4 border-b flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <h2 className="text-xl font-bold text-foreground">Processing</h2>
                 <p className="text-sm text-muted-foreground">Manage and view all processing records</p>
               </div>
-              <div className="flex items-center gap-3">
-                <div className="relative w-64">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                <div className="relative w-full sm:w-64">
                   <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                   <Input
-                    placeholder="Search by tracking ID, name, designation office, purpose, remarks..."
+                    placeholder="Search by tracking ID, name..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="pl-10"
@@ -649,11 +649,10 @@ setFormData(initialFormData());
                 <Dialog open={isDialogOpen} onOpenChange={handleDialogOpenChange}>
                   <DialogTrigger asChild>
                     <Button
-                      className="gap-2 bg-indigo-600 hover:bg-indigo-700"
+                      className="gap-2 bg-indigo-600 hover:bg-indigo-700 w-full sm:w-auto"
                       onClick={() => {
                         setEditingId(null);
                         setFormData({
-                          receivedBy: '',
                           dateTimeIn: getCurrentDateTime(),
                           dateTimeOut: '',
                           fullName: '',
