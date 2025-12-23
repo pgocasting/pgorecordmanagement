@@ -39,12 +39,18 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from '@/components/ui/command';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
 import {
   Menu,
   Search,
@@ -52,8 +58,12 @@ import {
   User,
   Plus
 } from 'lucide-react';
+import {
+  Card,
+  CardContent,
+} from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { Sidebar } from '@/components/Sidebar';
-import { ActionButtons } from '@/components/ActionButtons';
 import SuccessModal from '@/components/SuccessModal';
 import TimeOutModal from '@/components/TimeOutModal';
 
@@ -97,6 +107,60 @@ export default function LocatorPage() {
       hour12: true,
       timeZone: 'Asia/Manila'
     });
+  };
+
+  // Helper function to get acronym from designation
+  const getDesignationAcronym = (designation: string): string => {
+    const acronymMap: { [key: string]: string } = {
+      'Office of the Provincial Governor (PGO)': 'PGO',
+      'Office of the Vice Governor (OVG)': 'OVG',
+      "Provincial Administrator's Office (PAO)": 'PAO',
+      'Provincial Legal Office (PLO)': 'PLO',
+      'Provincial Treasury Office (PTO)': 'PTO',
+      'Provincial Accounting Office (PAccO)': 'PAccO',
+      'Provincial Budget Office (PBO)': 'PBO',
+      "Provincial Assessor's Office (PAO)": 'PAO',
+      'Provincial Engineer\'s Office (PEO)': 'PEO',
+      'Provincial Health Office (PHO)': 'PHO',
+      'Provincial Social Welfare and Development Office (PSWDO)': 'PSWDO',
+      'Provincial Agriculture Office (PAgrO)': 'PAgrO',
+      'Provincial Veterinary Office (PVO)': 'PVO',
+      'Provincial Environment and Natural Resources Office (PENRO)': 'PENRO',
+      'Provincial Planning and Development Office (PPDO)': 'PPDO',
+      'Provincial Human Resource Management Office (PHRMO)': 'PHRMO',
+      'Provincial General Services Office (PGSO)': 'PGSO',
+      'Provincial Information and Communications Technology Office (PICTO)': 'PICTO',
+      'Provincial Disaster Risk Reduction and Management Office (PDRRMO)': 'PDRRMO',
+      'Provincial Tourism Office (PTO)': 'PTO',
+      'Provincial Youth, Sports, and Development Office (PYSDO)': 'PYSDO',
+      'Sangguniang Panlalawigan Secretariat (SPS)': 'SPS',
+      'Admin': 'Admin',
+      'Manager': 'Manager',
+      'Staff': 'Staff',
+      'Officer': 'Officer'
+    };
+    
+    // If the full designation is in the map, return its acronym
+    if (acronymMap[designation]) {
+      return acronymMap[designation];
+    }
+    
+    // If it's already an acronym, return as is
+    const acronyms = Object.values(acronymMap);
+    if (acronyms.includes(designation)) {
+      return designation;
+    }
+    
+    // Extract acronym from parentheses if present
+    const match = designation.match(/\(([^)]+)\)/);
+    if (match) {
+      return match[1];
+    }
+    
+    // Default: return first letters of words (max 4 chars)
+    const words = designation.split(' ');
+    const acronym = words.slice(0, 4).map(word => word.charAt(0)).join('').toUpperCase();
+    return acronym;
   };
 
   const navigate = useNavigate();
@@ -169,6 +233,7 @@ export default function LocatorPage() {
   ];
 
   const [designationOptions, setDesignationOptions] = useState<string[]>([]);
+  const [designationDropdownOpen, setDesignationDropdownOpen] = useState(false);
 
   useEffect(() => {
     const loadDesignations = async () => {
@@ -177,7 +242,34 @@ export default function LocatorPage() {
         setDesignationOptions(designations);
       } catch (error) {
         console.error('Error loading designations:', error);
-        setDesignationOptions(['Admin', 'Manager', 'Staff', 'Officer']);
+        setDesignationOptions([
+          'Office of the Provincial Governor (PGO)',
+          'Office of the Vice Governor (OVG)',
+          'Provincial Administrator\'s Office (PAO)',
+          'Provincial Legal Office (PLO)',
+          'Provincial Treasury Office (PTO)',
+          'Provincial Accounting Office (PAccO)',
+          'Provincial Budget Office (PBO)',
+          'Provincial Assessor\'s Office (PAO)',
+          'Provincial Engineer\'s Office (PEO)',
+          'Provincial Health Office (PHO)',
+          'Provincial Social Welfare and Development Office (PSWDO)',
+          'Provincial Agriculture Office (PAgrO)',
+          'Provincial Veterinary Office (PVO)',
+          'Provincial Environment and Natural Resources Office (PENRO)',
+          'Provincial Planning and Development Office (PPDO)',
+          'Provincial Human Resource Management Office (PHRMO)',
+          'Provincial General Services Office (PGSO)',
+          'Provincial Information and Communications Technology Office (PICTO)',
+          'Provincial Disaster Risk Reduction and Management Office (PDRRMO)',
+          'Provincial Tourism Office (PTO)',
+          'Provincial Youth, Sports, and Development Office (PYSDO)',
+          'Sangguniang Panlalawigan Secretariat (SPS)',
+          'Admin',
+          'Manager',
+          'Staff',
+          'Officer'
+        ]);
       }
     };
     loadDesignations();
@@ -580,7 +672,7 @@ export default function LocatorPage() {
   };
 
   return (
-    <div className="flex h-screen bg-gray-50">
+    <div className="flex h-screen bg-background">
       {/* Mobile Sidebar */}
       <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
         <SheetTrigger asChild className="md:hidden">
@@ -594,37 +686,37 @@ export default function LocatorPage() {
       </Sheet>
 
       {/* Desktop Sidebar */}
-      <div className="hidden md:block bg-white border-r border-gray-200 shadow-sm">
+      <div className="hidden md:block bg-card border-r shadow-sm">
         <Sidebar recordTypes={recordTypes} onNavigate={undefined} />
       </div>
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Top Bar */}
-        <div className="bg-white border-b border-gray-200 px-6 py-4">
+        <div className="bg-card border-b px-6 py-4">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Locator Records</h1>
-              <p className="text-sm text-gray-600">Welcome back</p>
+              <h1 className="text-2xl font-bold text-foreground">Locator Records</h1>
+              <p className="text-sm text-muted-foreground">Welcome back</p>
             </div>
             
             {/* User Info and Logout */}
             <div className="flex items-center gap-2">
               {user?.name && (
-                <div className="flex items-center gap-2 px-3 py-2 bg-gray-50 rounded-lg border border-gray-200">
-                  <div className="w-6 h-6 rounded-full bg-indigo-100 flex items-center justify-center shrink-0">
-                    <User className="h-3 w-3 text-indigo-600" />
+                <div className="flex items-center gap-2 px-3 py-2 bg-secondary rounded-lg border">
+                  <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                    <User className="h-3 w-3 text-primary" />
                   </div>
                   <div className="flex flex-col min-w-0">
-                    <p className="text-xs font-medium text-gray-900 truncate">{user.name}</p>
-                    <p className="text-xs text-gray-500 truncate capitalize">{user.role}</p>
+                    <p className="text-xs font-medium text-foreground truncate">{user.name}</p>
+                    <p className="text-xs text-muted-foreground truncate capitalize">{user.role}</p>
                   </div>
                 </div>
               )}
               
               <Button
                 variant="outline"
-                className="gap-2 text-red-600 hover:text-red-700 hover:bg-red-50 h-9"
+                className="gap-2 text-destructive hover:text-destructive hover:bg-destructive/10 h-9"
                 onClick={handleLogout}
               >
                 <LogOut className="h-4 w-4" />
@@ -635,17 +727,17 @@ export default function LocatorPage() {
         </div>
 
         {/* Content Area */}
-        <div className="flex-1 overflow-auto p-6 bg-linear-to-br from-gray-100 via-gray-50 to-gray-100" style={{backgroundImage: 'linear-gradient(0deg, transparent 24%, rgba(200, 200, 200, 0.05) 25%, rgba(200, 200, 200, 0.05) 26%, transparent 27%, transparent 74%, rgba(200, 200, 200, 0.05) 75%, rgba(200, 200, 200, 0.05) 76%, transparent 77%, transparent), linear-gradient(90deg, transparent 24%, rgba(200, 200, 200, 0.05) 25%, rgba(200, 200, 200, 0.05) 26%, transparent 27%, transparent 74%, rgba(200, 200, 200, 0.05) 75%, rgba(200, 200, 200, 0.05) 76%, transparent 77%, transparent)', backgroundSize: '50px 50px'}}>
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+        <div className="flex-1 overflow-auto p-6 bg-muted/30">
+          <div className="bg-card rounded-lg shadow-sm border overflow-hidden">
             {/* Header */}
-            <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+            <div className="px-6 py-4 border-b flex items-center justify-between">
               <div>
-                <h2 className="text-xl font-bold text-gray-900">Locators</h2>
-                <p className="text-sm text-gray-600">Manage and view all locator records</p>
+                <h2 className="text-xl font-bold text-foreground">Locators</h2>
+                <p className="text-sm text-muted-foreground">Manage and view all locator records</p>
               </div>
               <div className="flex items-center gap-3">
                 <div className="relative w-64">
-                  <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                  <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                   <Input
                     placeholder="Search by tracking ID, name..."
                     value={searchTerm}
@@ -724,18 +816,43 @@ export default function LocatorPage() {
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label htmlFor="designation">Office *</Label>
-                        <Select value={formData.designation} onValueChange={(value) => handleSelectChange('designation', value)}>
-                          <SelectTrigger className="w-full">
-                            <SelectValue placeholder="Select" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {designationOptions.map((option) => (
-                              <SelectItem key={option} value={option}>
-                                {option}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                        <Popover open={designationDropdownOpen} onOpenChange={setDesignationDropdownOpen}>
+                          <PopoverTrigger asChild>
+                            <Button
+                              variant="outline"
+                              role="combobox"
+                              aria-expanded={designationDropdownOpen}
+                              className="w-full justify-between truncate"
+                            >
+                              <span className="truncate flex-1 text-left">
+                                {formData.designation || "Select office..."}
+                              </span>
+                              <Search className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-full p-0" align="start">
+                            <Command>
+                              <CommandInput placeholder="Search office..." />
+                              <CommandList>
+                                <CommandEmpty>No office found.</CommandEmpty>
+                                <CommandGroup>
+                                  {designationOptions.map((option) => (
+                                    <CommandItem
+                                      key={option}
+                                      value={option}
+                                      onSelect={(currentValue) => {
+                                        handleSelectChange('designation', currentValue);
+                                        setDesignationDropdownOpen(false);
+                                      }}
+                                    >
+                                      {option}
+                                    </CommandItem>
+                                  ))}
+                                </CommandGroup>
+                              </CommandList>
+                            </Command>
+                          </PopoverContent>
+                        </Popover>
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="placeOfAssignment">Place of Assignment *</Label>
@@ -829,61 +946,69 @@ export default function LocatorPage() {
             </div>
 
             {/* Table */}
-            <div className="bg-white rounded-lg border border-gray-200 shadow-md overflow-hidden">
+            <div className="rounded-lg border bg-card shadow-sm">
               <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
-                  <TableRow className="bg-gray-50">
-                    <TableHead className="font-semibold py-1 px-1 text-center text-xs">Received By</TableHead>
-                    <TableHead className="font-semibold py-1 px-1 text-center text-xs">Tracking ID</TableHead>
-                    <TableHead className="font-semibold py-1 px-1 text-center text-xs">Date/Time IN</TableHead>
-                    <TableHead className="font-semibold py-1 px-1 text-center text-xs">Date/Time OUT</TableHead>
-                    <TableHead className="font-semibold py-1 px-1 text-center text-xs">Full Name</TableHead>
-                    <TableHead className="font-semibold py-1 px-1 text-center text-xs">Designation</TableHead>
-                    <TableHead className="font-semibold py-1 px-1 text-center text-xs">Purpose</TableHead>
-                    <TableHead className="font-semibold py-1 px-1 text-center text-xs">Place of Assignment</TableHead>
-                    <TableHead className="font-semibold py-1 px-1 text-center text-xs">Status</TableHead>
-                    <TableHead className="font-semibold py-1 px-1 text-center text-xs">Remarks</TableHead>
-                    <TableHead className="font-semibold py-1 px-1 text-center text-xs">Actions</TableHead>
+                  <TableRow className="bg-muted/50">
+                    <TableHead className="font-semibold py-3 px-4 text-center text-xs">Received By</TableHead>
+                    <TableHead className="font-semibold py-3 px-4 text-center text-xs">Tracking ID</TableHead>
+                    <TableHead className="font-semibold py-3 px-4 text-center text-xs">Date/Time IN</TableHead>
+                    <TableHead className="font-semibold py-3 px-4 text-center text-xs">Date/Time OUT</TableHead>
+                    <TableHead className="font-semibold py-3 px-4 text-center text-xs">Full Name</TableHead>
+                    <TableHead className="font-semibold py-3 px-4 text-center text-xs">Designation</TableHead>
+                    <TableHead className="font-semibold py-3 px-4 text-center text-xs">Purpose</TableHead>
+                    <TableHead className="font-semibold py-3 px-4 text-center text-xs">Place of Assignment</TableHead>
+                    <TableHead className="font-semibold py-3 px-4 text-center text-xs">Status</TableHead>
+                    <TableHead className="font-semibold py-3 px-4 text-center text-xs">Remarks</TableHead>
+                    <TableHead className="font-semibold py-3 px-4 text-center text-xs">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {filteredLocators.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={10} className="text-center py-4 text-gray-500 text-xs wrap-break-word whitespace-normal">
+                      <TableCell colSpan={11} className="text-center py-8 text-muted-foreground">
                         {locators.length === 0 ? 'No locators found. Click "Add Locator" to create one.' : 'No locators match your search.'}
                       </TableCell>
                     </TableRow>
                   ) : (
                     filteredLocators.map((item) => (
-                      <TableRow key={item.id} className="hover:bg-gray-50">
-                        <TableCell className="text-xs py-1 px-1 text-center wrap-break-word whitespace-normal">{item.receivedBy || '-'}</TableCell>
-                        <TableCell className="text-xs py-1 px-1 text-center font-bold italic text-indigo-600 wrap-break-word whitespace-normal">{item.trackingId}</TableCell>
-                        <TableCell className="text-xs py-1 px-1 text-center wrap-break-word whitespace-normal">{formatDateTimeWithoutSeconds(item.dateTimeIn)}</TableCell>
-                        <TableCell className={`text-xs py-1 px-1 text-center wrap-break-word whitespace-normal ${item.status === 'Completed' ? 'text-green-600 font-medium' : 'text-red-600'}`}>{item.dateTimeOut ? formatDateTimeWithoutSeconds(item.dateTimeOut) : '-'}</TableCell>
-                        <TableCell className="text-xs py-1 px-1 text-center wrap-break-word whitespace-normal">{item.fullName}</TableCell>
-                        <TableCell className="text-xs py-1 px-1 text-center wrap-break-word whitespace-normal">{item.designation}</TableCell>
-                        <TableCell className="text-xs py-1 px-1 text-center wrap-break-word whitespace-normal">{item.purpose}</TableCell>
-                        <TableCell className="text-xs py-1 px-1 text-center wrap-break-word whitespace-normal">{item.placeOfAssignment}</TableCell>
-                        <TableCell className="text-xs py-1 px-1 text-center wrap-break-word whitespace-normal">
-                          <span
-                            className={`px-1 py-0.5 rounded text-xs font-medium ${
-                              item.status === 'Completed'
-                                ? 'bg-green-100 text-green-800'
-                                : item.status === 'Approved'
-                                ? 'bg-green-100 text-green-800'
-                                : item.status === 'Rejected'
-                                ? 'bg-red-100 text-red-800'
-                                : item.status === 'Pending'
-                                ? 'bg-yellow-100 text-yellow-800'
-                                : 'bg-gray-100 text-gray-800'
+                      <TableRow key={item.id} className="hover:bg-muted/50 transition-colors">
+                        <TableCell className="text-sm py-3 px-4 text-center">{item.receivedBy || '-'}</TableCell>
+                        <TableCell className="text-sm py-3 px-4 text-center font-bold text-primary">{item.trackingId}</TableCell>
+                        <TableCell className="text-sm py-3 px-4 text-center">{formatDateTimeWithoutSeconds(item.dateTimeIn)}</TableCell>
+                        <TableCell className={`text-sm py-3 px-4 text-center ${item.status === 'Completed' ? 'text-green-600 font-medium' : 'text-red-600'}`}>{item.dateTimeOut ? formatDateTimeWithoutSeconds(item.dateTimeOut) : '-'}</TableCell>
+                        <TableCell className="text-sm py-3 px-4 text-center">{item.fullName}</TableCell>
+                        <TableCell className="text-sm py-3 px-4 text-center">
+                          <div className="group relative inline-block">
+                            <span className="text-primary font-medium hover:underline cursor-default">
+                              {getDesignationAcronym(item.designation)}
+                            </span>
+                            <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-sm rounded-lg shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
+                              <div className="font-medium">{item.designation}</div>
+                              <div className="absolute top-full left-1/2 transform -translate-x-1/2 -mt-1 w-2 h-2 bg-gray-900 rotate-45"></div>
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-sm py-3 px-4 text-center">{item.purpose}</TableCell>
+                        <TableCell className="text-sm py-3 px-4 text-center">{item.placeOfAssignment}</TableCell>
+                        <TableCell className="text-sm py-3 px-4 text-center">
+                          <Badge 
+                            variant={
+                              item.status === 'Rejected' ? 'destructive' : 'secondary'
+                            }
+                            className={`${
+                              item.status === 'Completed' || item.status === 'Approved' ? 
+                              'bg-green-50 text-green-700 hover:bg-green-100 border-green-200' : 
+                              item.status === 'Pending' || (!item.status || item.status === 'Pending') ? 
+                              'bg-yellow-50 text-yellow-700 hover:bg-yellow-100 border-yellow-200' : ''
                             }`}
                           >
                             {item.status || 'Pending'}
-                          </span>
+                          </Badge>
                         </TableCell>
                         <TableCell 
-                          className="wrap-break-word whitespace-normal text-xs cursor-pointer hover:bg-gray-50"
+                          className="wrap-break-word whitespace-normal text-sm cursor-pointer hover:bg-gray-50"
                           onClick={() => viewRemarksHistory(item)}
                         >
                           {item.remarks ? (
@@ -901,7 +1026,7 @@ export default function LocatorPage() {
                                   {item.remarksHistory[0]?.timestamp && item.status !== 'Completed' && item.status !== 'Pending' && (
                                     <span>[{formatDateTimeWithoutSeconds(item.remarksHistory[0].timestamp)}] </span>
                                   )}
-                                  [{item.status} by {item.receivedBy}]
+                                  [{item.status === 'Pending' ? `${item.status} - Created by ${item.receivedBy}` : `${item.status} by ${item.receivedBy}`}]
                                 </div>
                               )}
                               <div className="text-xs text-blue-600 mt-1">
@@ -910,21 +1035,65 @@ export default function LocatorPage() {
                             </div>
                           ) : '-'}
                         </TableCell>
-                        <TableCell className="text-xs py-1 px-1 text-center wrap-break-word whitespace-normal">
-                          <ActionButtons
-                            onView={() => handleViewLocator(item.id)}
-                            onEdit={() => handleEditLocator(item.id)}
-                            onTimeOut={() => handleTimeOut(item.id)}
-                            onReject={() => handleRejectLocator(item.id)}
-                            hidden={item.status === 'Rejected'}
-                            canEdit={item.status !== 'Rejected'}
-                            canReject={item.status !== 'Rejected'}
-                            showTimeOut={item.status !== 'Completed' && item.status !== 'Rejected'}
-                            showEdit={item.status !== 'Completed'}
-                            showReject={item.status !== 'Completed'}
-                            editDisabledReason={item.status === 'Rejected' ? 'Cannot edit rejected records' : undefined}
-                            rejectDisabledReason={item.status === 'Rejected' ? 'Record already rejected' : (user?.role !== 'admin' && (!!item.dateTimeOut || item.status !== 'Pending') ? 'Users can only reject pending records' : undefined)}
-                          />
+                        <TableCell className="text-sm py-3 px-4">
+                          <div className="flex flex-col items-center gap-1">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleViewLocator(item.id)}
+                              className="h-8 w-16 text-blue-600 border-blue-600 hover:bg-blue-50 hover:text-blue-700"
+                            >
+                              View
+                            </Button>
+                            {item.status === 'Pending' && (
+                              <>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleEditLocator(item.id)}
+                                  className="h-8 w-16 text-orange-600 border-orange-600 hover:bg-orange-50 hover:text-orange-700"
+                                >
+                                  Edit
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleRejectLocator(item.id)}
+                                  className="h-8 w-16 text-red-600 border-red-600 hover:bg-red-50 hover:text-red-700"
+                                >
+                                  Reject
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleTimeOut(item.id)}
+                                  className="h-8 w-16 text-green-600 border-green-600 hover:bg-green-50 hover:text-green-700"
+                                >
+                                  Out
+                                </Button>
+                              </>
+                            )}
+                            {item.status === 'Approved' && (
+                              <>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleEditLocator(item.id)}
+                                  className="h-8 w-16 text-orange-600 border-orange-600 hover:bg-orange-50 hover:text-orange-700"
+                                >
+                                  Edit
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleTimeOut(item.id)}
+                                  className="h-8 w-16 text-green-600 border-green-600 hover:bg-green-50 hover:text-green-700"
+                                >
+                                  Out
+                                </Button>
+                              </>
+                            )}
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))
@@ -990,13 +1159,13 @@ export default function LocatorPage() {
           </DialogDescription>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="rejectRemarks" className="text-sm font-medium text-gray-700">Rejection Remarks *</Label>
+              <Label htmlFor="rejectRemarks" className="text-sm font-medium">Rejection Remarks *</Label>
               <textarea
                 id="rejectRemarks"
                 placeholder="Enter rejection remarks (required)"
                 value={rejectData.remarks}
                 onChange={(e) => setRejectData({ remarks: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 text-sm"
+                className="w-full min-h-[80px] resize-none rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                 rows={3}
               />
             </div>
@@ -1023,6 +1192,168 @@ export default function LocatorPage() {
         </DialogContent>
       </Dialog>
 
+      {/* View Modal */}
+      <Dialog open={viewModalOpen} onOpenChange={setViewModalOpen}>
+        <DialogContent className="w-[90vw] h-[90vh] overflow-hidden flex flex-col">
+          <DialogHeader className="pb-4 shrink-0">
+            <div className="flex items-center justify-between">
+              <div>
+                <DialogTitle className="text-xl font-semibold text-foreground">Locator Details</DialogTitle>
+                <DialogDescription className="text-sm text-muted-foreground mt-1">
+                  View complete information about this locator record
+                </DialogDescription>
+              </div>
+              {selectedLocator && (
+                <Badge 
+                  variant={
+                    selectedLocator.status === 'Rejected' ? 'destructive' : 'secondary'
+                  }
+                  className={`${
+                    selectedLocator.status === 'Completed' || selectedLocator.status === 'Approved' ? 
+                    'bg-green-100 text-green-800 hover:bg-green-200 border-green-200' : 
+                    selectedLocator.status === 'Pending' || (!selectedLocator.status || selectedLocator.status === 'Pending') ? 
+                    'bg-yellow-100 text-yellow-800 hover:bg-yellow-200 border-yellow-200' : ''
+                  } px-3 py-1 shrink-0`}
+                >
+                  {selectedLocator.status || 'Pending'}
+                </Badge>
+              )}
+            </div>
+          </DialogHeader>
+          
+          {/* Scrollable Content Area */}
+          <div className="overflow-y-auto px-1 flex-1 min-h-0">
+            {selectedLocator && (
+              <div className="space-y-4">
+                {/* Additional Information */}
+                <Card className="border">
+                  <CardContent className="p-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <p className="text-sm font-medium text-muted-foreground">Tracking ID</p>
+                        <p className="text-sm text-foreground mt-1">{selectedLocator.trackingId}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-muted-foreground">Received By</p>
+                        <p className="text-sm text-foreground mt-1">{selectedLocator.receivedBy || '-'}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-muted-foreground">Date/Time In</p>
+                        <p className="text-sm text-foreground mt-1">{formatDateTimeWithoutSeconds(selectedLocator.dateTimeIn)}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-muted-foreground">Created Date</p>
+                        <p className="text-sm text-foreground mt-1">{formatDateTimeWithoutSeconds(selectedLocator.createdAt)}</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Basic Information */}
+                <Card className="border">
+                  <CardContent className="p-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <p className="text-sm font-medium text-muted-foreground">Full Name</p>
+                        <p className="text-sm text-foreground mt-1">{selectedLocator.fullName}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-muted-foreground">Designation</p>
+                        <p className="text-sm text-foreground mt-1">
+                          <div className="group relative inline-block">
+                            <span className="text-primary font-medium hover:underline cursor-default">
+                              {getDesignationAcronym(selectedLocator.designation)}
+                            </span>
+                            <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-sm rounded-lg shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
+                              <div className="font-medium">{selectedLocator.designation}</div>
+                              <div className="text-xs text-gray-300 mt-1">Click to copy</div>
+                            </div>
+                          </div>
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-muted-foreground">Purpose</p>
+                        <p className="text-sm text-foreground mt-1">{selectedLocator.purpose}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-muted-foreground">Place of Assignment</p>
+                        <p className="text-sm text-foreground mt-1">{selectedLocator.placeOfAssignment}</p>
+                      </div>
+                      {selectedLocator.inclusiveDateStart && (
+                        <div>
+                          <p className="text-sm font-medium text-muted-foreground">Start Date</p>
+                          <p className="text-sm text-foreground mt-1">{selectedLocator.inclusiveDateStart}</p>
+                        </div>
+                      )}
+                      {selectedLocator.inclusiveDateEnd && (
+                        <div>
+                          <p className="text-sm font-medium text-muted-foreground">End Date</p>
+                          <p className="text-sm text-foreground mt-1">{selectedLocator.inclusiveDateEnd}</p>
+                        </div>
+                      )}
+                      {selectedLocator.inclusiveTimeStart && (
+                        <div>
+                          <p className="text-sm font-medium text-muted-foreground">Start Time</p>
+                          <p className="text-sm text-foreground mt-1">{selectedLocator.inclusiveTimeStart}</p>
+                        </div>
+                      )}
+                      <div>
+                        <p className="text-sm font-medium text-muted-foreground">Date/Time Out</p>
+                        <p className="text-sm text-foreground mt-1">{selectedLocator.dateTimeOut ? formatDateTimeWithoutSeconds(selectedLocator.dateTimeOut) : '-'}</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Remarks */}
+                <Card className="border">
+                  <CardContent className="p-4">
+                    <div className="grid grid-cols-1 gap-4">
+                      {/* Remarks Column */}
+                      <div>
+                        <p className="text-sm font-medium text-muted-foreground mb-2">Remarks</p>
+                        <p className="text-sm text-foreground whitespace-pre-wrap bg-secondary px-3 py-2 rounded-md border min-h-[100px]">
+                          {selectedLocator.remarks || 'No remarks'}
+                        </p>
+                        {selectedLocator.timeOutRemarks && (
+                          <div className="mt-3 pt-3 border-t">
+                            <p className="text-sm font-medium text-muted-foreground mb-2">Time Out Details</p>
+                            <div className="space-y-2">
+                              <div>
+                                <p className="text-sm font-medium text-muted-foreground">Date/Time Out</p>
+                                <p className="text-sm text-foreground bg-secondary px-2 py-1 rounded border">
+                                  {selectedLocator.dateTimeOut ? formatDateTimeWithoutSeconds(selectedLocator.dateTimeOut) : '-'}
+                                </p>
+                              </div>
+                              <div>
+                                <p className="text-sm font-medium text-muted-foreground">Time Out Remarks</p>
+                                <p className="text-sm text-foreground whitespace-pre-wrap bg-secondary px-2 py-1 rounded border">
+                                  {selectedLocator.timeOutRemarks}
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
+          </div>
+          
+          <DialogFooter className="pt-4 shrink-0">
+            <Button
+              variant="outline"
+              onClick={() => setViewModalOpen(false)}
+              className="px-6"
+            >
+              Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Success Modal */}
       <SuccessModal
         open={successModalOpen}
@@ -1031,105 +1362,6 @@ export default function LocatorPage() {
         isError={success.includes('Error')}
       />
 
-      {/* View Modal */}
-      <Dialog open={viewModalOpen} onOpenChange={setViewModalOpen}>
-        <DialogContent className="max-w-2xl max-h-[80vh] flex flex-col">
-          <DialogHeader>
-            <DialogTitle>Locator Details</DialogTitle>
-            <DialogDescription>
-              View complete information about this locator record
-            </DialogDescription>
-          </DialogHeader>
-          
-          {/* Scrollable Content Area */}
-          <div className="flex-1 overflow-y-auto">
-            {selectedLocator && (
-              <div className="space-y-4">
-                {/* Personal Information */}
-                <div className="bg-white border border-gray-200 rounded-lg p-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <p className="text-xs font-medium text-gray-600 uppercase">Full Name</p>
-                      <p className="text-sm font-semibold text-gray-900 mt-1">{selectedLocator.fullName}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs font-medium text-gray-600 uppercase">Designation/Office</p>
-                      <p className="text-sm font-semibold text-gray-900 mt-1">{selectedLocator.designation}</p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Locator Details */}
-                <div className="bg-white border border-gray-200 rounded-lg p-4">
-                  <div className="grid grid-cols-3 gap-4">
-                    <div>
-                      <p className="text-xs font-medium text-gray-600 uppercase">Date/Time In</p>
-                      <p className="text-sm font-semibold text-gray-900 mt-1">{formatDateTimeWithoutSeconds(selectedLocator.dateTimeIn)}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs font-medium text-gray-600 uppercase">Date/Time Out</p>
-                      <p className="text-sm font-semibold text-gray-900 mt-1">{selectedLocator.dateTimeOut ? formatDateTimeWithoutSeconds(selectedLocator.dateTimeOut) : '-'}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs font-medium text-gray-600 uppercase">Place of Assignment</p>
-                      <p className="text-sm font-semibold text-gray-900 mt-1">{selectedLocator.placeOfAssignment || '-'}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs font-medium text-gray-600 uppercase">Start Date</p>
-                      <p className="text-sm font-semibold text-gray-900 mt-1">{selectedLocator.inclusiveDateStart || '-'}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs font-medium text-gray-600 uppercase">End Date</p>
-                      <p className="text-sm font-semibold text-gray-900 mt-1">{selectedLocator.inclusiveDateEnd || '-'}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs font-medium text-gray-600 uppercase">Start Time</p>
-                      <p className="text-sm font-semibold text-gray-900 mt-1">{selectedLocator.inclusiveTimeStart || '-'}</p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Purpose */}
-                <div className="bg-white border border-gray-200 rounded-lg p-4">
-                  <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wide mb-3">Purpose</h3>
-                  <p className="text-sm font-semibold text-gray-900 whitespace-pre-wrap">{selectedLocator.purpose || '-'}</p>
-                </div>
-
-                {/* Remarks */}
-                <div className="bg-white border border-gray-200 rounded-lg p-4">
-                  <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wide mb-3">Remarks</h3>
-                  <p className="text-sm font-semibold text-gray-900 whitespace-pre-wrap">{selectedLocator.remarks || '-'}</p>
-                  {selectedLocator.timeOutRemarks && (
-                    <div className="mt-3 pt-3 border-t border-gray-200">
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <p className="text-xs font-semibold text-blue-600 uppercase">Date/Time Out</p>
-                          <p className="text-sm font-semibold text-blue-900 mt-1">{selectedLocator.dateTimeOut ? formatDateTimeWithoutSeconds(selectedLocator.dateTimeOut) : '-'}</p>
-                        </div>
-                        <div>
-                          <p className="text-xs font-semibold text-blue-600 uppercase">Time Out Remarks</p>
-                          <p className="text-sm font-semibold text-blue-900 mt-1 whitespace-pre-wrap">{selectedLocator.timeOutRemarks}</p>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-          </div>
-          
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setViewModalOpen(false)}
-            >
-              Close
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-              
       {/* Remarks History Dialog */}
       <Dialog open={remarksHistoryOpen} onOpenChange={setRemarksHistoryOpen}>
         <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
@@ -1146,10 +1378,10 @@ export default function LocatorPage() {
               <div className="space-y-3">
                 {[...currentRemarksHistory].reverse().map((item, index) => (
                   <div key={index} className={`border-l-4 ${
-                    item.status === 'Completed' ? 'border-green-200' :
-                    item.status === 'Rejected' ? 'border-red-200' :
-                    'border-blue-200'
-                  } pl-4 py-3 bg-gray-50 rounded-r-lg`}>
+                    item.status === 'Completed' ? 'border-l-green-500' :
+                    item.status === 'Rejected' ? 'border-l-red-500' :
+                    'border-l-blue-500'
+                  } pl-4 py-3 bg-muted/50 rounded-r-lg`}>
                     {/* Header with status, user, and timestamp */}
                     <div className="flex justify-between items-start mb-2">
                       <div className="flex items-center space-x-3">
@@ -1176,7 +1408,7 @@ export default function LocatorPage() {
                       </span>
                     </div>
                     {/* Remarks content */}
-                    <div className="text-sm text-gray-800 bg-white p-3 rounded border border-gray-200">
+                    <div className="text-sm text-foreground bg-card p-3 rounded-md border shadow-sm">
                       {item.remarks.split('\n').map((line, i) => (
                         <div key={i} className="flex items-start">
                           <span className="mr-2 text-gray-400 mt-0.5">•</span>

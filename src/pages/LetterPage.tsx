@@ -41,9 +41,27 @@ import {
   Search,
   User,
 } from 'lucide-react';
-import { ActionButtons } from '@/components/ActionButtons';
+import {
+  Card,
+  CardContent,
+} from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from '@/components/ui/command';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
 import { Sidebar } from '@/components/Sidebar';
 import SuccessModal from '@/components/SuccessModal';
+
 import TimeOutModal from '@/components/TimeOutModal';
 
 const getCurrentDateTime = (): string => {
@@ -67,13 +85,17 @@ interface Letter {
   particulars: string;
   status: string;
   remarks: string;
+  letterType?: string;
+  inclusiveDateStart?: string;
+  inclusiveDateEnd?: string;
+  inclusiveTimeStart?: string;
+  timeOutRemarks?: string;
   remarksHistory: Array<{
     remarks: string;
     status: string;
     timestamp: string;
     updatedBy: string;
   }>;
-  timeOutRemarks?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -91,6 +113,60 @@ export default function LetterPage() {
       hour12: true,
       timeZone: 'Asia/Manila'
     });
+  };
+
+  // Helper function to get acronym from designation
+  const getDesignationAcronym = (designation: string): string => {
+    const acronymMap: { [key: string]: string } = {
+      'Office of the Provincial Governor (PGO)': 'PGO',
+      'Office of the Vice Governor (OVG)': 'OVG',
+      "Provincial Administrator's Office (PAO)": 'PAO',
+      'Provincial Legal Office (PLO)': 'PLO',
+      'Provincial Treasury Office (PTO)': 'PTO',
+      'Provincial Accounting Office (PAccO)': 'PAccO',
+      'Provincial Budget Office (PBO)': 'PBO',
+      "Provincial Assessor's Office (PAO)": 'PAO',
+      'Provincial Engineer\'s Office (PEO)': 'PEO',
+      'Provincial Health Office (PHO)': 'PHO',
+      'Provincial Social Welfare and Development Office (PSWDO)': 'PSWDO',
+      'Provincial Agriculture Office (PAgrO)': 'PAgrO',
+      'Provincial Veterinary Office (PVO)': 'PVO',
+      'Provincial Environment and Natural Resources Office (PENRO)': 'PENRO',
+      'Provincial Planning and Development Office (PPDO)': 'PPDO',
+      'Provincial Human Resource Management Office (PHRMO)': 'PHRMO',
+      'Provincial General Services Office (PGSO)': 'PGSO',
+      'Provincial Information and Communications Technology Office (PICTO)': 'PICTO',
+      'Provincial Disaster Risk Reduction and Management Office (PDRRMO)': 'PDRRMO',
+      'Provincial Tourism Office (PTO)': 'PTO',
+      'Provincial Youth, Sports, and Development Office (PYSDO)': 'PYSDO',
+      'Sangguniang Panlalawigan Secretariat (SPS)': 'SPS',
+      'Admin': 'Admin',
+      'Manager': 'Manager',
+      'Staff': 'Staff',
+      'Officer': 'Officer'
+    };
+    
+    // If the full designation is in the map, return its acronym
+    if (acronymMap[designation]) {
+      return acronymMap[designation];
+    }
+    
+    // If it's already an acronym, return as is
+    const acronyms = Object.values(acronymMap);
+    if (acronyms.includes(designation)) {
+      return designation;
+    }
+    
+    // Extract acronym from parentheses if present
+    const match = designation.match(/\(([^)]+)\)/);
+    if (match) {
+      return match[1];
+    }
+    
+    // Default: return first letters of words (max 4 chars)
+    const words = designation.split(' ');
+    const acronym = words.slice(0, 4).map(word => word.charAt(0)).join('').toUpperCase();
+    return acronym;
   };
 
   const navigate = useNavigate();
@@ -140,6 +216,8 @@ export default function LetterPage() {
   });
 
   const [designationOptions, setDesignationOptions] = useState<string[]>([]);
+  const [designationDropdownOpen, setDesignationDropdownOpen] = useState(false);
+  const [editConfirmOpen, setEditConfirmOpen] = useState(false);
 
   useEffect(() => {
     const loadDesignations = async () => {
@@ -148,7 +226,34 @@ export default function LetterPage() {
         setDesignationOptions(designations);
       } catch (error) {
         console.error('Error loading designations:', error);
-        setDesignationOptions(['Admin', 'Manager', 'Staff', 'Officer']);
+        setDesignationOptions([
+          'Office of the Provincial Governor (PGO)',
+          'Office of the Vice Governor (OVG)',
+          'Provincial Administrator\'s Office (PAO)',
+          'Provincial Legal Office (PLO)',
+          'Provincial Treasury Office (PTO)',
+          'Provincial Accounting Office (PAccO)',
+          'Provincial Budget Office (PBO)',
+          'Provincial Assessor\'s Office (PAO)',
+          'Provincial Engineer\'s Office (PEO)',
+          'Provincial Health Office (PHO)',
+          'Provincial Social Welfare and Development Office (PSWDO)',
+          'Provincial Agriculture Office (PAgrO)',
+          'Provincial Veterinary Office (PVO)',
+          'Provincial Environment and Natural Resources Office (PENRO)',
+          'Provincial Planning and Development Office (PPDO)',
+          'Provincial Human Resource Management Office (PHRMO)',
+          'Provincial General Services Office (PGSO)',
+          'Provincial Information and Communications Technology Office (PICTO)',
+          'Provincial Disaster Risk Reduction and Management Office (PDRRMO)',
+          'Provincial Tourism Office (PTO)',
+          'Provincial Youth, Sports, and Development Office (PYSDO)',
+          'Sangguniang Panlalawigan Secretariat (SPS)',
+          'Admin',
+          'Manager',
+          'Staff',
+          'Officer'
+        ]);
       }
     };
     loadDesignations();
@@ -195,14 +300,22 @@ export default function LetterPage() {
   };
 
   const handleAddOrUpdate = async () => {
+    setSuccess('');
+
     if (!formData.dateTimeIn || !formData.fullName || !formData.designationOffice || !formData.particulars) {
       setSuccess('Please fill in all required fields');
       setSuccessModalOpen(true);
       return;
     }
 
-    setIsLoading(true);
+    // If editing, show confirmation modal
+    if (editingId) {
+      setEditConfirmOpen(true);
+      return;
+    }
 
+    // If adding new, proceed directly
+    setIsLoading(true);
     try {
       const now = new Date().toISOString();
       const currentUser = user?.name || 'Unknown';
@@ -262,28 +375,26 @@ export default function LetterPage() {
         const result = await letterService.addLetter(newLetter);
         setSuccess('Letter added successfully');
         setLetters([result as Letter, ...letters]);
-      }
 
-      // Reset form
-      setFormData({
-        dateTimeIn: '',
-        dateTimeOut: '',
-        fullName: '',
-        designationOffice: '',
-        particulars: '',
-        remarks: '',
-        remarksHistory: []
-      });
-      setEditingId(null);
-      setIsDialogOpen(false);
-      setSuccessModalOpen(true);
+        setFormData({
+          dateTimeIn: '',
+          dateTimeOut: '',
+          fullName: '',
+          designationOffice: '',
+          particulars: '',
+          remarks: '',
+          remarksHistory: []
+        });
+        setIsDialogOpen(false);
+        setSuccessModalOpen(true);
+      }
     } catch (error) {
-      console.error('Error saving letter:', error);
-      setSuccess('Error saving letter');
-      setSuccessModalOpen(true);
-    } finally {
-      setIsLoading(false);
-    }
+        console.error('Error saving letter:', error);
+        setSuccess(`Error saving letter record: ${(error as any).message || 'Unknown error'}`);
+        setSuccessModalOpen(true);
+      } finally {
+        setIsLoading(false);
+      }
   };
 
   const handleEditLetter = (letter: Letter) => {
@@ -298,64 +409,6 @@ export default function LetterPage() {
     });
     setEditingId(letter.id);
     setIsDialogOpen(true);
-  };
-
-  const handleReject = async () => {
-    if (letterToDelete) {
-      if (!rejectData.remarks.trim()) {
-        setSuccess('Error: Rejection remarks are required');
-        setSuccessModalOpen(true);
-        return;
-      }
-
-      try {
-        const letter = letters.find(l => l.id === letterToDelete);
-        if (!letter) return;
-        
-        const now = new Date().toISOString();
-        const currentUser = user?.name || 'Unknown';
-        const newRemarks = rejectData.remarks;
-        
-        const updatedRemarksHistory = [
-          ...(letter.remarksHistory || []),
-          {
-            remarks: newRemarks,
-            status: 'Rejected',
-            timestamp: now,
-            updatedBy: currentUser
-          }
-        ];
-        
-        await letterService.updateLetter(letterToDelete, { 
-          status: 'Rejected', 
-          remarks: newRemarks,
-          remarksHistory: updatedRemarksHistory,
-          updatedAt: now
-        });
-        
-        const updatedLetters = letters.map(l => 
-          l.id === letterToDelete 
-            ? { 
-                ...l, 
-                status: 'Rejected', 
-                remarks: newRemarks,
-                remarksHistory: updatedRemarksHistory,
-                updatedAt: now
-              } 
-            : l
-        );
-        setLetters(updatedLetters);
-        setLetterToDelete(null);
-        setRejectData({ remarks: '' });
-        setDeleteConfirmOpen(false);
-        setSuccess('Letter rejected successfully');
-        setSuccessModalOpen(true);
-      } catch (error) {
-        console.error('Error rejecting letter:', error);
-        setSuccess('Error rejecting letter');
-        setSuccessModalOpen(true);
-      }
-    }
   };
 
   const handleDialogOpenChange = (open: boolean) => {
@@ -460,6 +513,135 @@ export default function LetterPage() {
     }
   };
 
+  const confirmEditLetter = async () => {
+    if (!editingId) return;
+
+    setIsLoading(true);
+    try {
+      const now = new Date().toISOString();
+      const currentUser = user?.name || 'Unknown';
+      const existingLetter = letters.find(l => l.id === editingId);
+      
+      const newRemarksHistory = [
+        ...(existingLetter?.remarksHistory || []),
+        {
+          remarks: formData.remarks,
+          status: 'Edited',
+          timestamp: now,
+          updatedBy: currentUser
+        }
+      ];
+      
+      const updateData = {
+        dateTimeIn: formData.dateTimeIn,
+        dateTimeOut: formData.dateTimeOut,
+        fullName: formData.fullName,
+        designationOffice: formData.designationOffice,
+        particulars: formData.particulars,
+        remarks: formData.remarks,
+        remarksHistory: newRemarksHistory,
+        updatedAt: now
+      };
+      
+      await letterService.updateLetter(editingId, updateData);
+      setSuccess('Letter record updated successfully');
+      setEditingId(null);
+
+      const updatedLetters = letters.map(l => 
+        l.id === editingId 
+          ? { 
+              ...l, 
+              ...updateData
+            } 
+          : l
+      );
+      setLetters(updatedLetters);
+
+      setFormData({
+        dateTimeIn: '',
+        dateTimeOut: '',
+        fullName: '',
+        designationOffice: '',
+        particulars: '',
+        remarks: '',
+        remarksHistory: []
+      });
+      setIsDialogOpen(false);
+      setEditConfirmOpen(false);
+      setSuccessModalOpen(true);
+    } catch (err) {
+      console.error('Failed to save letter:', err);
+      setSuccess('Error updating letter record');
+      setSuccessModalOpen(true);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleRejectLetter = (id: string) => {
+    setLetterToDelete(id);
+    setRejectData({ remarks: '' });
+    setDeleteConfirmOpen(true);
+  };
+
+  const confirmRejectLetter = async () => {
+    if (!letterToDelete) return;
+
+    if (!rejectData.remarks.trim()) {
+      setSuccess('Error: Rejection remarks are required');
+      setSuccessModalOpen(true);
+      return;
+    }
+
+    try {
+      const letter = letters.find(l => l.id === letterToDelete);
+      if (!letter) return;
+      
+      const now = new Date().toISOString();
+      const currentUser = user?.name || 'Unknown';
+      const newRemarks = rejectData.remarks;
+      
+      const updatedRemarksHistory = [
+        ...(letter.remarksHistory || []),
+        {
+          remarks: newRemarks,
+          status: 'Rejected',
+          timestamp: now,
+          updatedBy: currentUser
+        }
+      ];
+      
+      await letterService.updateLetter(letterToDelete, { 
+        status: 'Rejected', 
+        remarks: newRemarks,
+        remarksHistory: updatedRemarksHistory,
+        updatedAt: now
+      });
+      
+      const updatedLetters = letters.map(l => 
+        l.id === letterToDelete 
+          ? { 
+              ...l, 
+              status: 'Rejected', 
+              remarks: newRemarks,
+              remarksHistory: updatedRemarksHistory,
+              updatedAt: now
+            } 
+          : l
+      );
+      setLetters(updatedLetters);
+      setLetterToDelete(null);
+      setRejectData({ remarks: '' });
+      setDeleteConfirmOpen(false);
+      setSuccess('Letter rejected successfully');
+      setSuccessModalOpen(true);
+    } catch (err) {
+      console.error('Failed to reject letter:', err);
+      setSuccess('Error rejecting letter record');
+      setSuccessModalOpen(true);
+    }
+  };
+
   const handleLogout = () => {
     logout();
     navigate('/login');
@@ -481,7 +663,7 @@ export default function LetterPage() {
   ];
 
   return (
-    <div className="flex h-screen bg-gray-50">
+    <div className="flex h-screen bg-background">
       {/* Mobile Sidebar */}
       <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
         <SheetTrigger asChild className="md:hidden">
@@ -495,37 +677,37 @@ export default function LetterPage() {
       </Sheet>
 
       {/* Desktop Sidebar */}
-      <div className="hidden md:block bg-white border-r border-gray-200 shadow-sm">
+      <div className="hidden md:block bg-card border-r shadow-sm">
         <Sidebar recordTypes={recordTypes} onNavigate={undefined} />
       </div>
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Top Bar */}
-        <div className="bg-white border-b border-gray-200 px-6 py-4">
+        <div className="bg-card border-b px-6 py-4">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Letter Records</h1>
-              <p className="text-sm text-gray-600">Welcome back</p>
+              <h1 className="text-2xl font-bold text-foreground">Letter Records</h1>
+              <p className="text-sm text-muted-foreground">Welcome back</p>
             </div>
             
             {/* User Info and Logout */}
             <div className="flex items-center gap-2">
               {user?.name && (
-                <div className="flex items-center gap-2 px-3 py-2 bg-gray-50 rounded-lg border border-gray-200">
-                  <div className="w-6 h-6 rounded-full bg-indigo-100 flex items-center justify-center shrink-0">
-                    <User className="h-3 w-3 text-indigo-600" />
+                <div className="flex items-center gap-2 px-3 py-2 bg-secondary rounded-lg border">
+                  <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                    <User className="h-3 w-3 text-primary" />
                   </div>
                   <div className="flex flex-col min-w-0">
-                    <p className="text-xs font-medium text-gray-900 truncate">{user.name}</p>
-                    <p className="text-xs text-gray-500 truncate capitalize">{user.role}</p>
+                    <p className="text-xs font-medium text-foreground truncate">{user.name}</p>
+                    <p className="text-xs text-muted-foreground truncate capitalize">{user.role}</p>
                   </div>
                 </div>
               )}
               
               <Button
                 variant="outline"
-                className="gap-2 text-red-600 hover:text-red-700 hover:bg-red-50 h-9"
+                className="gap-2 text-destructive hover:text-destructive hover:bg-destructive/10 h-9"
                 onClick={handleLogout}
               >
                 <LogOut className="h-4 w-4" />
@@ -536,17 +718,17 @@ export default function LetterPage() {
         </div>
 
         {/* Content Area */}
-        <div className="flex-1 overflow-auto p-6 bg-linear-to-br from-gray-100 via-gray-50 to-gray-100" style={{backgroundImage: 'linear-gradient(0deg, transparent 24%, rgba(200, 200, 200, 0.05) 25%, rgba(200, 200, 200, 0.05) 26%, transparent 27%, transparent 74%, rgba(200, 200, 200, 0.05) 75%, rgba(200, 200, 200, 0.05) 76%, transparent 77%, transparent), linear-gradient(90deg, transparent 24%, rgba(200, 200, 200, 0.05) 25%, rgba(200, 200, 200, 0.05) 26%, transparent 27%, transparent 74%, rgba(200, 200, 200, 0.05) 75%, rgba(200, 200, 200, 0.05) 76%, transparent 77%, transparent)', backgroundSize: '50px 50px'}}>
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+        <div className="flex-1 overflow-auto p-6 bg-muted/30">
+          <div className="bg-card rounded-lg shadow-sm border overflow-hidden">
             {/* Header */}
-            <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+            <div className="px-6 py-4 border-b flex items-center justify-between">
               <div>
-                <h2 className="text-xl font-bold text-gray-900">Letters</h2>
-                <p className="text-sm text-gray-600">Manage and view all letter records</p>
+                <h2 className="text-xl font-bold text-foreground">Letters</h2>
+                <p className="text-sm text-muted-foreground">Manage and view all letter records</p>
               </div>
               <div className="flex items-center gap-3">
                 <div className="relative w-64">
-                  <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                  <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                   <Input
                     placeholder="Search by tracking ID, name..."
                     value={searchTerm}
@@ -556,7 +738,7 @@ export default function LetterPage() {
                 </div>
                 <Dialog open={isDialogOpen} onOpenChange={handleDialogOpenChange}>
                   <DialogTrigger asChild>
-                    <Button
+                    <Button 
                       className="gap-2 bg-indigo-600 hover:bg-indigo-700"
                       onClick={() => {
                         setEditingId(null);
@@ -589,7 +771,7 @@ export default function LetterPage() {
                         id="trackingId"
                         value={editingId ? letters.find(l => l.id === editingId)?.trackingId || '' : generateTrackingId()}
                         disabled
-                        className="bg-gray-50"
+                        className="bg-secondary"
                       />
                     </div>
                     <div className="grid grid-cols-2 gap-4">
@@ -617,26 +799,52 @@ export default function LetterPage() {
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label htmlFor="designationOffice">Office *</Label>
-                        <Select value={formData.designationOffice} onValueChange={(value) => setFormData({ ...formData, designationOffice: value })}>
-                          <SelectTrigger className="w-full">
-                            <SelectValue placeholder="Select" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {designationOptions.map((option) => (
-                              <SelectItem key={option} value={option}>
-                                {option}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                        <Popover open={designationDropdownOpen} onOpenChange={setDesignationDropdownOpen}>
+                          <PopoverTrigger asChild>
+                            <Button
+                              variant="outline"
+                              role="combobox"
+                              aria-expanded={designationDropdownOpen}
+                              className="w-full justify-between truncate"
+                            >
+                              <span className="truncate flex-1 text-left">
+                                {formData.designationOffice || "Select office..."}
+                              </span>
+                              <Search className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-full p-0" align="start">
+                            <Command>
+                              <CommandInput placeholder="Search office..." />
+                              <CommandList>
+                                <CommandEmpty>No office found.</CommandEmpty>
+                                <CommandGroup>
+                                  {designationOptions.map((option) => (
+                                    <CommandItem
+                                      key={option}
+                                      value={option}
+                                      onSelect={(currentValue) => {
+                                        setFormData({ ...formData, designationOffice: currentValue });
+                                        setDesignationDropdownOpen(false);
+                                      }}
+                                    >
+                                      {option}
+                                    </CommandItem>
+                                  ))}
+                                </CommandGroup>
+                              </CommandList>
+                            </Command>
+                          </PopoverContent>
+                        </Popover>
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="particulars">Particulars *</Label>
                         <Input
                           id="particulars"
+                          name="particulars"
+                          placeholder="Particulars"
                           value={formData.particulars}
                           onChange={(e) => setFormData({ ...formData, particulars: e.target.value })}
-                          placeholder="Particulars"
                           required
                         />
                       </div>
@@ -645,9 +853,10 @@ export default function LetterPage() {
                       <Label htmlFor="remarks">Remarks</Label>
                       <Input
                         id="remarks"
+                        name="remarks"
+                        placeholder="Remarks"
                         value={formData.remarks}
                         onChange={(e) => setFormData({ ...formData, remarks: e.target.value })}
-                        placeholder="Enter remarks"
                       />
                     </div>
                   </div>
@@ -664,96 +873,155 @@ export default function LetterPage() {
             </div>
 
             {/* Table */}
-            <div className="bg-white rounded-lg border border-gray-200 shadow-md overflow-hidden">
+            <div className="bg-card rounded-lg border shadow-sm overflow-hidden">
               <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
-                  <TableRow className="bg-gray-50">
-                    <TableHead className="text-center">Received By</TableHead>
-                    <TableHead className="text-center">Tracking ID</TableHead>
-                    <TableHead className="text-center">Date/Time IN</TableHead>
-                    <TableHead className="text-center">Date/Time OUT</TableHead>
-                    <TableHead className="text-center">Full Name</TableHead>
-                    <TableHead className="text-center">Office</TableHead>
-                    <TableHead className="text-center">Particulars</TableHead>
-                    <TableHead className="text-center">Status</TableHead>
-                    <TableHead className="text-center">Remarks</TableHead>
-                    <TableHead className="text-center">Actions</TableHead>
+                  <TableRow className="bg-muted/50">
+                    <TableHead className="font-semibold py-3 px-4 text-center text-xs">Received By</TableHead>
+                    <TableHead className="font-semibold py-3 px-4 text-center text-xs">Tracking ID</TableHead>
+                    <TableHead className="font-semibold py-3 px-4 text-center text-xs">Date/Time IN</TableHead>
+                    <TableHead className="font-semibold py-3 px-4 text-center text-xs">Date/Time OUT</TableHead>
+                    <TableHead className="font-semibold py-3 px-4 text-center text-xs">Full Name</TableHead>
+                    <TableHead className="font-semibold py-3 px-4 text-center text-xs">Office</TableHead>
+                    <TableHead className="font-semibold py-3 px-4 text-center text-xs">Particulars</TableHead>
+                    <TableHead className="font-semibold py-3 px-4 text-center text-xs">Status</TableHead>
+                    <TableHead className="font-semibold py-3 px-4 text-center text-xs">Remarks</TableHead>
+                    <TableHead className="font-semibold py-3 px-4 text-center text-xs">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredLetters.length > 0 ? (
-                    filteredLetters.map((letter) => (
-                      <TableRow key={letter.id} className="hover:bg-gray-50">
-                        <TableCell className="wrap-break-word whitespace-normal text-center text-xs">{letter.receivedBy || '-'}</TableCell>
-                        <TableCell className="font-bold italic wrap-break-word whitespace-normal text-center text-xs text-indigo-600">{letter.trackingId}</TableCell>
-                        <TableCell className="wrap-break-word whitespace-normal text-center text-xs">{formatDateTimeWithoutSeconds(letter.dateTimeIn)}</TableCell>
-                        <TableCell className={`wrap-break-word whitespace-normal text-center text-xs ${letter.status === 'Completed' ? 'text-green-600 font-medium' : 'text-red-600'}`}>{letter.dateTimeOut ? formatDateTimeWithoutSeconds(letter.dateTimeOut) : '-'}</TableCell>
-                        <TableCell className="wrap-break-word whitespace-normal text-center text-xs uppercase">{letter.fullName}</TableCell>
-                        <TableCell className="wrap-break-word whitespace-normal text-center text-xs">{letter.designationOffice}</TableCell>
-                        <TableCell className="wrap-break-word whitespace-normal text-center text-xs">{letter.particulars}</TableCell>
-                        <TableCell className="wrap-break-word whitespace-normal text-center text-xs">
-                          <span className={`px-2 py-1 rounded text-xs font-medium ${
-                            letter.status === 'Completed' ? 'bg-green-100 text-green-800' :
-                            letter.status === 'Pending' ? 'bg-yellow-100 text-yellow-800' :
-                            letter.status === 'Rejected' ? 'bg-red-100 text-red-800' :
-                            'bg-gray-100 text-gray-800'
-                          }`}>
-                            {letter.status}
-                          </span>
+                  {filteredLetters.length === 0 ? (
+                    <TableRow key="empty-state">
+                      <TableCell colSpan={10} className="text-center py-8 text-muted-foreground">
+                        {letters.length === 0 ? 'No letters found. Click "Add Record" to create one.' : 'No letters match your search.'}
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    filteredLetters.map((item) => (
+                      <TableRow key={item.id} className="hover:bg-muted/50 transition-colors">
+                        <TableCell className="text-sm py-3 px-4 text-center">{item.receivedBy || '-'}</TableCell>
+                        <TableCell className="text-sm py-3 px-4 text-center font-bold text-primary">{item.trackingId}</TableCell>
+                        <TableCell className="text-sm py-3 px-4 text-center">{formatDateTimeWithoutSeconds(item.dateTimeIn)}</TableCell>
+                        <TableCell className={`text-sm py-3 px-4 text-center ${item.status === 'Completed' ? 'text-green-600 font-medium' : 'text-red-600'}`}>{item.dateTimeOut ? formatDateTimeWithoutSeconds(item.dateTimeOut) : '-'}</TableCell>
+                        <TableCell className="text-sm py-3 px-4 text-center">{item.fullName}</TableCell>
+                        <TableCell className="text-sm py-3 px-4 text-center">
+                          <div className="group relative inline-block">
+                            <span className="text-primary font-medium hover:underline cursor-default">
+                              {getDesignationAcronym(item.designationOffice)}
+                            </span>
+                            <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-sm rounded-lg shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
+                              <div className="font-medium">{item.designationOffice}</div>
+                              <div className="absolute top-full left-1/2 transform -translate-x-1/2 -mt-1 w-2 h-2 bg-gray-900 rotate-45"></div>
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-sm py-3 px-4 text-center">{item.particulars}</TableCell>
+                        <TableCell className="text-sm py-3 px-4 text-center">
+                          <Badge 
+                            variant={
+                              item.status === 'Rejected' ? 'destructive' : 'secondary'
+                            }
+                            className={`${
+                              item.status === 'Completed' || item.status === 'Approved' ? 
+                              'bg-green-50 text-green-700 hover:bg-green-100 border-green-200' : 
+                              item.status === 'Pending' || (!item.status || item.status === 'Pending') ? 
+                              'bg-yellow-50 text-yellow-700 hover:bg-yellow-100 border-yellow-200' : ''
+                            }`}
+                          >
+                            {item.status || 'Pending'}
+                          </Badge>
                         </TableCell>
                         <TableCell 
-  className="wrap-break-word whitespace-normal text-xs cursor-pointer hover:bg-gray-50"
-  onClick={() => viewRemarksHistory(letter)}
->
-  {letter.remarks ? (
-    <div className="space-y-1 relative">
-      {letter.status === 'Pending' && letter.remarksHistory?.some(h => h.status === 'Edited') && (
-        <span className="absolute -top-2 -right-1 bg-yellow-100 text-yellow-800 text-[10px] px-1.5 py-0.5 rounded-full">
-          Edited
-        </span>
-      )}
-      <div className="text-black">
-        {letter.remarksHistory?.length > 0 ? letter.remarksHistory[0].remarks : letter.remarks}
-      </div>
-      {letter.remarksHistory?.length > 0 && (
-        <div className={`${letter.status === 'Completed' ? 'text-green-600' : letter.status === 'Rejected' ? 'text-red-600' : 'text-yellow-600'}`}>
-          {letter.remarksHistory[0]?.timestamp && letter.status !== 'Completed' && letter.status !== 'Pending' && (
-            <span>[{formatDateTimeWithoutSeconds(letter.remarksHistory[0].timestamp)}] </span>
-          )}
-          [{letter.status} by {letter.receivedBy}]
-        </div>
-      )}
-      <div className="text-xs text-blue-600 mt-1">
-        Click to view full history
-      </div>
-    </div>
-  ) : '-'}
-</TableCell>
-                        <TableCell className="text-center">
-                          <ActionButtons
-                            onView={() => handleView(letter)}
-                            onEdit={() => handleEditLetter(letter)}
-                            onTimeOut={() => handleTimeOut(letter.id)}
-                            onReject={() => {
-                              setLetterToDelete(letter.id);
-                              setRejectData({ remarks: '' });
-                              setDeleteConfirmOpen(true);
-                            }}
-                            hidden={letter.status === 'Rejected'}
-                            showTimeOut={letter.status !== 'Completed'}
-                            showEdit={letter.status !== 'Completed'}
-                            showReject={letter.status !== 'Completed'}
-                          />
+                          className="wrap-break-word whitespace-normal text-xs cursor-pointer hover:bg-muted/50"
+                          onClick={() => viewRemarksHistory(item)}
+                        >
+                          {item.remarks ? (
+                            <div className="space-y-1 relative">
+                              {item.status === 'Pending' && item.remarksHistory?.some(h => h.status === 'Edited') && (
+                                <span className="absolute -top-2 -right-1 bg-yellow-50 text-yellow-700 text-[10px] px-1.5 py-0.5 rounded-full">
+                                  Edited
+                                </span>
+                              )}
+                              <div className="text-black">
+                                {item.remarksHistory?.length > 0 ? item.remarksHistory[0].remarks : item.remarks}
+                              </div>
+                              {item.remarksHistory?.length > 0 && (
+                                <div className={`${item.status === 'Completed' ? 'text-green-600' : item.status === 'Rejected' ? 'text-red-600' : 'text-yellow-600'}`}>
+                                  {item.remarksHistory[0]?.timestamp && item.status !== 'Completed' && item.status !== 'Pending' && (
+                                    <span>[{formatDateTimeWithoutSeconds(item.remarksHistory[0].timestamp)}] </span>
+                                  )}
+                                  [{item.status === 'Pending' ? `${item.status} - Created by ${item.receivedBy}` : `${item.status} by ${item.receivedBy}`}]
+                                </div>
+                              )}
+                              <div className="text-xs text-blue-600 mt-1">
+                                Click to view full history
+                              </div>
+                            </div>
+                          ) : '-'}
+                        </TableCell>
+                        <TableCell className="text-sm py-3 px-4">
+                          <div className="flex flex-col items-center gap-1">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleView(item)}
+                              className="h-8 w-16 text-blue-600 border-blue-600 hover:bg-blue-50 hover:text-blue-700"
+                            >
+                              View
+                            </Button>
+                            {item.status === 'Pending' && (
+                              <>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleEditLetter(item)}
+                                  className="h-8 w-16 text-orange-600 border-orange-600 hover:bg-orange-50 hover:text-orange-700"
+                                >
+                                  Edit
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleRejectLetter(item.id)}
+                                  className="h-8 w-16 text-red-600 border-red-600 hover:bg-red-50 hover:text-red-700"
+                                >
+                                  Reject
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleTimeOut(item.id)}
+                                  className="h-8 w-16 text-green-600 border-green-600 hover:bg-green-50 hover:text-green-700"
+                                >
+                                  Out
+                                </Button>
+                              </>
+                            )}
+                            {item.status === 'Approved' && (
+                              <>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleEditLetter(item)}
+                                  className="h-8 w-16 text-orange-600 border-orange-600 hover:bg-orange-50 hover:text-orange-700"
+                                >
+                                  Edit
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleTimeOut(item.id)}
+                                  className="h-8 w-16 text-green-600 border-green-600 hover:bg-green-50 hover:text-green-700"
+                                >
+                                  Out
+                                </Button>
+                              </>
+                            )}
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))
-                  ) : (
-                    <TableRow>
-                      <TableCell colSpan={9} className="text-center py-8 text-gray-500 wrap-break-word whitespace-normal">
-                        No letters found. Add one to get started.
-                      </TableCell>
-                    </TableRow>
                   )}
                 </TableBody>
               </Table>
@@ -763,97 +1031,185 @@ export default function LetterPage() {
         </div>
       </div>
 
+      {/* Edit Confirmation Modal */}
+      <Dialog open={editConfirmOpen} onOpenChange={setEditConfirmOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogTitle className="text-lg font-semibold">Confirm Update</DialogTitle>
+          <p className="text-sm text-muted-foreground mt-4">
+            Are you sure you want to update this letter record? This action cannot be undone.
+          </p>
+          <div className="flex gap-3 justify-end pt-6">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setEditConfirmOpen(false);
+              }}
+              className="px-6"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={confirmEditLetter}
+              disabled={isLoading}
+              className="px-6 bg-amber-600 hover:bg-amber-700 text-white"
+            >
+              {isLoading ? 'Updating...' : 'Update'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {/* View Modal */}
       <Dialog open={viewModalOpen} onOpenChange={setViewModalOpen}>
-        <DialogContent className="max-w-2xl max-h-[80vh] flex flex-col">
-          <DialogHeader>
-            <DialogTitle>Letter Details</DialogTitle>
-            <DialogDescription>
-              View complete information about this letter record
-            </DialogDescription>
+        <DialogContent className="w-[90vw] h-[90vh] overflow-hidden flex flex-col">
+          <DialogHeader className="pb-4 shrink-0">
+            <div className="flex items-center justify-between">
+              <div>
+                <DialogTitle className="text-xl font-semibold text-foreground">Letter Details</DialogTitle>
+                <DialogDescription className="text-sm text-muted-foreground mt-1">
+                  View complete information about this letter record
+                </DialogDescription>
+              </div>
+              {selectedLetter && (
+                <Badge 
+                  variant={
+                    selectedLetter.status === 'Rejected' ? 'destructive' : 'secondary'
+                  }
+                  className={`${
+                    selectedLetter.status === 'Completed' || selectedLetter.status === 'Approved' ? 
+                    'bg-green-50 text-green-700 hover:bg-green-100 border-green-200' : 
+                    selectedLetter.status === 'Pending' || (!selectedLetter.status || selectedLetter.status === 'Pending') ? 
+                    'bg-yellow-50 text-yellow-700 hover:bg-yellow-100 border-yellow-200' : ''
+                  } px-3 py-1 shrink-0`}
+                >
+                  {selectedLetter.status || 'Pending'}
+                </Badge>
+              )}
+            </div>
           </DialogHeader>
           
           {/* Scrollable Content Area */}
-          <div className="flex-1 overflow-y-auto">
+          <div className="overflow-y-auto px-1 flex-1 min-h-0">
             {selectedLetter && (
               <div className="space-y-4">
-                {/* Personal Information */}
-                <div className="bg-white border border-gray-200 rounded-lg p-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <p className="text-xs font-medium text-gray-600 uppercase">Full Name</p>
-                      <p className="text-sm font-semibold text-gray-900 mt-1">{selectedLetter.fullName}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs font-medium text-gray-600 uppercase">Designation/Office</p>
-                      <p className="text-sm font-semibold text-gray-900 mt-1">{selectedLetter.designationOffice}</p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Letter Details */}
-                <div className="bg-white border border-gray-200 rounded-lg p-4">
-                  <div className="grid grid-cols-3 gap-4">
-                    <div>
-                      <p className="text-xs font-medium text-gray-600 uppercase">Date/Time In</p>
-                      <p className="text-sm font-semibold text-gray-900 mt-1">{formatDateTimeWithoutSeconds(selectedLetter.dateTimeIn)}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs font-medium text-gray-600 uppercase">Date/Time Out</p>
-                      <p className="text-sm font-semibold text-gray-900 mt-1">{selectedLetter.dateTimeOut ? formatDateTimeWithoutSeconds(selectedLetter.dateTimeOut) : '-'}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs font-medium text-gray-600 uppercase">Letter Type</p>
-                      <p className="text-sm font-semibold text-gray-900 mt-1">{selectedLetter.letterType || '-'}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs font-medium text-gray-600 uppercase">Start Date</p>
-                      <p className="text-sm font-semibold text-gray-900 mt-1">{selectedLetter.inclusiveDateStart || '-'}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs font-medium text-gray-600 uppercase">End Date</p>
-                      <p className="text-sm font-semibold text-gray-900 mt-1">{selectedLetter.inclusiveDateEnd || '-'}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs font-medium text-gray-600 uppercase">Start Time</p>
-                      <p className="text-sm font-semibold text-gray-900 mt-1">{selectedLetter.inclusiveTimeStart || '-'}</p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Particulars */}
-                <div className="bg-white border border-gray-200 rounded-lg p-4">
-                  <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wide mb-3">Particulars</h3>
-                  <p className="text-sm font-semibold text-gray-900 whitespace-pre-wrap">{selectedLetter.particulars || '-'}</p>
-                </div>
-
-                {/* Remarks */}
-                <div className="bg-white border border-gray-200 rounded-lg p-4">
-                  <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wide mb-3">Remarks</h3>
-                  <p className="text-sm font-semibold text-gray-900 whitespace-pre-wrap">{selectedLetter.remarks || '-'}</p>
-                  {selectedLetter.timeOutRemarks && (
-                    <div className="mt-3 pt-3 border-t border-gray-200">
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <p className="text-xs font-semibold text-blue-600 uppercase">Date/Time Out</p>
-                          <p className="text-sm font-semibold text-blue-900 mt-1">{selectedLetter.dateTimeOut ? formatDateTimeWithoutSeconds(selectedLetter.dateTimeOut) : '-'}</p>
-                        </div>
-                        <div>
-                          <p className="text-xs font-semibold text-blue-600 uppercase">Time Out Remarks</p>
-                          <p className="text-sm font-semibold text-blue-900 mt-1 whitespace-pre-wrap">{selectedLetter.timeOutRemarks}</p>
-                        </div>
+                {/* Additional Information */}
+                <Card className="border">
+                  <CardContent className="p-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <p className="text-sm font-medium text-muted-foreground">Tracking ID</p>
+                        <p className="text-sm text-foreground mt-1">{selectedLetter.trackingId}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-muted-foreground">Received By</p>
+                        <p className="text-sm text-foreground mt-1">{selectedLetter.receivedBy || '-'}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-muted-foreground">Date/Time In</p>
+                        <p className="text-sm text-foreground mt-1">{formatDateTimeWithoutSeconds(selectedLetter.dateTimeIn)}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-muted-foreground">Created Date</p>
+                        <p className="text-sm text-foreground mt-1">{formatDateTimeWithoutSeconds(selectedLetter.createdAt)}</p>
                       </div>
                     </div>
-                  )}
-                </div>
+                  </CardContent>
+                </Card>
+
+                {/* Basic Information */}
+                <Card className="border">
+                  <CardContent className="p-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <p className="text-sm font-medium text-muted-foreground">Full Name</p>
+                        <p className="text-sm text-foreground mt-1">{selectedLetter.fullName}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-muted-foreground">Designation</p>
+                        <div className="mt-1">
+                          <div className="group relative inline-block">
+                            <span className="text-primary font-medium hover:underline cursor-default">
+                              {getDesignationAcronym(selectedLetter.designationOffice)}
+                            </span>
+                            <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-sm rounded-lg shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
+                              <div className="font-medium">{selectedLetter.designationOffice}</div>
+                              <div className="absolute top-full left-1/2 transform -translate-x-1/2 -mt-1 w-2 h-2 bg-gray-900 rotate-45"></div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-gray-600">Particulars</p>
+                        <p className="text-sm text-gray-900 mt-1">{selectedLetter.particulars}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-gray-600">Status</p>
+                        <div className="mt-1">
+                          <Badge 
+                            variant={
+                              selectedLetter.status === 'Rejected' ? 'destructive' : 'secondary'
+                            }
+                            className={`${
+                              selectedLetter.status === 'Completed' || selectedLetter.status === 'Approved' ? 
+                              'bg-green-50 text-green-700 hover:bg-green-100 border-green-200' : 
+                              selectedLetter.status === 'Pending' || (!selectedLetter.status || selectedLetter.status === 'Pending') ? 
+                              'bg-yellow-50 text-yellow-700 hover:bg-yellow-100 border-yellow-200' : ''
+                            } text-xs`}
+                          >
+                            {selectedLetter.status || 'Pending'}
+                          </Badge>
+                        </div>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-gray-600">Date/Time Out</p>
+                        <p className="text-sm text-foreground mt-1">{selectedLetter.dateTimeOut ? formatDateTimeWithoutSeconds(selectedLetter.dateTimeOut) : '-'}</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Remarks */}
+                <Card className="border">
+                  <CardContent className="p-4">
+                    <div className="grid grid-cols-1 gap-4">
+                      {/* Remarks Column */}
+                      <div>
+                        <p className="text-sm font-medium text-muted-foreground mb-2">Remarks</p>
+                        <p className="text-sm text-foreground whitespace-pre-wrap bg-secondary px-3 py-2 rounded-md border min-h-[100px]">
+                          {selectedLetter.remarks || 'No remarks'}
+                        </p>
+                        {selectedLetter.timeOutRemarks && (
+                          <div className="mt-3 pt-3 border-t">
+                            <p className="text-sm font-medium text-muted-foreground mb-2">Time Out Details</p>
+                            <div className="space-y-2">
+                              <div>
+                                <p className="text-sm font-medium text-muted-foreground">Date/Time Out</p>
+                                <p className="text-sm text-foreground bg-secondary px-2 py-1 rounded border">
+                                  {selectedLetter.dateTimeOut ? formatDateTimeWithoutSeconds(selectedLetter.dateTimeOut) : '-'}
+                                </p>
+                              </div>
+                              <div>
+                                <p className="text-sm font-medium text-muted-foreground">Time Out Remarks</p>
+                                <p className="text-sm text-foreground whitespace-pre-wrap bg-secondary px-2 py-1 rounded border">
+                                  {selectedLetter.timeOutRemarks}
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
               </div>
             )}
           </div>
           
-          <DialogFooter>
+          <DialogFooter className="pt-4 border-t border-gray-200 shrink-0">
             <Button
               variant="outline"
               onClick={() => setViewModalOpen(false)}
+              className="px-6"
             >
               Close
             </Button>
@@ -861,7 +1217,7 @@ export default function LetterPage() {
         </DialogContent>
       </Dialog>
                 
-      {/* Delete Confirmation Modal */}
+      {/* Reject Confirmation Modal */}
       <Dialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogTitle className="text-lg font-semibold">Confirm Reject</DialogTitle>
@@ -894,7 +1250,7 @@ export default function LetterPage() {
               Cancel
             </Button>
             <Button
-              onClick={handleReject}
+              onClick={confirmRejectLetter}
               className="px-6 bg-red-600 hover:bg-red-700 text-white"
             >
               Reject
@@ -945,10 +1301,10 @@ export default function LetterPage() {
                     <div className="flex justify-between items-start mb-2">
                       <div className="flex items-center space-x-3">
                         <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                          item.status === 'Completed' ? 'bg-green-100 text-green-800' :
-                          item.status === 'Rejected' ? 'bg-red-100 text-red-800' :
-                          item.status === 'Edited' ? 'bg-yellow-100 text-yellow-800' :
-                          'bg-blue-100 text-blue-800'
+                          item.status === 'Completed' ? 'bg-green-50 text-green-700' :
+                          item.status === 'Rejected' ? 'bg-red-50 text-red-700' :
+                          item.status === 'Edited' ? 'bg-yellow-50 text-yellow-700' :
+                          'bg-blue-50 text-blue-700'
                         }`}>
                           {item.status}
                         </span>
@@ -978,6 +1334,7 @@ export default function LetterPage() {
                   </div>
                 ))}
               </div>
+
             )}
           </div>
         </DialogContent>
@@ -992,4 +1349,5 @@ export default function LetterPage() {
       />
     </div>
   );
+
 }

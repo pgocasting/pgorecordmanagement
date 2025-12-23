@@ -59,7 +59,7 @@ import {
   Plus
 } from 'lucide-react';
 import { Sidebar } from '@/components/Sidebar';
-import { ActionButtons } from '@/components/ActionButtons';
+import { Badge } from '@/components/ui/badge';
 import SuccessModal from '@/components/SuccessModal';
 import TimeOutModal from '@/components/TimeOutModal';
 
@@ -253,6 +253,9 @@ export default function TravelOrderPage() {
   const filteredTravelOrders = travelOrders.filter(order =>
     order.trackingId.toLowerCase().includes(searchTerm.toLowerCase()) ||
     order.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    order.designation?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    order.purpose?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    order.remarks?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     order.receivedBy?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
@@ -290,6 +293,8 @@ export default function TravelOrderPage() {
       !formData.inclusiveDateEnd ||
       !formData.placeOfAssignment
     ) {
+      setSuccess('Please fill in all required fields');
+      setSuccessModalOpen(true);
       return;
     }
 
@@ -310,6 +315,7 @@ export default function TravelOrderPage() {
         ];
         const updateData = {
           ...formData,
+          receivedBy: existingTravelOrder?.receivedBy || currentUser,
           remarks: formData.remarks || '',
           remarksHistory: newRemarksHistory,
           updatedAt: now
@@ -355,6 +361,7 @@ export default function TravelOrderPage() {
       const newTravelOrder = {
         trackingId: generateTrackingId(),
         ...formData,
+        receivedBy: currentUser,
         remarks: formData.remarks || 'Travel order created',
         remarksHistory: [{
           remarks: formData.remarks || 'Travel order created',
@@ -583,7 +590,7 @@ export default function TravelOrderPage() {
   };
 
   return (
-    <div className="flex h-screen bg-gray-50">
+    <div className="flex h-screen bg-background">
       {/* Mobile Sidebar */}
       <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
         <SheetTrigger asChild className="md:hidden">
@@ -597,37 +604,37 @@ export default function TravelOrderPage() {
       </Sheet>
 
       {/* Desktop Sidebar */}
-      <div className="hidden md:block bg-white border-r border-gray-200 shadow-sm">
+      <div className="hidden md:block bg-card border-r shadow-sm">
         <Sidebar recordTypes={recordTypes} onNavigate={undefined} />
       </div>
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Top Bar */}
-        <div className="bg-white border-b border-gray-200 px-6 py-4">
+        <div className="bg-card border-b px-6 py-4">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Travel Order Records</h1>
-              <p className="text-sm text-gray-600">Welcome back</p>
+              <h1 className="text-2xl font-bold text-foreground">Travel Order Records</h1>
+              <p className="text-sm text-muted-foreground">Welcome back</p>
             </div>
             
             {/* User Info and Logout */}
             <div className="flex items-center gap-2">
               {user?.name && (
-                <div className="flex items-center gap-2 px-3 py-2 bg-gray-50 rounded-lg border border-gray-200">
-                  <div className="w-6 h-6 rounded-full bg-indigo-100 flex items-center justify-center shrink-0">
-                    <User className="h-3 w-3 text-indigo-600" />
+                <div className="flex items-center gap-2 px-3 py-2 bg-secondary rounded-lg border">
+                  <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                    <User className="h-3 w-3 text-primary" />
                   </div>
                   <div className="flex flex-col min-w-0">
-                    <p className="text-xs font-medium text-gray-900 truncate">{user.name}</p>
-                    <p className="text-xs text-gray-500 truncate capitalize">{user.role}</p>
+                    <p className="text-xs font-medium text-foreground truncate">{user.name}</p>
+                    <p className="text-xs text-muted-foreground truncate capitalize">{user.role}</p>
                   </div>
                 </div>
               )}
               
               <Button
                 variant="outline"
-                className="gap-2 text-red-600 hover:text-red-700 hover:bg-red-50 h-9"
+                className="gap-2 text-destructive hover:text-destructive hover:bg-destructive/10 h-9"
                 onClick={handleLogout}
               >
                 <LogOut className="h-4 w-4" />
@@ -638,19 +645,19 @@ export default function TravelOrderPage() {
         </div>
 
         {/* Content Area */}
-        <div className="flex-1 overflow-auto p-6 bg-linear-to-br from-gray-100 via-gray-50 to-gray-100" style={{backgroundImage: 'linear-gradient(0deg, transparent 24%, rgba(200, 200, 200, 0.05) 25%, rgba(200, 200, 200, 0.05) 26%, transparent 27%, transparent 74%, rgba(200, 200, 200, 0.05) 75%, rgba(200, 200, 200, 0.05) 76%, transparent 77%, transparent), linear-gradient(90deg, transparent 24%, rgba(200, 200, 200, 0.05) 25%, rgba(200, 200, 200, 0.05) 26%, transparent 27%, transparent 74%, rgba(200, 200, 200, 0.05) 75%, rgba(200, 200, 200, 0.05) 76%, transparent 77%, transparent)', backgroundSize: '50px 50px'}}>
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+        <div className="flex-1 overflow-auto p-6 bg-muted/30">
+          <div className="bg-card rounded-lg shadow-sm border overflow-hidden">
             {/* Header */}
-            <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+            <div className="px-6 py-4 border-b flex items-center justify-between">
               <div>
-                <h2 className="text-xl font-bold text-gray-900">Travel Orders</h2>
-                <p className="text-sm text-gray-600">Manage and view all travel order records</p>
+                <h2 className="text-xl font-bold text-foreground">Travel Orders</h2>
+                <p className="text-sm text-muted-foreground">Manage and view all travel order records</p>
               </div>
               <div className="flex items-center gap-3">
                 <div className="relative w-64">
-                  <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                  <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                   <Input
-                    placeholder="Search by tracking ID, name..."
+                    placeholder="Search by tracking ID, name, designation, purpose, remarks..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="pl-10"
@@ -693,19 +700,19 @@ export default function TravelOrderPage() {
                   <div className="space-y-3">
                     {!editingId && (
                       <div className="space-y-1">
-                        <Label htmlFor="trackingId" className="text-xs font-medium text-gray-700">Tracking ID</Label>
+                        <Label htmlFor="trackingId" className="text-xs font-medium">Tracking ID</Label>
                         <Input
                           id="trackingId"
                           type="text"
                           value={generateTrackingId()}
                           disabled
-                          className="bg-gray-100 h-8 text-xs"
+                          className="bg-gray-50"
                         />
                       </div>
                     )}
                     <div className="grid grid-cols-2 gap-3">
                       <div className="space-y-1">
-                        <Label htmlFor="dateTimeIn" className="text-xs font-medium text-gray-700">Date/Time IN *</Label>
+                        <Label htmlFor="dateTimeIn" className="text-xs font-medium">Date/Time IN *</Label>
                         <Input
                           id="dateTimeIn"
                           name="dateTimeIn"
@@ -717,7 +724,7 @@ export default function TravelOrderPage() {
                       </div>
 
                       <div className="space-y-1">
-                        <Label htmlFor="fullName" className="text-xs font-medium text-gray-700">Full Name *</Label>
+                        <Label htmlFor="fullName" className="text-xs font-medium">Full Name *</Label>
                         <Input
                           id="fullName"
                           name="fullName"
@@ -731,7 +738,7 @@ export default function TravelOrderPage() {
 
                     {editingId && user?.role === 'admin' && (
                       <div className="space-y-1">
-                        <Label htmlFor="dateTimeOut" className="text-xs font-medium text-gray-700">Date/Time OUT</Label>
+                        <Label htmlFor="dateTimeOut" className="text-xs font-medium">Date/Time OUT</Label>
                         <Input
                           id="dateTimeOut"
                           name="dateTimeOut"
@@ -744,17 +751,19 @@ export default function TravelOrderPage() {
                     )}
 
                     <div className="space-y-1">
-                      <Label htmlFor="designation" className="text-xs font-medium text-gray-700">Designation/Office *</Label>
+                      <Label htmlFor="designation" className="text-xs font-medium">Designation/Office *</Label>
                       <Popover open={designationDropdownOpen} onOpenChange={setDesignationDropdownOpen}>
                         <PopoverTrigger asChild>
                           <Button
                             variant="outline"
                             role="combobox"
                             aria-expanded={designationDropdownOpen}
-                            className="w-full h-8 text-xs justify-between"
+                            className="w-full h-8 text-xs justify-between truncate"
                             title={formData.designation || "Select designation"}
                           >
-                            {formData.designation ? getAcronym(formData.designation) : "Select office..."}
+                            <span className="truncate flex-1 text-left">
+                              {formData.designation ? getAcronym(formData.designation) : "Select office..."}
+                            </span>
                             <Search className="ml-2 h-3 w-3 shrink-0 opacity-50" />
                           </Button>
                         </PopoverTrigger>
@@ -785,7 +794,7 @@ export default function TravelOrderPage() {
 
                     <div className="grid grid-cols-2 gap-3">
                       <div className="space-y-1">
-                        <Label htmlFor="inclusiveDateStart" className="text-xs font-medium text-gray-700">Date Start *</Label>
+                        <Label htmlFor="inclusiveDateStart" className="text-xs font-medium">Date Start *</Label>
                         <Input
                           id="inclusiveDateStart"
                           name="inclusiveDateStart"
@@ -796,7 +805,7 @@ export default function TravelOrderPage() {
                         />
                       </div>
                       <div className="space-y-1">
-                        <Label htmlFor="inclusiveDateEnd" className="text-xs font-medium text-gray-700">Date End *</Label>
+                        <Label htmlFor="inclusiveDateEnd" className="text-xs font-medium">Date End *</Label>
                         <Input
                           id="inclusiveDateEnd"
                           name="inclusiveDateEnd"
@@ -810,7 +819,7 @@ export default function TravelOrderPage() {
 
                     <div className="grid grid-cols-2 gap-3">
                       <div className="space-y-1">
-                        <Label htmlFor="inclusiveTimeStart" className="text-xs font-medium text-gray-700">Time Start</Label>
+                        <Label htmlFor="inclusiveTimeStart" className="text-xs font-medium">Time Start</Label>
                         <Input
                           id="inclusiveTimeStart"
                           name="inclusiveTimeStart"
@@ -821,7 +830,7 @@ export default function TravelOrderPage() {
                         />
                       </div>
                       <div className="space-y-1">
-                        <Label htmlFor="inclusiveTimeEnd" className="text-xs font-medium text-gray-700">Time End</Label>
+                        <Label htmlFor="inclusiveTimeEnd" className="text-xs font-medium">Time End</Label>
                         <Input
                           id="inclusiveTimeEnd"
                           name="inclusiveTimeEnd"
@@ -884,57 +893,65 @@ export default function TravelOrderPage() {
               <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
-                  <TableRow className="bg-gray-50">
-                    <TableHead className="font-semibold py-1 px-1 text-center text-xs">Received By</TableHead>
-                    <TableHead className="font-semibold py-1 px-1 text-center text-xs">Tracking ID</TableHead>
-                    <TableHead className="font-semibold py-1 px-1 text-center text-xs">Date/Time IN</TableHead>
-                    <TableHead className="font-semibold py-1 px-1 text-center text-xs">Date/Time OUT</TableHead>
-                    <TableHead className="font-semibold py-1 px-1 text-center text-xs">Full Name</TableHead>
-                    <TableHead className="font-semibold py-1 px-1 text-center text-xs">Designation</TableHead>
-                    <TableHead className="font-semibold py-1 px-1 text-center text-xs">Purpose</TableHead>
-                    <TableHead className="font-semibold py-1 px-1 text-center text-xs">Place of Assignment</TableHead>
-                    <TableHead className="font-semibold py-1 px-1 text-center text-xs">Status</TableHead>
-                    <TableHead className="font-semibold py-1 px-1 text-center text-xs">Remarks</TableHead>
-                    <TableHead className="font-semibold py-1 px-1 text-center text-xs">Actions</TableHead>
+                  <TableRow className="bg-muted/50">
+                    <TableHead className="font-semibold py-3 px-4 text-center text-xs">Received By</TableHead>
+                    <TableHead className="font-semibold py-3 px-4 text-center text-xs">Tracking ID</TableHead>
+                    <TableHead className="font-semibold py-3 px-4 text-center text-xs">Date/Time IN</TableHead>
+                    <TableHead className="font-semibold py-3 px-4 text-center text-xs">Date/Time OUT</TableHead>
+                    <TableHead className="font-semibold py-3 px-4 text-center text-xs">Full Name</TableHead>
+                    <TableHead className="font-semibold py-3 px-4 text-center text-xs">Designation</TableHead>
+                    <TableHead className="font-semibold py-3 px-4 text-center text-xs">Purpose</TableHead>
+                    <TableHead className="font-semibold py-3 px-4 text-center text-xs">Place of Assignment</TableHead>
+                    <TableHead className="font-semibold py-3 px-4 text-center text-xs">Status</TableHead>
+                    <TableHead className="font-semibold py-3 px-4 text-center text-xs">Remarks</TableHead>
+                    <TableHead className="font-semibold py-3 px-4 text-center text-xs">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {filteredTravelOrders.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={12} className="text-center py-4 text-gray-500 text-xs wrap-break-word whitespace-normal">
+                      <TableCell colSpan={11} className="text-center py-8 text-muted-foreground">
                         {travelOrders.length === 0 ? 'No travel orders found. Click "Add Travel Order" to create one.' : 'No travel orders match your search.'}
                       </TableCell>
                     </TableRow>
                   ) : (
                     filteredTravelOrders.map((item) => (
-                      <TableRow key={item.id} className="hover:bg-gray-50">
-                        <TableCell className="text-xs py-1 px-1 text-center wrap-break-word whitespace-normal">{item.receivedBy || '-'}</TableCell>
-                        <TableCell className="text-xs py-1 px-1 text-center font-bold italic text-indigo-600 wrap-break-word whitespace-normal">{item.trackingId}</TableCell>
-                        <TableCell className="text-xs py-1 px-1 text-center wrap-break-word whitespace-normal">{formatDateTimeWithoutSeconds(item.dateTimeIn)}</TableCell>
-                        <TableCell className={`text-xs py-1 px-1 text-center wrap-break-word whitespace-normal ${item.status === 'Completed' ? 'text-green-600 font-medium' : 'text-red-600'}`}>{item.dateTimeOut ? formatDateTimeWithoutSeconds(item.dateTimeOut) : '-'}</TableCell>
-                        <TableCell className="text-xs py-1 px-1 text-center wrap-break-word whitespace-normal">{item.fullName}</TableCell>
-                        <TableCell className="text-xs py-1 px-1 text-center wrap-break-word whitespace-normal">{item.designation}</TableCell>
-                        <TableCell className="text-xs py-1 px-1 text-center wrap-break-word whitespace-normal">{item.purpose}</TableCell>
-                        <TableCell className="text-xs py-1 px-1 text-center wrap-break-word whitespace-normal">{item.placeOfAssignment}</TableCell>
-                        <TableCell className="text-xs py-1 px-1 text-center wrap-break-word whitespace-normal">
-                          <span
-                            className={`px-1 py-0.5 rounded text-xs font-medium ${
-                              item.status === 'Completed'
-                                ? 'bg-green-100 text-green-800'
-                                : item.status === 'Approved'
-                                ? 'bg-green-100 text-green-800'
-                                : item.status === 'Rejected'
-                                ? 'bg-red-100 text-red-800'
-                                : item.status === 'Pending'
-                                ? 'bg-yellow-100 text-yellow-800'
-                                : 'bg-gray-100 text-gray-800'
+                      <TableRow key={item.id} className="hover:bg-muted/50 transition-colors">
+                        <TableCell className="text-sm py-3 px-4 text-center">{item.receivedBy || user?.name || '-'}</TableCell>
+                        <TableCell className="text-sm py-3 px-4 text-center font-bold text-primary">{item.trackingId}</TableCell>
+                        <TableCell className="text-sm py-3 px-4 text-center">{formatDateTimeWithoutSeconds(item.dateTimeIn)}</TableCell>
+                        <TableCell className={`text-sm py-3 px-4 text-center ${item.status === 'Completed' ? 'text-green-600 font-medium' : 'text-red-600'}`}>{item.dateTimeOut ? formatDateTimeWithoutSeconds(item.dateTimeOut) : '-'}</TableCell>
+                        <TableCell className="text-sm py-3 px-4 text-center">{item.fullName}</TableCell>
+                        <TableCell className="text-sm py-3 px-4 text-center">
+                          <div className="group relative inline-block">
+                            <span className="text-primary font-medium hover:underline cursor-default">
+                              {getAcronym(item.designation)}
+                            </span>
+                            <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-sm rounded-lg shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
+                              <div className="font-medium">{item.designation}</div>
+                              <div className="absolute top-full left-1/2 transform -translate-x-1/2 -mt-1 w-2 h-2 bg-gray-900 rotate-45"></div>
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-sm py-3 px-4 text-center">{item.purpose}</TableCell>
+                        <TableCell className="text-sm py-3 px-4 text-center">{item.placeOfAssignment}</TableCell>
+                        <TableCell className="text-sm py-3 px-4 text-center">
+                          <Badge 
+                            variant={
+                              item.status === 'Rejected' ? 'destructive' : 'secondary'
+                            }
+                            className={`${
+                              item.status === 'Completed' || item.status === 'Approved' ? 
+                              'bg-green-50 text-green-700 hover:bg-green-100 border-green-200' : 
+                              item.status === 'Pending' || (!item.status || item.status === 'Pending') ? 
+                              'bg-yellow-50 text-yellow-700 hover:bg-yellow-100 border-yellow-200' : ''
                             }`}
                           >
                             {item.status || 'Pending'}
-                          </span>
+                          </Badge>
                         </TableCell>
                         <TableCell 
-                          className="py-1 px-1 text-center wrap-break-word whitespace-normal text-xs cursor-pointer hover:bg-gray-50"
+                          className="wrap-break-word whitespace-normal text-sm cursor-pointer hover:bg-gray-50"
                           onClick={() => viewRemarksHistory(item)}
                         >
                           {item.remarks ? (
@@ -952,7 +969,7 @@ export default function TravelOrderPage() {
                                   {item.remarksHistory[0]?.timestamp && item.status !== 'Completed' && item.status !== 'Pending' && (
                                     <span>[{formatDateTimeWithoutSeconds(item.remarksHistory[0].timestamp)}] </span>
                                   )}
-                                  [{item.status} by {item.receivedBy}]
+                                  [{item.status === 'Pending' ? `${item.status} - Created by ${item.receivedBy || user?.name}` : `${item.status} by ${item.receivedBy || user?.name}`}]
                                 </div>
                               )}
                               <div className="text-xs text-blue-600 mt-1">
@@ -960,23 +977,66 @@ export default function TravelOrderPage() {
                               </div>
                             </div>
                           ) : '-'}
-
                         </TableCell>
-                        <TableCell className="py-1 px-1 text-center wrap-break-word whitespace-normal">
-                          <ActionButtons
-                            onView={() => handleViewTravelOrder(item.id)}
-                            onEdit={() => handleEditTravelOrder(item.id)}
-                            onTimeOut={() => handleTimeOut(item.id)}
-                            onReject={() => handleRejectTravelOrder(item.id)}
-                            hidden={item.status === 'Rejected'}
-                            canEdit={user?.role === 'admin' || (!!item.dateTimeOut === false && item.status === 'Pending')}
-                            canReject={user?.role === 'admin' || (!!item.dateTimeOut === false && item.status === 'Pending')}
-                            showTimeOut={!item.dateTimeOut}
-                            showEdit={item.status !== 'Completed'}
-                            showReject={item.status !== 'Completed'}
-                            editDisabledReason={user?.role !== 'admin' && (!!item.dateTimeOut || item.status !== 'Pending') ? 'Users can only edit pending records' : undefined}
-                            rejectDisabledReason={user?.role !== 'admin' && (!!item.dateTimeOut || item.status !== 'Pending') ? 'Users can only reject pending records' : undefined}
-                          />
+                        <TableCell className="text-sm py-3 px-4">
+                          <div className="flex flex-col items-center gap-1">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleViewTravelOrder(item.id)}
+                              className="h-8 w-16 text-blue-600 border-blue-600 hover:bg-blue-50 hover:text-blue-700"
+                            >
+                              View
+                            </Button>
+                            {item.status === 'Pending' && (
+                              <>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleEditTravelOrder(item.id)}
+                                  className="h-8 w-16 text-orange-600 border-orange-600 hover:bg-orange-50 hover:text-orange-700"
+                                >
+                                  Edit
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleRejectTravelOrder(item.id)}
+                                  className="h-8 w-16 text-red-600 border-red-600 hover:bg-red-50 hover:text-red-700"
+                                >
+                                  Reject
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleTimeOut(item.id)}
+                                  className="h-8 w-16 text-green-600 border-green-600 hover:bg-green-50 hover:text-green-700"
+                                >
+                                  Out
+                                </Button>
+                              </>
+                            )}
+                            {item.status === 'Approved' && (
+                              <>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleEditTravelOrder(item.id)}
+                                  className="h-8 w-16 text-orange-600 border-orange-600 hover:bg-orange-50 hover:text-orange-700"
+                                >
+                                  Edit
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleTimeOut(item.id)}
+                                  className="h-8 w-16 text-green-600 border-green-600 hover:bg-green-50 hover:text-green-700"
+                                >
+                                  Out
+                                </Button>
+                              </>
+                            )}
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))
@@ -998,7 +1058,7 @@ export default function TravelOrderPage() {
           </DialogDescription>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="rejectRemarks" className="text-sm font-medium text-gray-700">Rejection Remarks *</Label>
+              <Label htmlFor="rejectRemarks" className="text-sm font-medium">Rejection Remarks *</Label>
               <textarea
                 id="rejectRemarks"
                 placeholder="Enter rejection remarks (required)"
@@ -1062,69 +1122,69 @@ export default function TravelOrderPage() {
             {selectedTravelOrder && (
               <div className="space-y-4">
                 {/* Personal Information */}
-                <div className="bg-white border border-gray-200 rounded-lg p-4">
+                <div className="bg-card border rounded-lg p-4">
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <p className="text-xs font-medium text-gray-600 uppercase">Full Name</p>
-                      <p className="text-sm font-semibold text-gray-900 mt-1">{selectedTravelOrder.fullName}</p>
+                      <p className="text-xs font-medium uppercase">Full Name</p>
+                      <p className="text-sm font-semibold mt-1">{selectedTravelOrder.fullName}</p>
                     </div>
                     <div>
-                      <p className="text-xs font-medium text-gray-600 uppercase">Designation/Office</p>
-                      <p className="text-sm font-semibold text-gray-900 mt-1">{selectedTravelOrder.designation}</p>
+                      <p className="text-xs font-medium uppercase">Designation/Office</p>
+                      <p className="text-sm font-semibold mt-1">{selectedTravelOrder.designation}</p>
                     </div>
                   </div>
                 </div>
 
                 {/* Travel Details */}
-                <div className="bg-white border border-gray-200 rounded-lg p-4">
+                <div className="bg-card border rounded-lg p-4">
                   <div className="grid grid-cols-3 gap-4">
                     <div>
-                      <p className="text-xs font-medium text-gray-600 uppercase">Date/Time In</p>
-                      <p className="text-sm font-semibold text-gray-900 mt-1">{formatDateTimeWithoutSeconds(selectedTravelOrder.dateTimeIn)}</p>
+                      <p className="text-xs font-medium uppercase">Date/Time In</p>
+                      <p className="text-sm font-semibold mt-1">{formatDateTimeWithoutSeconds(selectedTravelOrder.dateTimeIn)}</p>
                     </div>
                     <div>
-                      <p className="text-xs font-medium text-gray-600 uppercase">Date/Time Out</p>
-                      <p className="text-sm font-semibold text-gray-900 mt-1">{selectedTravelOrder.dateTimeOut ? formatDateTimeWithoutSeconds(selectedTravelOrder.dateTimeOut) : '-'}</p>
+                      <p className="text-xs font-medium uppercase">Date/Time Out</p>
+                      <p className="text-sm font-semibold mt-1">{selectedTravelOrder.dateTimeOut ? formatDateTimeWithoutSeconds(selectedTravelOrder.dateTimeOut) : '-'}</p>
                     </div>
                     <div>
-                      <p className="text-xs font-medium text-gray-600 uppercase">Place of Assignment</p>
-                      <p className="text-sm font-semibold text-gray-900 mt-1">{selectedTravelOrder.placeOfAssignment || '-'}</p>
+                      <p className="text-xs font-medium uppercase">Place of Assignment</p>
+                      <p className="text-sm font-semibold mt-1">{selectedTravelOrder.placeOfAssignment || '-'}</p>
                     </div>
                     <div>
-                      <p className="text-xs font-medium text-gray-600 uppercase">Start Date</p>
-                      <p className="text-sm font-semibold text-gray-900 mt-1">{selectedTravelOrder.inclusiveDateStart || '-'}</p>
+                      <p className="text-xs font-medium uppercase">Start Date</p>
+                      <p className="text-sm font-semibold mt-1">{selectedTravelOrder.inclusiveDateStart || '-'}</p>
                     </div>
                     <div>
-                      <p className="text-xs font-medium text-gray-600 uppercase">End Date</p>
-                      <p className="text-sm font-semibold text-gray-900 mt-1">{selectedTravelOrder.inclusiveDateEnd || '-'}</p>
+                      <p className="text-xs font-medium uppercase">End Date</p>
+                      <p className="text-sm font-semibold mt-1">{selectedTravelOrder.inclusiveDateEnd || '-'}</p>
                     </div>
                     <div>
-                      <p className="text-xs font-medium text-gray-600 uppercase">Transportation</p>
-                      <p className="text-sm font-semibold text-gray-900 mt-1">{selectedTravelOrder.transportation || '-'}</p>
+                      <p className="text-xs font-medium uppercase">Transportation</p>
+                      <p className="text-sm font-semibold mt-1">{selectedTravelOrder.inclusiveTimeStart || '-'}</p>
                     </div>
                   </div>
                 </div>
 
                 {/* Purpose */}
-                <div className="bg-white border border-gray-200 rounded-lg p-4">
-                  <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wide mb-3">Purpose</h3>
-                  <p className="text-sm font-semibold text-gray-900 whitespace-pre-wrap">{selectedTravelOrder.purpose || '-'}</p>
+                <div className="bg-card border rounded-lg p-4">
+                  <h3 className="text-sm font-bold uppercase tracking-wide mb-3">Purpose</h3>
+                  <p className="text-sm font-semibold whitespace-pre-wrap">{selectedTravelOrder.purpose || '-'}</p>
                 </div>
 
                 {/* Remarks */}
-                <div className="bg-white border border-gray-200 rounded-lg p-4">
-                  <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wide mb-3">Remarks</h3>
-                  <p className="text-sm font-semibold text-gray-900 whitespace-pre-wrap">{selectedTravelOrder.remarks || '-'}</p>
+                <div className="bg-card border rounded-lg p-4">
+                  <h3 className="text-sm font-bold uppercase tracking-wide mb-3">Remarks</h3>
+                  <p className="text-sm font-semibold whitespace-pre-wrap">{selectedTravelOrder.remarks || '-'}</p>
                   {selectedTravelOrder.timeOutRemarks && (
-                    <div className="mt-3 pt-3 border-t border-gray-200">
+                    <div className="mt-3 pt-3 border-t">
                       <div className="grid grid-cols-2 gap-4">
                         <div>
-                          <p className="text-xs font-semibold text-blue-600 uppercase">Date/Time Out</p>
-                          <p className="text-sm font-semibold text-blue-900 mt-1">{selectedTravelOrder.dateTimeOut ? formatDateTimeWithoutSeconds(selectedTravelOrder.dateTimeOut) : '-'}</p>
+                          <p className="text-xs font-semibold uppercase">Date/Time Out</p>
+                          <p className="text-sm font-semibold mt-1">{selectedTravelOrder.dateTimeOut ? formatDateTimeWithoutSeconds(selectedTravelOrder.dateTimeOut) : '-'}</p>
                         </div>
                         <div>
-                          <p className="text-xs font-semibold text-blue-600 uppercase">Time Out Remarks</p>
-                          <p className="text-sm font-semibold text-blue-900 mt-1 whitespace-pre-wrap">{selectedTravelOrder.timeOutRemarks}</p>
+                          <p className="text-xs font-semibold uppercase">Time Out Remarks</p>
+                          <p className="text-sm font-semibold mt-1 whitespace-pre-wrap">{selectedTravelOrder.timeOutRemarks}</p>
                         </div>
                       </div>
                     </div>

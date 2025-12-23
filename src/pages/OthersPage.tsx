@@ -40,12 +40,18 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from '@/components/ui/command';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
 import {
   Plus,
   Menu,
@@ -54,7 +60,7 @@ import {
   User,
 } from 'lucide-react';
 import { Sidebar } from '@/components/Sidebar';
-import { ActionButtons } from '@/components/ActionButtons';
+import { Badge } from '@/components/ui/badge';
 import SuccessModal from '@/components/SuccessModal';
 import TimeOutModal from '@/components/TimeOutModal';
 
@@ -66,6 +72,7 @@ interface Others {
   dateTimeOut?: string;
   fullName: string;
   designationOffice: string;
+  recordType?: string;
   inclusiveDateStart?: string;
   inclusiveDateEnd?: string;
   inclusiveTimeStart?: string;
@@ -132,6 +139,60 @@ export default function OthersPage() {
     });
   };
 
+  // Helper function to get acronym from designation
+  const getDesignationAcronym = (designation: string): string => {
+    const acronymMap: { [key: string]: string } = {
+      'Office of the Provincial Governor (PGO)': 'PGO',
+      'Office of the Vice Governor (OVG)': 'OVG',
+      "Provincial Administrator's Office (PAO)": 'PAO',
+      'Provincial Legal Office (PLO)': 'PLO',
+      'Provincial Treasury Office (PTO)': 'PTO',
+      'Provincial Accounting Office (PAccO)': 'PAccO',
+      'Provincial Budget Office (PBO)': 'PBO',
+      "Provincial Assessor's Office (PAO)": 'PAO',
+      'Provincial Engineer\'s Office (PEO)': 'PEO',
+      'Provincial Health Office (PHO)': 'PHO',
+      'Provincial Social Welfare and Development Office (PSWDO)': 'PSWDO',
+      'Provincial Agriculture Office (PAgrO)': 'PAgrO',
+      'Provincial Veterinary Office (PVO)': 'PVO',
+      'Provincial Environment and Natural Resources Office (PENRO)': 'PENRO',
+      'Provincial Planning and Development Office (PPDO)': 'PPDO',
+      'Provincial Human Resource Management Office (PHRMO)': 'PHRMO',
+      'Provincial General Services Office (PGSO)': 'PGSO',
+      'Provincial Information and Communications Technology Office (PICTO)': 'PICTO',
+      'Provincial Disaster Risk Reduction and Management Office (PDRRMO)': 'PDRRMO',
+      'Provincial Tourism Office (PTO)': 'PTO',
+      'Provincial Youth, Sports, and Development Office (PYSDO)': 'PYSDO',
+      'Sangguniang Panlalawigan Secretariat (SPS)': 'SPS',
+      'Admin': 'Admin',
+      'Manager': 'Manager',
+      'Staff': 'Staff',
+      'Officer': 'Officer'
+    };
+    
+    // If the full designation is in the map, return its acronym
+    if (acronymMap[designation]) {
+      return acronymMap[designation];
+    }
+    
+    // If it's already an acronym, return as is
+    const acronyms = Object.values(acronymMap);
+    if (acronyms.includes(designation)) {
+      return designation;
+    }
+    
+    // Extract acronym from parentheses if present
+    const match = designation.match(/\(([^)]+)\)/);
+    if (match) {
+      return match[1];
+    }
+    
+    // Default: return first letters of words (max 4 chars)
+    const words = designation.split(' ');
+    const acronym = words.slice(0, 4).map(word => word.charAt(0)).join('').toUpperCase();
+    return acronym;
+  };
+
   const navigate = useNavigate();
   const { logout, user } = useAuth();
   const [records, setRecords] = useState<Others[]>([]);
@@ -164,6 +225,7 @@ export default function OthersPage() {
   const [viewModalOpen, setViewModalOpen] = useState(false);
   const [selectedRecord, setSelectedRecord] = useState<Others | null>(null);
   const [designationOptions, setDesignationOptions] = useState<string[]>([]);
+  const [designationDropdownOpen, setDesignationDropdownOpen] = useState(false);
 
   useEffect(() => {
     const loadDesignations = async () => {
@@ -172,7 +234,34 @@ export default function OthersPage() {
         setDesignationOptions(designations);
       } catch (error) {
         console.error('Error loading designations:', error);
-        setDesignationOptions(['Admin', 'Manager', 'Staff', 'Officer']);
+        setDesignationOptions([
+          'Office of the Provincial Governor (PGO)',
+          'Office of the Vice Governor (OVG)',
+          'Provincial Administrator\'s Office (PAO)',
+          'Provincial Legal Office (PLO)',
+          'Provincial Treasury Office (PTO)',
+          'Provincial Accounting Office (PAccO)',
+          'Provincial Budget Office (PBO)',
+          'Provincial Assessor\'s Office (PAO)',
+          'Provincial Engineer\'s Office (PEO)',
+          'Provincial Health Office (PHO)',
+          'Provincial Social Welfare and Development Office (PSWDO)',
+          'Provincial Agriculture Office (PAgrO)',
+          'Provincial Veterinary Office (PVO)',
+          'Provincial Environment and Natural Resources Office (PENRO)',
+          'Provincial Planning and Development Office (PPDO)',
+          'Provincial Human Resource Management Office (PHRMO)',
+          'Provincial General Services Office (PGSO)',
+          'Provincial Information and Communications Technology Office (PICTO)',
+          'Provincial Disaster Risk Reduction and Management Office (PDRRMO)',
+          'Provincial Tourism Office (PTO)',
+          'Provincial Youth, Sports, and Development Office (PYSDO)',
+          'Sangguniang Panlalawigan Secretariat (SPS)',
+          'Admin',
+          'Manager',
+          'Staff',
+          'Officer'
+        ]);
       }
     };
     loadDesignations();
@@ -596,7 +685,7 @@ export default function OthersPage() {
   };
 
   return (
-    <div className="flex h-screen bg-gray-50">
+    <div className="flex h-screen bg-background">
       {/* Mobile Sidebar */}
       <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
         <SheetTrigger asChild className="md:hidden">
@@ -610,37 +699,37 @@ export default function OthersPage() {
       </Sheet>
 
       {/* Desktop Sidebar */}
-      <div className="hidden md:block bg-white border-r border-gray-200 shadow-sm">
+      <div className="hidden md:block bg-card border-r shadow-sm">
         <Sidebar recordTypes={recordTypes} onNavigate={undefined} />
       </div>
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Top Bar */}
-        <div className="bg-white border-b border-gray-200 px-6 py-4">
+        <div className="bg-card border-b px-6 py-4">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Other Records</h1>
-              <p className="text-sm text-gray-600">Welcome back</p>
+              <h1 className="text-2xl font-bold text-foreground">Other Records</h1>
+              <p className="text-sm text-muted-foreground">Welcome back</p>
             </div>
             
             {/* User Info and Logout */}
             <div className="flex items-center gap-2">
               {user?.name && (
-                <div className="flex items-center gap-2 px-3 py-2 bg-gray-50 rounded-lg border border-gray-200">
-                  <div className="w-6 h-6 rounded-full bg-indigo-100 flex items-center justify-center shrink-0">
-                    <User className="h-3 w-3 text-indigo-600" />
+                <div className="flex items-center gap-2 px-3 py-2 bg-secondary rounded-lg border">
+                  <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                    <User className="h-3 w-3 text-primary" />
                   </div>
                   <div className="flex flex-col min-w-0">
-                    <p className="text-xs font-medium text-gray-900 truncate">{user.name}</p>
-                    <p className="text-xs text-gray-500 truncate capitalize">{user.role}</p>
+                    <p className="text-xs font-medium text-foreground truncate">{user.name}</p>
+                    <p className="text-xs text-muted-foreground truncate capitalize">{user.role}</p>
                   </div>
                 </div>
               )}
               
               <Button
                 variant="outline"
-                className="gap-2 text-red-600 hover:text-red-700 hover:bg-red-50 h-9"
+                className="gap-2 text-destructive hover:text-destructive hover:bg-destructive/10 h-9"
                 onClick={handleLogout}
               >
                 <LogOut className="h-4 w-4" />
@@ -651,17 +740,17 @@ export default function OthersPage() {
         </div>
 
         {/* Content Area */}
-        <div className="flex-1 overflow-auto p-6 bg-linear-to-br from-gray-100 via-gray-50 to-gray-100" style={{backgroundImage: 'linear-gradient(0deg, transparent 24%, rgba(200, 200, 200, 0.05) 25%, rgba(200, 200, 200, 0.05) 26%, transparent 27%, transparent 74%, rgba(200, 200, 200, 0.05) 75%, rgba(200, 200, 200, 0.05) 76%, transparent 77%, transparent), linear-gradient(90deg, transparent 24%, rgba(200, 200, 200, 0.05) 25%, rgba(200, 200, 200, 0.05) 26%, transparent 27%, transparent 74%, rgba(200, 200, 200, 0.05) 75%, rgba(200, 200, 200, 0.05) 76%, transparent 77%, transparent)', backgroundSize: '50px 50px'}}>
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+        <div className="flex-1 overflow-auto p-6 bg-muted/30">
+          <div className="bg-card rounded-lg shadow-sm border overflow-hidden">
             {/* Header */}
-            <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+            <div className="px-6 py-4 border-b flex items-center justify-between">
               <div>
-                <h2 className="text-xl font-bold text-gray-900">Others</h2>
-                <p className="text-sm text-gray-600">Manage and view all other records</p>
+                <h2 className="text-xl font-bold text-foreground">Others</h2>
+                <p className="text-sm text-muted-foreground">Manage and view all other records</p>
               </div>
               <div className="flex items-center gap-3">
                 <div className="relative w-64">
-                  <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                  <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                   <Input
                     placeholder="Search by tracking ID, name..."
                     value={searchTerm}
@@ -740,18 +829,43 @@ export default function OthersPage() {
                       <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
                           <Label htmlFor="designationOffice">Office *</Label>
-                          <Select value={formData.designationOffice} onValueChange={(value) => handleSelectChange('designationOffice', value)}>
-                            <SelectTrigger className="w-full">
-                              <SelectValue placeholder="Select" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {designationOptions.map((option) => (
-                                <SelectItem key={option} value={option}>
-                                  {option}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
+                          <Popover open={designationDropdownOpen} onOpenChange={setDesignationDropdownOpen}>
+                            <PopoverTrigger asChild>
+                              <Button
+                                variant="outline"
+                                role="combobox"
+                                aria-expanded={designationDropdownOpen}
+                                className="w-full justify-between truncate"
+                              >
+                                <span className="truncate flex-1 text-left">
+                                  {formData.designationOffice || "Select office..."}
+                                </span>
+                                <Search className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                              </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-full p-0" align="start">
+                              <Command>
+                                <CommandInput placeholder="Search office..." />
+                                <CommandList>
+                                  <CommandEmpty>No office found.</CommandEmpty>
+                                  <CommandGroup>
+                                    {designationOptions.map((option) => (
+                                      <CommandItem
+                                        key={option}
+                                        value={option}
+                                        onSelect={(currentValue) => {
+                                          handleSelectChange('designationOffice', currentValue);
+                                          setDesignationDropdownOpen(false);
+                                        }}
+                                      >
+                                        {option}
+                                      </CommandItem>
+                                    ))}
+                                  </CommandGroup>
+                                </CommandList>
+                              </Command>
+                            </PopoverContent>
+                          </Popover>
                         </div>
                         <div className="space-y-2">
                           <Label htmlFor="dateTimeOut">Date/Time OUT</Label>
@@ -845,58 +959,73 @@ export default function OthersPage() {
             </div>
 
             {/* Table */}
-            <div className="bg-white rounded-lg border border-gray-200 shadow-md overflow-hidden">
+            <div className="bg-card rounded-lg border shadow-md overflow-hidden">
               <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
-                  <TableRow className="bg-gray-50">
-                    <TableHead className="text-center">Received By</TableHead>
-                    <TableHead className="text-center">Tracking ID</TableHead>
-                    <TableHead className="text-center">Date/Time IN</TableHead>
-                    <TableHead className="text-center">Date/Time OUT</TableHead>
-                    <TableHead className="text-center">Full Name</TableHead>
-                    <TableHead className="text-center">Office</TableHead>
-                    <TableHead className="text-center">Purpose</TableHead>
-                    <TableHead className="text-center">Status</TableHead>
-                    <TableHead className="text-center">Remarks</TableHead>
-                    <TableHead className="text-center">Actions</TableHead>
+                  <TableRow className="bg-muted/50">
+                    <TableHead className="font-semibold py-3 px-4 text-center text-xs">Received By</TableHead>
+                    <TableHead className="font-semibold py-3 px-4 text-center text-xs">Tracking ID</TableHead>
+                    <TableHead className="font-semibold py-3 px-4 text-center text-xs">Date/Time IN</TableHead>
+                    <TableHead className="font-semibold py-3 px-4 text-center text-xs">Date/Time OUT</TableHead>
+                    <TableHead className="font-semibold py-3 px-4 text-center text-xs">Full Name</TableHead>
+                    <TableHead className="font-semibold py-3 px-4 text-center text-xs">Office</TableHead>
+                    <TableHead className="font-semibold py-3 px-4 text-center text-xs">Purpose</TableHead>
+                    <TableHead className="font-semibold py-3 px-4 text-center text-xs">Status</TableHead>
+                    <TableHead className="font-semibold py-3 px-4 text-center text-xs">Remarks</TableHead>
+                    <TableHead className="font-semibold py-3 px-4 text-center text-xs">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {filteredRecords.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={10} className="text-center py-8 text-gray-500 text-xs wrap-break-word whitespace-normal">
+                      <TableCell colSpan={10} className="text-center py-8 text-muted-foreground text-xs wrap-break-word whitespace-normal">
                         {records.length === 0 ? 'No records found. Click "Add Record" to create one.' : 'No records match your search.'}
                       </TableCell>
                     </TableRow>
                   ) : (
                     filteredRecords.map((record) => (
-                      <TableRow key={record.id} className="hover:bg-gray-50">
-                        <TableCell className="wrap-break-word whitespace-normal text-center text-xs">{record.receivedBy || '-'}</TableCell>
-                        <TableCell className="font-bold italic wrap-break-word whitespace-normal text-center text-xs text-indigo-600">{record.trackingId}</TableCell>
-                        <TableCell className="wrap-break-word whitespace-normal text-center text-xs">{formatDateTimeWithoutSeconds(record.dateTimeIn)}</TableCell>
-                        <TableCell className={`wrap-break-word whitespace-normal text-center text-xs ${record.status === 'Completed' ? 'text-green-600 font-medium' : 'text-red-600'}`}>{record.dateTimeOut ? formatDateTimeWithoutSeconds(record.dateTimeOut) : '-'}</TableCell>
-                        <TableCell className="wrap-break-word whitespace-normal text-center text-xs uppercase">{record.fullName}</TableCell>
-                        <TableCell className="wrap-break-word whitespace-normal text-center text-xs">{record.designationOffice}</TableCell>
-                        <TableCell className="wrap-break-word whitespace-normal text-center text-xs">{record.purpose}</TableCell>
-                        <TableCell className="wrap-break-word whitespace-normal text-center text-xs">
-                          <span className={`px-2 py-1 rounded text-xs font-medium ${
-                            record.status === 'Completed' ? 'bg-green-100 text-green-800' :
-                            record.status === 'Pending' ? 'bg-yellow-100 text-yellow-800' :
-                            record.status === 'Rejected' ? 'bg-red-100 text-red-800' :
-                            'bg-gray-100 text-gray-800'
-                          }`}>
-                            {record.status}
-                          </span>
+                      <TableRow key={record.id} className="hover:bg-muted/50">
+                        <TableCell className="text-sm py-3 px-4 text-center">{record.receivedBy || '-'}</TableCell>
+                        <TableCell className="text-sm py-3 px-4 text-center font-bold text-primary">{record.trackingId}</TableCell>
+                        <TableCell className="text-sm py-3 px-4 text-center">{formatDateTimeWithoutSeconds(record.dateTimeIn)}</TableCell>
+                        <TableCell className={`text-sm py-3 px-4 text-center ${record.status === 'Completed' ? 'text-green-600 font-medium' : 'text-red-600'}`}>{record.dateTimeOut ? formatDateTimeWithoutSeconds(record.dateTimeOut) : '-'}</TableCell>
+                        <TableCell className="text-sm py-3 px-4 text-center uppercase">{record.fullName}</TableCell>
+                        <TableCell className="text-sm py-3 px-4 text-center">
+                          <div className="group relative inline-block">
+                            <span className="text-primary font-medium hover:underline cursor-default">
+                              {getDesignationAcronym(record.designationOffice)}
+                            </span>
+                            <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-sm rounded-lg shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
+                              <div className="font-medium">{record.designationOffice}</div>
+                              <div className="absolute top-full left-1/2 transform -translate-x-1/2 -mt-1 w-2 h-2 bg-gray-900 rotate-45"></div>
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-sm py-3 px-4 text-center wrap-break-word whitespace-normal">{record.purpose}</TableCell>
+                        <TableCell className="text-sm py-3 px-4 text-center">
+                          <Badge 
+                            variant={
+                              record.status === 'Rejected' ? 'destructive' : 'secondary'
+                            }
+                            className={`${
+                              record.status === 'Completed' ? 
+                              'bg-green-50 text-green-700 hover:bg-green-100 border-green-200' : 
+                              record.status === 'Pending' || (!record.status || record.status === 'Pending') ? 
+                              'bg-yellow-50 text-yellow-700 hover:bg-yellow-100 border-yellow-200' : ''
+                            }`}
+                          >
+                            {record.status || 'Pending'}
+                          </Badge>
                         </TableCell>
                         <TableCell 
-                          className="wrap-break-word whitespace-normal text-center text-xs cursor-pointer hover:bg-gray-50"
+                          className="text-sm py-3 px-4 cursor-pointer hover:bg-gray-50"
                           onClick={() => viewRemarksHistory(record)}
                         >
                           {record.remarks ? (
                             <div className="space-y-1 relative">
                               {record.status === 'Pending' && record.remarksHistory?.some(h => h.status === 'Edited') && (
-                                <span className="absolute -top-2 -right-1 bg-yellow-100 text-yellow-800 text-[10px] px-1.5 py-0.5 rounded-full">
+                                <span className="absolute -top-2 -right-1 bg-yellow-50 text-yellow-700 text-[10px] px-1.5 py-0.5 rounded-full">
                                   Edited
                                 </span>
                               )}
@@ -908,7 +1037,7 @@ export default function OthersPage() {
                                   {record.remarksHistory[0]?.timestamp && record.status !== 'Completed' && record.status !== 'Pending' && (
                                     <span>[{formatDateTimeWithoutSeconds(record.remarksHistory[0].timestamp)}] </span>
                                   )}
-                                  [{record.status} by {record.receivedBy}]
+                                  [{record.status === 'Pending' ? `${record.status} - Created by ${record.receivedBy}` : `${record.status} by ${record.receivedBy}`}]
                                 </div>
                               )}
                               <div className="text-xs text-blue-600 mt-1">
@@ -917,25 +1046,69 @@ export default function OthersPage() {
                             </div>
                           ) : '-'}
                         </TableCell>
-                        <TableCell className="py-1 px-1 text-center wrap-break-word whitespace-normal">
-                          <ActionButtons
-                            onView={() => handleViewRecord(record.id)}
-                            onEdit={() => handleEditRecord(record.id)}
-                            onTimeOut={() => handleTimeOut(record.id)}
-                            onReject={() => {
-                              setRecordToDelete(record.id);
-                              setRejectData({ remarks: '' });
-                              setDeleteConfirmOpen(true);
-                            }}
-                            hidden={record.status === 'Rejected'}
-                            canEdit={record.status !== 'Rejected'}
-                            canReject={record.status !== 'Rejected'}
-                            showTimeOut={record.status !== 'Completed' && record.status !== 'Rejected'}
-                            showEdit={record.status !== 'Completed'}
-                            showReject={record.status !== 'Completed'}
-                            editDisabledReason={record.status === 'Rejected' ? 'Cannot edit rejected records' : undefined}
-                            rejectDisabledReason={user?.role !== 'admin' && (!!record.dateTimeOut || record.status !== 'Pending') ? 'Users can only reject pending records' : undefined}
-                          />
+                        <TableCell className="text-sm py-3 px-4">
+                          <div className="flex flex-col items-center gap-1">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleViewRecord(record.id)}
+                              className="h-8 w-16 text-blue-600 border-blue-600 hover:bg-blue-50 hover:text-blue-700"
+                            >
+                              View
+                            </Button>
+                            {record.status === 'Pending' && (
+                              <>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleEditRecord(record.id)}
+                                  className="h-8 w-16 text-orange-600 border-orange-600 hover:bg-orange-50 hover:text-orange-700"
+                                >
+                                  Edit
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => {
+                                    setRecordToDelete(record.id);
+                                    setRejectData({ remarks: '' });
+                                    setDeleteConfirmOpen(true);
+                                  }}
+                                  className="h-8 w-16 text-red-600 border-red-600 hover:bg-red-50 hover:text-red-700"
+                                >
+                                  Reject
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleTimeOut(record.id)}
+                                  className="h-8 w-16 text-green-600 border-green-600 hover:bg-green-50 hover:text-green-700"
+                                >
+                                  Out
+                                </Button>
+                              </>
+                            )}
+                            {record.status === 'Approved' && (
+                              <>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleEditRecord(record.id)}
+                                  className="h-8 w-16 text-orange-600 border-orange-600 hover:bg-orange-50 hover:text-orange-700"
+                                >
+                                  Edit
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleTimeOut(record.id)}
+                                  className="h-8 w-16 text-green-600 border-green-600 hover:bg-green-50 hover:text-green-700"
+                                >
+                                  Out
+                                </Button>
+                              </>
+                            )}
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))
@@ -963,69 +1136,79 @@ export default function OthersPage() {
             {selectedRecord && (
               <div className="space-y-4">
                 {/* Personal Information */}
-                <div className="bg-white border border-gray-200 rounded-lg p-4">
+                <div className="bg-card border rounded-lg p-4">
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <p className="text-xs font-medium text-gray-600 uppercase">Full Name</p>
-                      <p className="text-sm font-semibold text-gray-900 mt-1">{selectedRecord.fullName}</p>
+                      <p className="text-xs font-medium uppercase">Full Name</p>
+                      <p className="text-sm font-semibold mt-1">{selectedRecord?.fullName || ''}</p>
                     </div>
                     <div>
-                      <p className="text-xs font-medium text-gray-600 uppercase">Designation/Office</p>
-                      <p className="text-sm font-semibold text-gray-900 mt-1">{selectedRecord.designationOffice}</p>
+                      <p className="text-xs font-medium uppercase">Designation/Office</p>
+                      <div className="mt-1">
+                        <div className="group relative inline-block">
+                          <span className="text-primary font-medium hover:underline cursor-default">
+                            {getDesignationAcronym(selectedRecord?.designationOffice || '')}
+                          </span>
+                          <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-sm rounded-lg shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
+                            <div className="font-medium">{selectedRecord?.designationOffice || ''}</div>
+                            <div className="absolute top-full left-1/2 transform -translate-x-1/2 -mt-1 w-2 h-2 bg-gray-900 rotate-45"></div>
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
 
                 {/* Record Details */}
-                <div className="bg-white border border-gray-200 rounded-lg p-4">
+                <div className="bg-card border rounded-lg p-4">
                   <div className="grid grid-cols-3 gap-4">
                     <div>
-                      <p className="text-xs font-medium text-gray-600 uppercase">Date/Time In</p>
-                      <p className="text-sm font-semibold text-gray-900 mt-1">{formatDateTimeWithoutSeconds(selectedRecord.dateTimeIn)}</p>
+                      <p className="text-xs font-medium uppercase">Date/Time In</p>
+                      <p className="text-sm font-semibold mt-1">{formatDateTimeWithoutSeconds(selectedRecord.dateTimeIn)}</p>
                     </div>
                     <div>
-                      <p className="text-xs font-medium text-gray-600 uppercase">Date/Time Out</p>
-                      <p className="text-sm font-semibold text-gray-900 mt-1">{selectedRecord.dateTimeOut ? formatDateTimeWithoutSeconds(selectedRecord.dateTimeOut) : '-'}</p>
+                      <p className="text-xs font-medium uppercase">Date/Time Out</p>
+                      <p className="text-sm font-semibold mt-1">{selectedRecord.dateTimeOut ? formatDateTimeWithoutSeconds(selectedRecord.dateTimeOut) : '-'}</p>
                     </div>
                     <div>
-                      <p className="text-xs font-medium text-gray-600 uppercase">Record Type</p>
-                      <p className="text-sm font-semibold text-gray-900 mt-1">{selectedRecord.recordType || '-'}</p>
+                      <p className="text-xs font-medium uppercase">Record Type</p>
+                      <p className="text-sm font-semibold mt-1">{selectedRecord?.recordType || '-'}</p>
                     </div>
                     <div>
-                      <p className="text-xs font-medium text-gray-600 uppercase">Start Date</p>
-                      <p className="text-sm font-semibold text-gray-900 mt-1">{selectedRecord.inclusiveDateStart || '-'}</p>
+                      <p className="text-xs font-medium uppercase">Start Date</p>
+                      <p className="text-sm font-semibold mt-1">{selectedRecord?.inclusiveDateStart || '-'}</p>
                     </div>
                     <div>
-                      <p className="text-xs font-medium text-gray-600 uppercase">End Date</p>
-                      <p className="text-sm font-semibold text-gray-900 mt-1">{selectedRecord.inclusiveDateEnd || '-'}</p>
+                      <p className="text-xs font-medium uppercase">End Date</p>
+                      <p className="text-sm font-semibold mt-1">{selectedRecord?.inclusiveDateEnd || '-'}</p>
                     </div>
                     <div>
-                      <p className="text-xs font-medium text-gray-600 uppercase">Start Time</p>
-                      <p className="text-sm font-semibold text-gray-900 mt-1">{selectedRecord.inclusiveTimeStart || '-'}</p>
+                      <p className="text-xs font-medium uppercase">Start Time</p>
+                      <p className="text-sm font-semibold mt-1">{selectedRecord?.inclusiveTimeStart || '-'}</p>
                     </div>
                   </div>
                 </div>
 
                 {/* Purpose */}
-                <div className="bg-white border border-gray-200 rounded-lg p-4">
-                  <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wide mb-3">Purpose</h3>
-                  <p className="text-sm font-semibold text-gray-900 whitespace-pre-wrap">{selectedRecord.purpose || '-'}</p>
+                <div className="bg-card border rounded-lg p-4">
+                  <h3 className="text-sm font-bold uppercase tracking-wide mb-3">Purpose</h3>
+                  <p className="text-sm font-semibold whitespace-pre-wrap">{selectedRecord?.purpose || '-'}</p>
                 </div>
 
                 {/* Remarks */}
-                <div className="bg-white border border-gray-200 rounded-lg p-4">
-                  <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wide mb-3">Remarks</h3>
-                  <p className="text-sm font-semibold text-gray-900 whitespace-pre-wrap">{selectedRecord.remarks || '-'}</p>
-                  {selectedRecord.timeOutRemarks && (
-                    <div className="mt-3 pt-3 border-t border-gray-200">
+                <div className="bg-card border rounded-lg p-4">
+                  <h3 className="text-sm font-bold uppercase tracking-wide mb-3">Remarks</h3>
+                  <p className="text-sm font-semibold whitespace-pre-wrap">{selectedRecord?.remarks || '-'}</p>
+                  {selectedRecord?.timeOutRemarks && (
+                    <div className="mt-3 pt-3 border-t">
                       <div className="grid grid-cols-2 gap-4">
                         <div>
-                          <p className="text-xs font-semibold text-blue-600 uppercase">Date/Time Out</p>
-                          <p className="text-sm font-semibold text-blue-900 mt-1">{selectedRecord.dateTimeOut ? formatDateTimeWithoutSeconds(selectedRecord.dateTimeOut) : '-'}</p>
+                          <p className="text-xs font-semibold uppercase">Date/Time Out</p>
+                          <p className="text-sm font-semibold mt-1">{selectedRecord?.dateTimeOut ? formatDateTimeWithoutSeconds(selectedRecord.dateTimeOut) : '-'}</p>
                         </div>
                         <div>
-                          <p className="text-xs font-semibold text-blue-600 uppercase">Time Out Remarks</p>
-                          <p className="text-sm font-semibold text-blue-900 mt-1 whitespace-pre-wrap">{selectedRecord.timeOutRemarks}</p>
+                          <p className="text-xs font-semibold uppercase">Time Out Remarks</p>
+                          <p className="text-sm font-semibold mt-1 whitespace-pre-wrap">{selectedRecord?.timeOutRemarks || ''}</p>
                         </div>
                       </div>
                     </div>
@@ -1199,10 +1382,10 @@ export default function OthersPage() {
                     <div className="flex justify-between items-start mb-2">
                       <div className="flex items-center space-x-3">
                         <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                          item.status === 'Completed' ? 'bg-green-100 text-green-800' :
-                          item.status === 'Rejected' ? 'bg-red-100 text-red-800' :
-                          item.status === 'Edited' ? 'bg-yellow-100 text-yellow-800' :
-                          'bg-blue-100 text-blue-800'
+                          item.status === 'Completed' ? 'bg-green-50 text-green-700' :
+                          item.status === 'Rejected' ? 'bg-red-50 text-red-700' :
+                          item.status === 'Edited' ? 'bg-yellow-50 text-yellow-700' :
+                          'bg-blue-50 text-blue-700'
                         }`}>
                           {item.status}
                         </span>

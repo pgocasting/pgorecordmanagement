@@ -45,15 +45,15 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen bg-white flex items-center justify-center p-4">
       <div className="w-full max-w-md">
-        <Card className="border border-gray-200 shadow-lg">
-          <CardHeader className="space-y-3 pb-6 border-b border-gray-200">
+        <Card className="border shadow-lg">
+          <CardHeader className="space-y-3 pb-6 border-b">
             <div className="flex items-center justify-center mb-2">
               <div className="w-12 h-12 bg-black rounded-lg flex items-center justify-center">
                 <LogIn className="w-6 h-6 text-white" />
               </div>
             </div>
             <CardTitle className="text-3xl text-center font-bold text-black">PGO Records</CardTitle>
-            <CardDescription className="text-center text-base text-gray-600">
+            <CardDescription className="text-center text-base text-muted-foreground">
               Sign in to your account
             </CardDescription>
           </CardHeader>
@@ -72,7 +72,7 @@ export default function LoginPage() {
                   Username
                 </Label>
                 <div className="relative">
-                  <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-500" />
+                  <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                   <Input
                     id="username"
                     type="text"
@@ -80,7 +80,7 @@ export default function LoginPage() {
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
                     disabled={isLoading}
-                    className="pl-10 h-10 border border-gray-300 bg-white text-black placeholder-gray-400 focus:border-black focus:ring-1 focus:ring-black"
+                    className="pl-10 h-10 border bg-background text-foreground placeholder-muted-foreground focus:border-ring focus:ring-1 focus:ring-ring"
                   />
                 </div>
               </div>
@@ -90,7 +90,7 @@ export default function LoginPage() {
                   Password
                 </Label>
                 <div className="relative">
-                  <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-500" />
+                  <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                   <Input
                     id="password"
                     type={showPassword ? 'text' : 'password'}
@@ -98,13 +98,13 @@ export default function LoginPage() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     disabled={isLoading}
-                    className="pl-10 pr-10 h-10 border border-gray-300 bg-white text-black placeholder-gray-400 focus:border-black focus:ring-1 focus:ring-black"
+                    className="pl-10 pr-10 h-10 border bg-background text-foreground placeholder-muted-foreground focus:border-ring focus:ring-1 focus:ring-ring"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
                     disabled={isLoading}
-                    className="absolute right-3 top-3 text-gray-500 hover:text-black disabled:opacity-50"
+                    className="absolute right-3 top-3 text-muted-foreground hover:text-foreground disabled:opacity-50"
                   >
                     {showPassword ? (
                       <EyeOff className="h-4 w-4" />
@@ -117,7 +117,7 @@ export default function LoginPage() {
 
               <Button
                 type="submit"
-                className="w-full h-10 bg-black hover:bg-gray-900 text-white font-semibold"
+                className="w-full h-10 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold"
                 disabled={isLoading}
               >
                 {isLoading ? (
@@ -133,7 +133,7 @@ export default function LoginPage() {
           </CardContent>
         </Card>
 
-        <p className="text-center text-gray-600 text-xs mt-4">
+        <p className="text-center text-muted-foreground text-xs mt-4">
           © 2025 PGO Record Management System. All rights reserved.
         </p>
       </div>

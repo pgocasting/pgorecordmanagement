@@ -828,9 +828,11 @@ export default function LeavePage() {
                               variant="outline"
                               role="combobox"
                               aria-expanded={designationDropdownOpen}
-                              className="w-full justify-between"
+                              className="w-full justify-between truncate"
                             >
-                              {formData.designation || "Select office..."}
+                              <span className="truncate flex-1 text-left">
+                                {formData.designation || "Select office..."}
+                              </span>
                               <Search className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                             </Button>
                           </PopoverTrigger>
@@ -987,9 +989,9 @@ export default function LeavePage() {
                             }
                             className={`${
                               item.status === 'Completed' || item.status === 'Approved' ? 
-                              'bg-green-100 text-green-800 hover:bg-green-200 border-green-200' : 
+                              'bg-green-50 text-green-700 hover:bg-green-100 border-green-200' : 
                               item.status === 'Pending' || (!item.status || item.status === 'Pending') ? 
-                              'bg-yellow-100 text-yellow-800 hover:bg-yellow-200 border-yellow-200' : ''
+                              'bg-yellow-50 text-yellow-700 hover:bg-yellow-100 border-yellow-200' : ''
                             }`}
                           >
                             {item.status || 'Pending'}
@@ -1014,7 +1016,7 @@ export default function LeavePage() {
                                   {item.remarksHistory[0]?.timestamp && item.status !== 'Completed' && item.status !== 'Pending' && (
                                     <span>[{formatDateTimeWithoutSeconds(item.remarksHistory[0].timestamp)}] </span>
                                   )}
-                                  [{item.status} by {item.receivedBy}]
+                                  [{item.status === 'Pending' ? `${item.status} - Created by ${item.receivedBy}` : `${item.status} by ${item.receivedBy}`}]
                                 </div>
                               )}
                               <div className="text-xs text-blue-600 mt-1">
@@ -1055,7 +1057,7 @@ export default function LeavePage() {
                               variant="outline"
                               size="sm"
                               onClick={() => handleTimeOut(item.id)}
-                              className="h-8 w-16 text-blue-600 border-blue-600 hover:bg-blue-50 hover:text-blue-700"
+                              className="h-8 w-16 text-green-600 border-green-600 hover:bg-green-50 hover:text-green-700"
                             >
                               Out
                             </Button>
@@ -1075,7 +1077,7 @@ export default function LeavePage() {
                               variant="outline"
                               size="sm"
                               onClick={() => handleTimeOut(item.id)}
-                              className="h-8 w-16 text-blue-600 border-blue-600 hover:bg-blue-50 hover:text-blue-700"
+                              className="h-8 w-16 text-green-600 border-green-600 hover:bg-green-50 hover:text-green-700"
                             >
                               Out
                             </Button>

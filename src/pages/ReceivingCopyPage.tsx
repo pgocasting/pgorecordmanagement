@@ -16,10 +16,16 @@ import {
 } from '@/services/firebaseService';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
 import { 
   Menu,
   LogOut, 
-  Printer 
+  Printer,
+  Search
 } from 'lucide-react';
 import { Sidebar } from '@/components/Sidebar';
 
@@ -62,6 +68,7 @@ export default function ReceivingCopyPage() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [selectedRecords, setSelectedRecords] = useState<Set<string>>(new Set());
   const [selectedCategories, setSelectedCategories] = useState<Set<string>>(new Set(recordTypes));
+  const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10);
 
@@ -204,7 +211,17 @@ export default function ReceivingCopyPage() {
   };
 
   const filteredRecords = allRecords.filter(record => 
-    selectedCategories.has(record.recordType || '') && record.status === 'Completed'
+    selectedCategories.has(record.recordType || '') && 
+    record.status === 'Completed' &&
+    (
+      searchTerm === '' ||
+      record.trackingId?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      record.fullName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      record.receivedBy?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      record.recordType?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      record.particulars?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      record.purpose?.toLowerCase().includes(searchTerm.toLowerCase())
+    )
   ).sort((a, b) => new Date(b.dateTimeIn).getTime() - new Date(a.dateTimeIn).getTime());
 
   const totalPages = Math.ceil(filteredRecords.length / itemsPerPage);
@@ -249,6 +266,23 @@ export default function ReceivingCopyPage() {
         year: 'numeric',
         month: '2-digit',
         day: '2-digit'
+      });
+    } catch {
+      return dateString;
+    }
+  };
+
+  const formatDateTimeWithoutSeconds = (dateString: string) => {
+    try {
+      const date = new Date(dateString);
+      return date.toLocaleString('en-US', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: true,
+        timeZone: 'Asia/Manila'
       });
     } catch {
       return dateString;
@@ -341,40 +375,61 @@ export default function ReceivingCopyPage() {
 
         {/* Content Area */}
         <div className="flex-1 overflow-hidden p-6 flex flex-col">
-          {/* Category Filter */}
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-4 print-hide shrink-0">
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="text-sm font-semibold text-gray-900">Filter by Category</h3>
-              <button
-                onClick={toggleSelectAllCategories}
-                className="text-xs text-indigo-600 hover:text-indigo-700 font-medium"
-              >
-                {selectedCategories.size === recordTypes.length ? 'Deselect All' : 'Select All'}
-              </button>
-            </div>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
-              {recordTypes.map((category) => (
-                <label key={category} className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={selectedCategories.has(category)}
-                    onChange={() => toggleCategorySelection(category)}
-                    className="cursor-pointer"
-                  />
-                  <span className="text-xs text-gray-700">
-                    {category}
-                    <span className="text-gray-500 opacity-80 ml-1">
-                      {category === 'Voucher' || category === 'Purchase Request' || category === 'Obligation Request' || category === 'Processing' ? 
-                        '(Have Amount)' : 
-                        '(No Amount)'}
-                    </span>
-                  </span>
-                </label>
-              ))}
+          {/* Search Bar */}
+          <div className="mb-4 print-hide">
+            <div className="relative max-w-md">
+              <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+              <Input
+                placeholder="Search by tracking ID, name, category, particulars..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
             </div>
           </div>
 
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden flex flex-col flex-1 min-h-0">
+          {/* Category Filter */}
+          <Card className="mb-4 print-hide shrink-0">
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-sm">Filter by Category</CardTitle>
+                <Button
+                  variant="link"
+                  size="sm"
+                  onClick={toggleSelectAllCategories}
+                  className="text-xs text-indigo-600 hover:text-indigo-700 font-medium p-0 h-auto"
+                >
+                  {selectedCategories.size === recordTypes.length ? 'Deselect All' : 'Select All'}
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent className="pt-0">
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+                {recordTypes.map((category) => (
+                  <div key={category} className="flex items-center space-x-2">
+                    <Checkbox
+                      id={category}
+                      checked={selectedCategories.has(category)}
+                      onCheckedChange={() => toggleCategorySelection(category)}
+                    />
+                    <Label 
+                      htmlFor={category} 
+                      className="text-sm text-gray-700 cursor-pointer flex-1"
+                    >
+                      {category}
+                      <span className="text-gray-500 opacity-80 ml-1 text-xs">
+                        {category === 'Voucher' || category === 'Purchase Request' || category === 'Obligation Request' || category === 'Processing' ? 
+                          '(Have Amount)' : 
+                          '(No Amount)'}
+                      </span>
+                    </Label>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="overflow-hidden flex flex-col flex-1 min-h-0">
             {isLoading ? (
               <div className="flex items-center justify-center h-96">
                 <p className="text-gray-500">Loading records...</p>
@@ -400,11 +455,9 @@ export default function ReceivingCopyPage() {
                   <thead>
                     <tr className="bg-gray-50 border-b border-gray-300">
                       <th className="border border-gray-300 px-2 py-2 text-center text-sm font-semibold text-gray-900">
-                        <input
-                          type="checkbox"
+                        <Checkbox
                           checked={selectedRecords.size === filteredRecords.length && filteredRecords.length > 0}
-                          onChange={toggleSelectAll}
-                          className="cursor-pointer"
+                          onCheckedChange={toggleSelectAll}
                         />
                       </th>
                       <th className="border border-gray-300 px-2 py-2 text-left text-sm font-semibold text-gray-900 whitespace-nowrap">Tracking ID</th>
@@ -415,18 +468,15 @@ export default function ReceivingCopyPage() {
                       <th className="border border-gray-300 px-2 py-2 text-left text-sm font-semibold text-gray-900">Particulars</th>
                       <th className="border border-gray-300 px-2 py-2 text-left text-sm font-semibold text-gray-900">Amount</th>
                       <th className="border border-gray-300 px-2 py-2 text-left text-sm font-semibold text-gray-900 print-hide">Remarks</th>
-                      <th className="border border-gray-300 px-2 py-2 text-left text-sm font-semibold text-gray-900 whitespace-nowrap">Received By</th>
                     </tr>
                   </thead>
                   <tbody>
                     {paginatedRecords.map((record) => (
                       <tr key={record.id} className={`border-b border-gray-200 ${selectedRecords.has(record.id) ? 'bg-blue-50 print-selected' : 'hover:bg-gray-50'}`}>
                         <td className="border border-gray-300 px-2 py-2 text-center">
-                          <input
-                            type="checkbox"
+                          <Checkbox
                             checked={selectedRecords.has(record.id)}
-                            onChange={() => toggleRecordSelection(record.id)}
-                            className="cursor-pointer"
+                            onCheckedChange={() => toggleRecordSelection(record.id)}
                           />
                         </td>
                         <td className="border border-gray-300 px-2 py-2 text-sm text-gray-900 truncate">
@@ -436,7 +486,9 @@ export default function ReceivingCopyPage() {
                           {formatDate(record.dateTimeIn)}
                         </td>
                         <td className="border border-gray-300 px-2 py-2 text-sm text-gray-900 truncate">
-                          {record.recordType || '-'}
+                          <Badge variant="outline" className="text-xs">
+                            {record.recordType || '-'}
+                          </Badge>
                         </td>
                         <td className="border border-gray-300 px-2 py-2 text-sm text-gray-900 break-words">
                           {getFullName(record)}
@@ -451,10 +503,21 @@ export default function ReceivingCopyPage() {
                           {formatAmount(record.amount)}
                         </td>
                         <td className="border border-gray-300 px-2 py-2 text-sm text-gray-900 break-words print-hide">
-                          {record.remarks || '-'}
-                        </td>
-                        <td className="border border-gray-300 px-2 py-2 text-sm text-black text-center">
-                          -
+                          {(record as any).remarksHistory?.length > 0 ? (
+                            (record as any).remarksHistory.map((historyItem: any, index: number) => (
+                              <div key={index} className="border-b border-gray-200 pb-1 mb-1 last:border-b-0">
+                                <div className="text-xs text-gray-500 mb-1">
+                                  {historyItem.timestamp && formatDateTimeWithoutSeconds(historyItem.timestamp)}
+                                </div>
+                                <div className="text-black text-sm">
+                                  {historyItem.remarks}
+                                </div>
+                                <div className={`text-xs ${index === 0 ? 'text-green-600' : index === (record as any).remarksHistory.length - 1 ? 'text-yellow-600' : historyItem.status === 'Completed' ? 'text-green-600' : historyItem.status === 'Rejected' ? 'text-red-600' : 'text-gray-600'}`}>
+                                  {index === 0 ? `Completed - ${historyItem.updatedBy}` : index === (record as any).remarksHistory.length - 1 ? `Pending - Created by ${historyItem.updatedBy}` : `${historyItem.status} - ${historyItem.updatedBy}`}
+                                </div>
+                              </div>
+                            ))
+                          ) : record.remarks || '-'}
                         </td>
                       </tr>
                     ))}
@@ -515,7 +578,7 @@ export default function ReceivingCopyPage() {
                 </div>
               </div>
             )}
-          </div>
+          </Card>
         </div>
       </div>
 
@@ -589,11 +652,18 @@ export default function ReceivingCopyPage() {
             background-color: white !important;
             box-shadow: none !important;
           }
-          col:first-child, th:first-child, td:first-child {
+          /* Hide checkbox and remarks columns in print */
+          col:first-child, 
+          th:first-child, 
+          td:first-child,
+          th:nth-child(8), /* Remarks header */
+          td:nth-child(8) { /* Remarks data cells */
             display: none !important;
           }
-          th:last-child, td:last-child {
-            color: white !important;
+          /* Add border to amount column in print */
+          th:nth-child(7), /* Amount header */
+          td:nth-child(7) { /* Amount data cells */
+            border: 1px solid #000 !important;
           }
           tbody tr:not(.print-selected) {
             display: none !important;

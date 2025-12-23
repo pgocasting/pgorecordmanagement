@@ -21,12 +21,18 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from '@/components/ui/command';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
 import {
   Dialog,
   DialogContent,
@@ -37,9 +43,9 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { Plus, Menu, LogOut, Search, User } from 'lucide-react';
-import { ActionButtons } from '@/components/ActionButtons';
 import SuccessModal from '@/components/SuccessModal';
 import TimeOutModal from '@/components/TimeOutModal';
+import { Badge } from '@/components/ui/badge';
 import { MonthlyTotalCard } from '@/components/MonthlyTotalCard';
 
 const getCurrentDateTime = (): string => {
@@ -60,7 +66,6 @@ interface PurchaseRequest {
   dateTimeOut?: string;
   fullName: string;
   designation: string;
-  itemDescription: string;
   amount?: string | number;
   purpose: string;
   status: string;
@@ -137,13 +142,13 @@ export default function PurchaseRequestPage() {
     updatedBy: string;
   }>>([]);
   const [designationOptions, setDesignationOptions] = useState<string[]>([]);
+  const [designationDropdownOpen, setDesignationDropdownOpen] = useState(false);
 
   const [formData, setFormData] = useState({
     dateTimeIn: '',
     dateTimeOut: '',
     fullName: '',
     designation: '',
-    itemDescription: '',
     amount: '',
     purpose: '',
     remarks: '',
@@ -190,6 +195,9 @@ export default function PurchaseRequestPage() {
   const filteredPurchaseRequests = purchaseRequests.filter(request =>
     request.trackingId.toLowerCase().includes(searchTerm.toLowerCase()) ||
     request.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    request.designation?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    request.purpose?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    request.remarks?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     request.receivedBy?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
@@ -253,7 +261,6 @@ export default function PurchaseRequestPage() {
       !formData.dateTimeIn ||
       !formData.fullName ||
       !formData.designation ||
-      !formData.itemDescription ||
       !formData.amount ||
       !formData.purpose
     ) {
@@ -296,7 +303,6 @@ export default function PurchaseRequestPage() {
         dateTimeOut: '',
         fullName: '',
         designation: '',
-        itemDescription: '',
         amount: '',
         purpose: '',
         remarks: '',
@@ -349,7 +355,6 @@ export default function PurchaseRequestPage() {
         dateTimeOut: '',
         fullName: '',
         designation: '',
-        itemDescription: '',
         amount: '',
         purpose: '',
         remarks: '',
@@ -375,7 +380,6 @@ export default function PurchaseRequestPage() {
         dateTimeOut: request.dateTimeOut || '',
         fullName: request.fullName,
         designation: request.designation,
-        itemDescription: request.itemDescription,
         amount: (request.amount || (request as any).estimatedCost || 0).toString(),
         purpose: request.purpose,
         remarks: request.remarks,
@@ -443,7 +447,6 @@ export default function PurchaseRequestPage() {
         dateTimeOut: '',
         fullName: '',
         designation: '',
-        itemDescription: '',
         amount: '',
         purpose: '',
         remarks: '',
@@ -540,7 +543,7 @@ export default function PurchaseRequestPage() {
   };
 
   return (
-    <div className="flex h-screen bg-gray-50">
+    <div className="flex h-screen bg-background">
       {/* Mobile Sidebar */}
       <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
         <SheetTrigger asChild className="md:hidden">
@@ -554,37 +557,37 @@ export default function PurchaseRequestPage() {
       </Sheet>
 
       {/* Desktop Sidebar */}
-      <div className="hidden md:block bg-white border-r border-gray-200 shadow-sm">
+      <div className="hidden md:block bg-card border-r shadow-sm">
         <Sidebar recordTypes={recordTypes} onNavigate={undefined} />
       </div>
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Top Bar */}
-        <div className="bg-white border-b border-gray-200 px-6 py-4">
+        <div className="bg-card border-b px-6 py-4">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Purchase Request Records</h1>
-              <p className="text-sm text-gray-600">Welcome back</p>
+              <h1 className="text-2xl font-bold text-foreground">Purchase Request Records</h1>
+              <p className="text-sm text-muted-foreground">Welcome back</p>
             </div>
             
             {/* User Info and Logout */}
             <div className="flex items-center gap-2">
               {user?.name && (
-                <div className="flex items-center gap-2 px-3 py-2 bg-gray-50 rounded-lg border border-gray-200">
-                  <div className="w-6 h-6 rounded-full bg-indigo-100 flex items-center justify-center shrink-0">
-                    <User className="h-3 w-3 text-indigo-600" />
+                <div className="flex items-center gap-2 px-3 py-2 bg-secondary rounded-lg border">
+                  <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                    <User className="h-3 w-3 text-primary" />
                   </div>
                   <div className="flex flex-col min-w-0">
-                    <p className="text-xs font-medium text-gray-900 truncate">{user.name}</p>
-                    <p className="text-xs text-gray-500 truncate capitalize">{user.role}</p>
+                    <p className="text-xs font-medium text-foreground truncate">{user.name}</p>
+                    <p className="text-xs text-muted-foreground truncate capitalize">{user.role}</p>
                   </div>
                 </div>
               )}
               
               <Button
                 variant="outline"
-                className="gap-2 text-red-600 hover:text-red-700 hover:bg-red-50 h-9"
+                className="gap-2 text-destructive hover:text-destructive hover:bg-destructive/10 h-9"
                 onClick={handleLogout}
               >
                 <LogOut className="h-4 w-4" />
@@ -595,20 +598,20 @@ export default function PurchaseRequestPage() {
         </div>
 
         {/* Content Area */}
-        <div className="flex-1 overflow-auto p-6">
+        <div className="flex-1 overflow-auto p-6 bg-muted/30">
           <MonthlyTotalCard total={monthlyTotal} />
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+          <div className="bg-card rounded-lg shadow-sm border overflow-hidden">
             {/* Header */}
-            <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+            <div className="px-6 py-4 border-b flex items-center justify-between">
               <div>
-                <h2 className="text-xl font-bold text-gray-900">Purchase Requests</h2>
-                <p className="text-sm text-gray-600">Manage and view all purchase request records</p>
+                <h2 className="text-xl font-bold text-foreground">Purchase Requests</h2>
+                <p className="text-sm text-muted-foreground">Manage and view all purchase request records</p>
               </div>
               <div className="flex items-center gap-3">
                 <div className="relative w-64">
-                  <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                  <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                   <Input
-                    placeholder="Search by tracking ID, name..."
+                    placeholder="Search by tracking ID, name, designation, purpose, remarks..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="pl-10"
@@ -625,7 +628,6 @@ export default function PurchaseRequestPage() {
                           dateTimeOut: '',
                           fullName: '',
                           designation: '',
-                          itemDescription: '',
                           amount: '',
                           purpose: '',
                           remarks: '',
@@ -681,18 +683,43 @@ export default function PurchaseRequestPage() {
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label htmlFor="designation">Office *</Label>
-                        <Select value={formData.designation} onValueChange={(value) => handleSelectChange('designation', value)}>
-                          <SelectTrigger className="w-full">
-                            <SelectValue placeholder="Select" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {designationOptions.map((option) => (
-                              <SelectItem key={option} value={option}>
-                                {option}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                        <Popover open={designationDropdownOpen} onOpenChange={setDesignationDropdownOpen}>
+                          <PopoverTrigger asChild>
+                            <Button
+                              variant="outline"
+                              role="combobox"
+                              aria-expanded={designationDropdownOpen}
+                              className="w-full justify-between truncate"
+                            >
+                              <span className="truncate flex-1 text-left">
+                                {formData.designation || "Select office..."}
+                              </span>
+                              <Search className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-full p-0" align="start">
+                            <Command>
+                              <CommandInput placeholder="Search office..." />
+                              <CommandList>
+                                <CommandEmpty>No office found.</CommandEmpty>
+                                <CommandGroup>
+                                  {designationOptions.map((option) => (
+                                    <CommandItem
+                                      key={option}
+                                      value={option}
+                                      onSelect={(currentValue) => {
+                                        handleSelectChange('designation', currentValue);
+                                        setDesignationDropdownOpen(false);
+                                      }}
+                                    >
+                                      {option}
+                                    </CommandItem>
+                                  ))}
+                                </CommandGroup>
+                              </CommandList>
+                            </Command>
+                          </PopoverContent>
+                        </Popover>
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="amount">Amount *</Label>
@@ -707,16 +734,6 @@ export default function PurchaseRequestPage() {
                           required
                         />
                       </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="remarks">Remarks</Label>
-                        <Input
-                          id="remarks"
-                          name="remarks"
-                          value={formData.remarks}
-                          onChange={handleInputChange}
-                          placeholder="Enter remarks"
-                        />
-                      </div>
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="purpose">Purpose *</Label>
@@ -728,6 +745,16 @@ export default function PurchaseRequestPage() {
                         placeholder="Enter purpose"
                         rows={3}
                         required
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="remarks">Remarks</Label>
+                      <Input
+                        id="remarks"
+                        name="remarks"
+                        value={formData.remarks}
+                        onChange={handleInputChange}
+                        placeholder="Enter remarks"
                       />
                     </div>
                   </div>
@@ -747,61 +774,53 @@ export default function PurchaseRequestPage() {
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
-                  <TableRow className="bg-gray-50">
-                    <TableHead className="text-center">Received By</TableHead>
-                    <TableHead className="text-center">Tracking ID</TableHead>
-                    <TableHead className="text-center">Date/Time IN</TableHead>
-                    <TableHead className="text-center">Date/Time OUT</TableHead>
-                    <TableHead className="text-center">Full Name</TableHead>
-                    <TableHead className="text-center">Purpose</TableHead>
-                    <TableHead className="text-center">Amount</TableHead>
-                    <TableHead className="text-center">Status</TableHead>
-                    <TableHead className="text-center">Remarks</TableHead>
-                    <TableHead className="text-center">Actions</TableHead>
+                  <TableRow className="bg-muted/50">
+                    <TableHead className="font-semibold py-3 px-4 text-center text-xs">Received By</TableHead>
+                    <TableHead className="font-semibold py-3 px-4 text-center text-xs">Tracking ID</TableHead>
+                    <TableHead className="font-semibold py-3 px-4 text-center text-xs">Date/Time IN</TableHead>
+                    <TableHead className="font-semibold py-3 px-4 text-center text-xs">Date/Time OUT</TableHead>
+                    <TableHead className="font-semibold py-3 px-4 text-center text-xs">Full Name</TableHead>
+                    <TableHead className="font-semibold py-3 px-4 text-center text-xs">Purpose</TableHead>
+                    <TableHead className="font-semibold py-3 px-4 text-center text-xs">Amount</TableHead>
+                    <TableHead className="font-semibold py-3 px-4 text-center text-xs">Status</TableHead>
+                    <TableHead className="font-semibold py-3 px-4 text-center text-xs">Remarks</TableHead>
+                    <TableHead className="font-semibold py-3 px-4 text-center text-xs">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {filteredPurchaseRequests.length === 0 ? (
                     <TableRow key="empty-state">
-                      <TableCell colSpan={10} className="text-center py-4 text-gray-500 text-xs">
+                      <TableCell colSpan={10} className="text-center py-8 text-muted-foreground">
                         {purchaseRequests.length === 0 ? 'No purchase requests found. Click "Add Purchase Request" to create one.' : 'No purchase requests match your search.'}
                       </TableCell>
                     </TableRow>
                   ) : (
                     filteredPurchaseRequests.map((request) => (
-                      <TableRow key={request.id} className="hover:bg-gray-50">
-                        <TableCell className="text-center text-xs">
-                          {request.receivedBy || '-'}
-                        </TableCell>
-                        <TableCell className="text-center font-semibold text-indigo-600 text-xs">
-                          {request.trackingId}
-                        </TableCell>
-                        <TableCell className="text-center text-xs">
-                          {formatDateTimeWithoutSeconds(request.dateTimeIn)}
-                        </TableCell>
-                        <TableCell className={`text-center text-xs ${request.status === 'Completed' ? 'text-green-600 font-medium' : ''}`}>
-                          {request.dateTimeOut ? formatDateTimeWithoutSeconds(request.dateTimeOut) : '-'}
-                        </TableCell>
-                        <TableCell className="text-center text-xs">{request.fullName}</TableCell>
-                        <TableCell className="text-center text-xs">{request.purpose}</TableCell>
-                        <TableCell className="text-center text-xs">{formatAmount(request.amount || (request as any).estimatedCost)}</TableCell>
-                        <TableCell className="text-center">
-                          <span
-                            className={`px-2 py-1 rounded text-xs font-medium ${
-                              request.status === 'Completed'
-                                ? 'bg-green-100 text-green-800'
-                                : request.status === 'Pending'
-                                ? 'bg-yellow-100 text-yellow-800'
-                                : request.status === 'Rejected'
-                                ? 'bg-red-100 text-red-800'
-                                : 'bg-gray-100 text-gray-800'
+                      <TableRow key={request.id} className="hover:bg-muted/50 transition-colors">
+                        <TableCell className="text-sm py-3 px-4 text-center">{request.receivedBy || '-'}</TableCell>
+                        <TableCell className="text-sm py-3 px-4 text-center font-bold text-primary">{request.trackingId}</TableCell>
+                        <TableCell className="text-sm py-3 px-4 text-center">{formatDateTimeWithoutSeconds(request.dateTimeIn)}</TableCell>
+                        <TableCell className={`text-sm py-3 px-4 text-center ${request.status === 'Completed' ? 'text-green-600 font-medium' : 'text-red-600'}`}>{request.dateTimeOut ? formatDateTimeWithoutSeconds(request.dateTimeOut) : '-'}</TableCell>
+                        <TableCell className="text-sm py-3 px-4 text-center">{request.fullName}</TableCell>
+                        <TableCell className="text-sm py-3 px-4 text-center">{request.purpose}</TableCell>
+                        <TableCell className="text-sm py-3 px-4 text-center">{formatAmount(request.amount || (request as any).estimatedCost)}</TableCell>
+                        <TableCell className="text-sm py-3 px-4 text-center">
+                          <Badge 
+                            variant={
+                              request.status === 'Rejected' ? 'destructive' : 'secondary'
+                            }
+                            className={`${
+                              request.status === 'Completed' || request.status === 'Approved' ? 
+                              'bg-green-50 text-green-700 hover:bg-green-100 border-green-200' : 
+                              request.status === 'Pending' || (!request.status || request.status === 'Pending') ? 
+                              'bg-yellow-50 text-yellow-700 hover:bg-yellow-100 border-yellow-200' : ''
                             }`}
                           >
-                            {request.status}
-                          </span>
+                            {request.status || 'Pending'}
+                          </Badge>
                         </TableCell>
                         <TableCell 
-                          className="wrap-break-word whitespace-normal text-xs cursor-pointer hover:bg-gray-50"
+                          className="wrap-break-word whitespace-normal text-sm cursor-pointer hover:bg-gray-50"
                           onClick={() => viewRemarksHistory(request)}
                         >
                           {request.remarks ? (
@@ -819,7 +838,7 @@ export default function PurchaseRequestPage() {
                                   {request.remarksHistory[0]?.timestamp && request.status !== 'Completed' && request.status !== 'Pending' && (
                                     <span>[{formatDateTimeWithoutSeconds(request.remarksHistory[0].timestamp)}] </span>
                                   )}
-                                  [{request.status} by {request.receivedBy}]
+                                  [{request.status === 'Pending' ? `${request.status} - Created by ${request.receivedBy}` : `${request.status} by ${request.receivedBy}`}]
                                 </div>
                               )}
                               <div className="text-xs text-blue-600 mt-1">
@@ -828,21 +847,65 @@ export default function PurchaseRequestPage() {
                             </div>
                           ) : '-'}
                         </TableCell>
-                        <TableCell className="text-center">
-                          <ActionButtons
-                            onView={() => handleViewRequest(request.id)}
-                            onEdit={() => handleEditRequest(request.id)}
-                            onTimeOut={() => handleTimeOut(request.id)}
-                            onReject={() => handleRejectRequest(request.id)}
-                            hidden={request.status === 'Rejected'}
-                            canEdit={request.status !== 'Rejected'}
-                            canReject={request.status !== 'Rejected'}
-                            showTimeOut={request.status !== 'Completed' && request.status !== 'Rejected'}
-                            showEdit={request.status !== 'Completed'}
-                            showReject={request.status !== 'Completed'}
-                            editDisabledReason={request.status === 'Rejected' ? 'Cannot edit rejected records' : undefined}
-                            rejectDisabledReason={request.status === 'Rejected' ? 'Record already rejected' : (request.status === 'Completed' ? 'Cannot reject completed records' : (user?.role !== 'admin' && (!!request.dateTimeOut || request.status !== 'Pending') ? 'Users can only reject pending records' : undefined))}
-                          />
+                        <TableCell className="text-sm py-3 px-4">
+                          <div className="flex flex-col items-center gap-1">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleViewRequest(request.id)}
+                              className="h-8 w-16 text-blue-600 border-blue-600 hover:bg-blue-50 hover:text-blue-700"
+                            >
+                              View
+                            </Button>
+                            {request.status === 'Pending' && (
+                              <>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleEditRequest(request.id)}
+                                  className="h-8 w-16 text-orange-600 border-orange-600 hover:bg-orange-50 hover:text-orange-700"
+                                >
+                                  Edit
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleRejectRequest(request.id)}
+                                  className="h-8 w-16 text-red-600 border-red-600 hover:bg-red-50 hover:text-red-700"
+                                >
+                                  Reject
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleTimeOut(request.id)}
+                                  className="h-8 w-16 text-green-600 border-green-600 hover:bg-green-50 hover:text-green-700"
+                                >
+                                  Out
+                                </Button>
+                              </>
+                            )}
+                            {request.status === 'Approved' && (
+                              <>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleEditRequest(request.id)}
+                                  className="h-8 w-16 text-orange-600 border-orange-600 hover:bg-orange-50 hover:text-orange-700"
+                                >
+                                  Edit
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleTimeOut(request.id)}
+                                  className="h-8 w-16 text-green-600 border-green-600 hover:bg-green-50 hover:text-green-700"
+                                >
+                                  Out
+                                </Button>
+                              </>
+                            )}
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))
@@ -863,13 +926,13 @@ export default function PurchaseRequestPage() {
           </DialogDescription>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="rejectRemarks" className="text-sm font-medium text-gray-700">Rejection Remarks *</Label>
+              <Label htmlFor="rejectRemarks" className="text-sm font-medium">Rejection Remarks *</Label>
               <textarea
                 id="rejectRemarks"
                 placeholder="Enter rejection remarks (required)"
                 value={rejectData.remarks}
                 onChange={(e) => setRejectData({ remarks: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 text-sm"
+                className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 text-sm"
                 rows={3}
               />
             </div>
@@ -982,12 +1045,6 @@ export default function PurchaseRequestPage() {
                       <p className="text-sm font-semibold text-gray-900 mt-1">{formatAmount(selectedRequest.amount || (selectedRequest as any).estimatedCost)}</p>
                     </div>
                   </div>
-                </div>
-
-                {/* Item Description */}
-                <div className="bg-white border border-gray-200 rounded-lg p-4">
-                  <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wide mb-3">Item Description</h3>
-                  <p className="text-sm font-semibold text-gray-900 whitespace-pre-wrap">{selectedRequest.itemDescription || '-'}</p>
                 </div>
 
                 {/* Purpose */}
