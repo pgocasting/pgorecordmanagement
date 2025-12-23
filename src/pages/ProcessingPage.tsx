@@ -653,6 +653,7 @@ setFormData(initialFormData());
                       onClick={() => {
                         setEditingId(null);
                         setFormData({
+                          receivedBy: '',
                           dateTimeIn: getCurrentDateTime(),
                           dateTimeOut: '',
                           fullName: '',
