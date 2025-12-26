@@ -534,7 +534,7 @@ export default function ReportPage() {
                       <TableHead className="text-center text-xs">Received By</TableHead>
                       <TableHead className="text-center text-xs">Tracking ID</TableHead>
                       <TableHead className="text-center text-xs">Category</TableHead>
-                      <TableHead className="text-center text-xs">Date/Time IN</TableHead>
+                      <TableHead className="text-center text-xs whitespace-normal wrap-break-word max-w-[120px]">Date/Time IN</TableHead>
                       <TableHead className="text-center text-xs">Name/Reference</TableHead>
                       <TableHead className="text-center text-xs">Amount</TableHead>
                       <TableHead className="text-center text-xs">Status</TableHead>
@@ -563,7 +563,7 @@ export default function ReportPage() {
                             {record.trackingId}
                           </TableCell>
                           <TableCell className="text-center text-xs">{record.category}</TableCell>
-                          <TableCell className="text-center text-xs">
+                          <TableCell className="text-center text-xs whitespace-normal wrap-break-word max-w-[120px]">
                             {new Date(record.dateTimeIn).toLocaleString()}
                           </TableCell>
                           <TableCell className="text-center text-xs">

@@ -941,8 +941,8 @@ export default function LeavePage() {
                   <TableRow className="bg-muted/50">
                     <TableHead className="font-semibold py-3 px-4 text-center text-xs">Received By</TableHead>
                     <TableHead className="font-semibold py-3 px-4 text-center text-xs">Tracking ID</TableHead>
-                    <TableHead className="font-semibold py-3 px-4 text-center text-xs">Date/Time IN</TableHead>
-                    <TableHead className="font-semibold py-3 px-4 text-center text-xs">Date/Time OUT</TableHead>
+                    <TableHead className="font-semibold py-3 px-4 text-center text-xs whitespace-normal wrap-break-word max-w-[120px]">Date/Time IN</TableHead>
+                    <TableHead className="font-semibold py-3 px-4 text-center text-xs whitespace-normal wrap-break-word max-w-[120px]">Date/Time OUT</TableHead>
                     <TableHead className="font-semibold py-3 px-4 text-center text-xs">Full Name</TableHead>
                     <TableHead className="font-semibold py-3 px-4 text-center text-xs">Designation</TableHead>
                     <TableHead className="font-semibold py-3 px-4 text-center text-xs">Leave Type</TableHead>
@@ -965,8 +965,8 @@ export default function LeavePage() {
                       <TableRow key={item.id} className="hover:bg-muted/50 transition-colors">
                         <TableCell className="text-sm py-3 px-4 text-center">{item.receivedBy || '-'}</TableCell>
                         <TableCell className="text-sm py-3 px-4 text-center font-bold text-primary">{item.trackingId}</TableCell>
-                        <TableCell className="text-sm py-3 px-4 text-center">{formatDateTimeWithoutSeconds(item.dateTimeIn)}</TableCell>
-                        <TableCell className={`text-sm py-3 px-4 text-center ${item.status === 'Completed' ? 'text-green-600 font-medium' : 'text-red-600'}`}>{item.dateTimeOut ? formatDateTimeWithoutSeconds(item.dateTimeOut) : '-'}</TableCell>
+                        <TableCell className="text-sm py-3 px-4 text-center whitespace-normal wrap-break-word max-w-[120px]">{formatDateTimeWithoutSeconds(item.dateTimeIn)}</TableCell>
+                        <TableCell className={`text-sm py-3 px-4 text-center whitespace-normal wrap-break-word max-w-[120px] ${item.status === 'Completed' ? 'text-green-600 font-medium' : 'text-red-600'}`}>{item.dateTimeOut ? formatDateTimeWithoutSeconds(item.dateTimeOut) : '-'}</TableCell>
                         <TableCell className="text-sm py-3 px-4 text-center">{item.fullName}</TableCell>
                         <TableCell className="text-sm py-3 px-4 text-center">
                           <div className="group relative inline-block">
@@ -1283,19 +1283,19 @@ export default function LeavePage() {
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
                         <p className="text-sm font-medium text-gray-600">Tracking ID</p>
-                        <p className="text-sm text-gray-900 mt-1 break-words">{selectedLeave.trackingId}</p>
+                        <p className="text-sm text-gray-900 mt-1 wrap-break-word">{selectedLeave.trackingId}</p>
                       </div>
                       <div>
                         <p className="text-sm font-medium text-gray-600">Received By</p>
-                        <p className="text-sm text-gray-900 mt-1 break-words">{selectedLeave.receivedBy || '-'}</p>
+                        <p className="text-sm text-gray-900 mt-1 wrap-break-word">{selectedLeave.receivedBy || '-'}</p>
                       </div>
                       <div>
                         <p className="text-sm font-medium text-gray-600">Date/Time In</p>
-                        <p className="text-sm text-gray-900 mt-1 break-words">{formatDateTimeWithoutSeconds(selectedLeave.dateTimeIn)}</p>
+                        <p className="text-sm text-gray-900 mt-1 wrap-break-word">{formatDateTimeWithoutSeconds(selectedLeave.dateTimeIn)}</p>
                       </div>
                       <div>
                         <p className="text-sm font-medium text-gray-600">Created Date</p>
-                        <p className="text-sm text-gray-900 mt-1 break-words">{formatDateTimeWithoutSeconds(selectedLeave.createdAt)}</p>
+                        <p className="text-sm text-gray-900 mt-1 wrap-break-word">{formatDateTimeWithoutSeconds(selectedLeave.createdAt)}</p>
                       </div>
                     </div>
                   </CardContent>
@@ -1307,7 +1307,7 @@ export default function LeavePage() {
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
                         <p className="text-sm font-medium text-gray-600">Full Name</p>
-                        <p className="text-sm text-gray-900 mt-1 break-words">{selectedLeave.fullName}</p>
+                        <p className="text-sm text-gray-900 mt-1 wrap-break-word">{selectedLeave.fullName}</p>
                       </div>
                       <div>
                         <p className="text-sm font-medium text-gray-600">Designation</p>
@@ -1325,7 +1325,7 @@ export default function LeavePage() {
                       </div>
                       <div>
                         <p className="text-sm font-medium text-gray-600">Leave Type</p>
-                        <p className="text-sm text-gray-900 mt-1 break-words">{selectedLeave.leaveType}</p>
+                        <p className="text-sm text-gray-900 mt-1 wrap-break-word">{selectedLeave.leaveType}</p>
                       </div>
                       <div>
                         <p className="text-sm font-medium text-gray-600">Status</p>
@@ -1347,11 +1347,11 @@ export default function LeavePage() {
                       </div>
                       <div>
                         <p className="text-sm font-medium text-gray-600">Start Date</p>
-                        <p className="text-sm text-gray-900 mt-1 break-words">{selectedLeave.inclusiveDateStart || '-'}</p>
+                        <p className="text-sm text-gray-900 mt-1 wrap-break-word">{selectedLeave.inclusiveDateStart || '-'}</p>
                       </div>
                       <div>
                         <p className="text-sm font-medium text-gray-600">End Date</p>
-                        <p className="text-sm text-gray-900 mt-1 break-words">{selectedLeave.inclusiveDateEnd}</p>
+                        <p className="text-sm text-gray-900 mt-1 wrap-break-word">{selectedLeave.inclusiveDateEnd}</p>
                       </div>
                     </div>
                   </CardContent>

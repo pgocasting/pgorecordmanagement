@@ -873,8 +873,8 @@ export default function LetterPage() {
                   <TableRow className="bg-muted/50">
                     <TableHead className="font-semibold py-3 px-4 text-center text-xs">Received By</TableHead>
                     <TableHead className="font-semibold py-3 px-4 text-center text-xs">Tracking ID</TableHead>
-                    <TableHead className="font-semibold py-3 px-4 text-center text-xs">Date/Time IN</TableHead>
-                    <TableHead className="font-semibold py-3 px-4 text-center text-xs">Date/Time OUT</TableHead>
+                    <TableHead className="font-semibold py-3 px-4 text-center text-xs whitespace-normal wrap-break-word max-w-[120px]">Date/Time IN</TableHead>
+                    <TableHead className="font-semibold py-3 px-4 text-center text-xs whitespace-normal wrap-break-word max-w-[120px]">Date/Time OUT</TableHead>
                     <TableHead className="font-semibold py-3 px-4 text-center text-xs">Full Name</TableHead>
                     <TableHead className="font-semibold py-3 px-4 text-center text-xs">Office</TableHead>
                     <TableHead className="font-semibold py-3 px-4 text-center text-xs">Particulars</TableHead>
@@ -895,8 +895,8 @@ export default function LetterPage() {
                       <TableRow key={item.id} className="hover:bg-muted/50 transition-colors">
                         <TableCell className="text-sm py-3 px-4 text-center">{item.receivedBy || '-'}</TableCell>
                         <TableCell className="text-sm py-3 px-4 text-center font-bold text-primary">{item.trackingId}</TableCell>
-                        <TableCell className="text-sm py-3 px-4 text-center">{formatDateTimeWithoutSeconds(item.dateTimeIn)}</TableCell>
-                        <TableCell className={`text-sm py-3 px-4 text-center ${item.status === 'Completed' ? 'text-green-600 font-medium' : 'text-red-600'}`}>{item.dateTimeOut ? formatDateTimeWithoutSeconds(item.dateTimeOut) : '-'}</TableCell>
+                        <TableCell className="text-sm py-3 px-4 text-center whitespace-normal wrap-break-word max-w-[120px]">{formatDateTimeWithoutSeconds(item.dateTimeIn)}</TableCell>
+                        <TableCell className={`text-sm py-3 px-4 text-center whitespace-normal wrap-break-word max-w-[120px] ${item.status === 'Completed' ? 'text-green-600 font-medium' : 'text-red-600'}`}>{item.dateTimeOut ? formatDateTimeWithoutSeconds(item.dateTimeOut) : '-'}</TableCell>
                         <TableCell className="text-sm py-3 px-4 text-center">{item.fullName}</TableCell>
                         <TableCell className="text-sm py-3 px-4 text-center">
                           <div className="group relative inline-block">

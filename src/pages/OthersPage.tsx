@@ -949,8 +949,8 @@ export default function OthersPage() {
                   <TableRow className="bg-muted/50">
                     <TableHead className="font-semibold py-3 px-4 text-center text-xs">Received By</TableHead>
                     <TableHead className="font-semibold py-3 px-4 text-center text-xs">Tracking ID</TableHead>
-                    <TableHead className="font-semibold py-3 px-4 text-center text-xs">Date/Time IN</TableHead>
-                    <TableHead className="font-semibold py-3 px-4 text-center text-xs">Date/Time OUT</TableHead>
+                    <TableHead className="font-semibold py-3 px-4 text-center text-xs whitespace-normal wrap-break-word max-w-[120px]">Date/Time IN</TableHead>
+                    <TableHead className="font-semibold py-3 px-4 text-center text-xs whitespace-normal wrap-break-word max-w-[120px]">Date/Time OUT</TableHead>
                     <TableHead className="font-semibold py-3 px-4 text-center text-xs">Full Name</TableHead>
                     <TableHead className="font-semibold py-3 px-4 text-center text-xs">Office</TableHead>
                     <TableHead className="font-semibold py-3 px-4 text-center text-xs">Purpose</TableHead>
@@ -971,8 +971,8 @@ export default function OthersPage() {
                       <TableRow key={record.id} className="hover:bg-muted/50">
                         <TableCell className="text-sm py-3 px-4 text-center">{record.receivedBy || '-'}</TableCell>
                         <TableCell className="text-sm py-3 px-4 text-center font-bold text-primary">{record.trackingId}</TableCell>
-                        <TableCell className="text-sm py-3 px-4 text-center">{formatDateTimeWithoutSeconds(record.dateTimeIn)}</TableCell>
-                        <TableCell className={`text-sm py-3 px-4 text-center ${record.status === 'Completed' ? 'text-green-600 font-medium' : 'text-red-600'}`}>{record.dateTimeOut ? formatDateTimeWithoutSeconds(record.dateTimeOut) : '-'}</TableCell>
+                        <TableCell className="text-sm py-3 px-4 text-center whitespace-normal wrap-break-word max-w-[120px]">{formatDateTimeWithoutSeconds(record.dateTimeIn)}</TableCell>
+                        <TableCell className={`text-sm py-3 px-4 text-center whitespace-normal wrap-break-word max-w-[120px] ${record.status === 'Completed' ? 'text-green-600 font-medium' : 'text-red-600'}`}>{record.dateTimeOut ? formatDateTimeWithoutSeconds(record.dateTimeOut) : '-'}</TableCell>
                         <TableCell className="text-sm py-3 px-4 text-center uppercase">{record.fullName}</TableCell>
                         <TableCell className="text-sm py-3 px-4 text-center">
                           <div className="group relative inline-block">

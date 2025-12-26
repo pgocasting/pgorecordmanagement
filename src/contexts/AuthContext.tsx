@@ -23,7 +23,7 @@ interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  login: (email: string, password: string) => Promise<void>;
+  login: (username: string, password: string, rememberMe?: boolean) => Promise<void>;
   logout: () => void;
   addUser: (email: string, password: string, name: string, role: 'admin' | 'user') => Promise<void>;
   getAllUsers: () => User[];
@@ -83,13 +83,24 @@ const getStoredCurrentUser = (): User | null => {
   }
 };
 
-const saveStoredCurrentUser = (user: User): void => {
+const saveStoredCurrentUser = (user: User, rememberMe: boolean = false): void => {
   try {
     // Ensure admin user always has admin role and correct name
     const userToSave = user.username === 'admin' ? { ...user, role: 'admin' as const, name: 'Administrator' } : user;
-    localStorage.setItem('currentUser', JSON.stringify(userToSave));
+    
+    if (rememberMe) {
+      // Store in localStorage for persistent sessions
+      localStorage.setItem('currentUser', JSON.stringify(userToSave));
+      localStorage.setItem('rememberMe', 'true');
+    } else {
+      // Store in sessionStorage for temporary sessions
+      sessionStorage.setItem('currentUser', JSON.stringify(userToSave));
+      localStorage.removeItem('rememberMe');
+      // Remove from localStorage if it exists
+      localStorage.removeItem('currentUser');
+    }
   } catch {
-    console.error('Failed to save current user to localStorage');
+    console.error('Failed to save current user to storage');
   }
 };
 
@@ -137,13 +148,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         saveStoredUsers(DEFAULT_USERS);
       }
 
-      // Load current user from localStorage
+      // Load current user from storage (localStorage or sessionStorage)
       let currentUser = getStoredCurrentUser();
+      if (!currentUser) {
+        // Try sessionStorage if not found in localStorage
+        try {
+          const sessionStored = sessionStorage.getItem('currentUser');
+          if (sessionStored) {
+            currentUser = JSON.parse(sessionStored);
+          }
+        } catch {
+          // Ignore errors
+        }
+      }
+      
       if (currentUser) {
         // Ensure admin user always has admin role
         if (currentUser.username === 'admin' && currentUser.role !== 'admin') {
           currentUser.role = 'admin';
-          saveStoredCurrentUser(currentUser);
+          saveStoredCurrentUser(currentUser, localStorage.getItem('rememberMe') === 'true');
         }
         setUser(currentUser);
       }
@@ -165,7 +188,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     initializeUsers();
   }, []);
 
-  const login = async (username: string, password: string): Promise<void> => {
+  const login = async (username: string, password: string, rememberMe: boolean = false): Promise<void> => {
     try {
       if (!username || !password) {
         throw new Error('Username and password are required');
@@ -179,7 +202,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       if (foundUser) {
         setUser(foundUser);
-        saveStoredCurrentUser(foundUser);
+        saveStoredCurrentUser(foundUser, rememberMe);
         return;
       }
 
@@ -201,7 +224,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               password: firebaseUser.password
             };
             setUser(firebaseFoundUser);
-            saveStoredCurrentUser(firebaseFoundUser);
+            saveStoredCurrentUser(firebaseFoundUser, rememberMe);
             return;
           }
         }
@@ -219,6 +242,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const logout = () => {
     setUser(null);
     localStorage.removeItem('currentUser');
+    localStorage.removeItem('rememberMe');
+    sessionStorage.removeItem('currentUser');
   };
 
   const addUser = async (username: string, password: string, name: string, role: 'admin' | 'user', email?: string): Promise<void> => {

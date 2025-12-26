@@ -39,6 +39,9 @@ interface Record {
   trackingId: string;
   title: string;
   date: string;
+  dateTimeIn?: string;
+  dateTimeOut?: string;
+  dateTimeRejected?: string;
   status: 'active' | 'archived' | 'pending' | 'completed' | 'rejected';
   category: string;
   amount?: number;
@@ -54,6 +57,76 @@ const extractName = (fullNameField: string): string => {
     return match[1].trim();
   }
   return fullNameField;
+};
+
+const extractDateFromText = (text?: string): string | undefined => {
+  if (!text) return undefined;
+
+  // ISO-ish timestamp (with optional seconds / ms / Z)
+  const isoMatch = text.match(/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(?::\d{2}(?:\.\d{1,3})?)?(?:Z)?/);
+  if (isoMatch?.[0]) return isoMatch[0];
+
+  // Bracketed date/time (e.g. [12/26/2025, 9:30 AM])
+  const bracketMatch = text.match(/\[([^\]]+)\]/);
+  if (bracketMatch?.[1]) {
+    const parsed = new Date(bracketMatch[1]);
+    if (!Number.isNaN(parsed.getTime())) return parsed.toISOString();
+  }
+
+  return undefined;
+};
+
+const getOutTimestamp = (record: any): string | undefined => {
+  if (record?.dateTimeOut) return record.dateTimeOut;
+
+  // Some pages store time-out info inside remarks fields.
+  const fromTimeOutRemarks = extractDateFromText(record?.timeOutRemarks);
+  if (fromTimeOutRemarks) return fromTimeOutRemarks;
+
+  const fromRemarks = extractDateFromText(record?.remarks);
+  if (fromRemarks) return fromRemarks;
+
+  const history = record?.remarksHistory;
+  if (Array.isArray(history) && history.length > 0) {
+    const completedEntries = history.filter((h: any) => h?.status === 'Completed' && h?.timestamp);
+    if (completedEntries.length > 0) {
+      const lastCompleted = completedEntries[completedEntries.length - 1];
+      return lastCompleted.timestamp;
+    }
+  }
+
+  return undefined;
+};
+
+const getRejectedTimestamp = (record: any): string | undefined => {
+  const history = record?.remarksHistory;
+  if (Array.isArray(history) && history.length > 0) {
+    const rejectedEntries = history.filter((h: any) => h?.status === 'Rejected' && h?.timestamp);
+    if (rejectedEntries.length > 0) {
+      const lastRejected = rejectedEntries[rejectedEntries.length - 1];
+      return lastRejected.timestamp;
+    }
+  }
+
+  const fromRemarks = extractDateFromText(record?.remarks);
+  if (fromRemarks) return fromRemarks;
+
+  if (record?.updatedAt) return record.updatedAt;
+  return undefined;
+};
+
+const formatDateTime = (value?: string): string => {
+  if (!value) return '-';
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return '-';
+  return d.toLocaleString('en-US', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: true,
+  });
 };
 
 export default function DashboardPage() {
@@ -94,7 +167,10 @@ export default function DashboardPage() {
               id: v.id,
               trackingId: v.trackingId,
               title: v.payee,
-              date: new Date(v.dateTimeIn).toLocaleString(),
+              date: formatDateTime(v.dateTimeIn),
+              dateTimeIn: v.dateTimeIn,
+              dateTimeOut: getOutTimestamp(v),
+              dateTimeRejected: v.status === 'Rejected' ? getRejectedTimestamp(v) : undefined,
               status: v.status === 'Completed' ? 'completed' : v.status === 'Rejected' ? 'rejected' : 'pending',
               category: 'Voucher',
               amount: v.amount || 0,
@@ -110,7 +186,10 @@ export default function DashboardPage() {
               id: l.id,
               trackingId: l.trackingId,
               title: extractName(l.fullName),
-              date: new Date(l.dateTimeIn).toLocaleString(),
+              date: formatDateTime(l.dateTimeIn),
+              dateTimeIn: l.dateTimeIn,
+              dateTimeOut: getOutTimestamp(l),
+              dateTimeRejected: l.status === 'Rejected' ? getRejectedTimestamp(l) : undefined,
               status: l.status === 'Completed' ? 'completed' : l.status === 'Rejected' ? 'rejected' : 'pending',
               category: 'Letter',
               receivedBy: l.receivedBy || '-'
@@ -125,7 +204,10 @@ export default function DashboardPage() {
               id: lv.id,
               trackingId: lv.trackingId,
               title: extractName(lv.fullName),
-              date: new Date(lv.dateTimeIn).toLocaleString(),
+              date: formatDateTime(lv.dateTimeIn),
+              dateTimeIn: lv.dateTimeIn,
+              dateTimeOut: getOutTimestamp(lv),
+              dateTimeRejected: lv.status === 'Rejected' ? getRejectedTimestamp(lv) : undefined,
               status: lv.status === 'Completed' ? 'completed' : lv.status === 'Rejected' ? 'rejected' : 'pending',
               category: 'Leave',
               receivedBy: lv.receivedBy || '-'
@@ -140,7 +222,10 @@ export default function DashboardPage() {
               id: loc.id,
               trackingId: loc.trackingId,
               title: extractName(loc.fullName),
-              date: new Date(loc.dateTimeIn).toLocaleString(),
+              date: formatDateTime(loc.dateTimeIn),
+              dateTimeIn: loc.dateTimeIn,
+              dateTimeOut: getOutTimestamp(loc),
+              dateTimeRejected: loc.status === 'Rejected' ? getRejectedTimestamp(loc) : undefined,
               status: loc.status === 'Completed' ? 'completed' : loc.status === 'Rejected' ? 'rejected' : 'pending',
               category: 'Locator',
               receivedBy: loc.receivedBy || '-'
@@ -155,7 +240,10 @@ export default function DashboardPage() {
               id: a.id,
               trackingId: a.trackingId,
               title: extractName(a.fullName),
-              date: new Date(a.dateTimeIn).toLocaleString(),
+              date: formatDateTime(a.dateTimeIn),
+              dateTimeIn: a.dateTimeIn,
+              dateTimeOut: getOutTimestamp(a),
+              dateTimeRejected: a.status === 'Rejected' ? getRejectedTimestamp(a) : undefined,
               status: a.status === 'Completed' ? 'completed' : a.status === 'Rejected' ? 'rejected' : 'pending',
               category: 'Admin to PGO',
               receivedBy: a.receivedBy || '-'
@@ -170,7 +258,10 @@ export default function DashboardPage() {
               id: o.id,
               trackingId: o.trackingId,
               title: extractName(o.fullName),
-              date: new Date(o.dateTimeIn).toLocaleString(),
+              date: formatDateTime(o.dateTimeIn),
+              dateTimeIn: o.dateTimeIn,
+              dateTimeOut: getOutTimestamp(o),
+              dateTimeRejected: o.status === 'Rejected' ? getRejectedTimestamp(o) : undefined,
               status: o.status === 'Completed' ? 'completed' : o.status === 'Rejected' ? 'rejected' : 'pending',
               category: 'Others',
               receivedBy: o.receivedBy || '-'
@@ -185,7 +276,10 @@ export default function DashboardPage() {
               id: t.id,
               trackingId: t.trackingId,
               title: extractName(t.fullName),
-              date: new Date(t.dateTimeIn).toLocaleString(),
+              date: formatDateTime(t.dateTimeIn),
+              dateTimeIn: t.dateTimeIn,
+              dateTimeOut: getOutTimestamp(t),
+              dateTimeRejected: t.status === 'Rejected' ? getRejectedTimestamp(t) : undefined,
               status: t.status === 'Completed' ? 'completed' : t.status === 'Rejected' ? 'rejected' : 'pending',
               category: 'Travel Order',
               receivedBy: t.receivedBy || '-'
@@ -200,7 +294,10 @@ export default function DashboardPage() {
               id: ot.id,
               trackingId: ot.trackingId,
               title: extractName(ot.fullName),
-              date: new Date(ot.dateTimeIn).toLocaleString(),
+              date: formatDateTime(ot.dateTimeIn),
+              dateTimeIn: ot.dateTimeIn,
+              dateTimeOut: getOutTimestamp(ot),
+              dateTimeRejected: ot.status === 'Rejected' ? getRejectedTimestamp(ot) : undefined,
               status: ot.status === 'Completed' ? 'completed' : ot.status === 'Rejected' ? 'rejected' : 'pending',
               category: 'Overtime',
               receivedBy: ot.receivedBy || '-'
@@ -215,7 +312,10 @@ export default function DashboardPage() {
               id: or.id,
               trackingId: or.trackingId,
               title: extractName(or.fullName),
-              date: new Date(or.dateTimeIn).toLocaleString(),
+              date: formatDateTime(or.dateTimeIn),
+              dateTimeIn: or.dateTimeIn,
+              dateTimeOut: getOutTimestamp(or),
+              dateTimeRejected: or.status === 'Rejected' ? getRejectedTimestamp(or) : undefined,
               status: or.status === 'Completed' ? 'completed' : or.status === 'Rejected' ? 'rejected' : 'pending',
               category: 'Obligation Request',
               amount: or.amount || 0,
@@ -231,7 +331,10 @@ export default function DashboardPage() {
               id: pr.id,
               trackingId: pr.trackingId,
               title: extractName(pr.fullName),
-              date: new Date(pr.dateTimeIn).toLocaleString(),
+              date: formatDateTime(pr.dateTimeIn),
+              dateTimeIn: pr.dateTimeIn,
+              dateTimeOut: getOutTimestamp(pr),
+              dateTimeRejected: pr.status === 'Rejected' ? getRejectedTimestamp(pr) : undefined,
               status: pr.status === 'Completed' ? 'completed' : pr.status === 'Rejected' ? 'rejected' : 'pending',
               category: 'Purchase Request',
               amount: pr.estimatedCost || 0,
@@ -455,7 +558,13 @@ export default function DashboardPage() {
                       <TableHead className="text-center text-xs">Received By</TableHead>
                       <TableHead className="text-center text-xs">Tracking ID</TableHead>
                       <TableHead className="text-center text-xs">Category</TableHead>
-                      <TableHead className="text-center text-xs">Date/Time IN</TableHead>
+                      <TableHead className="text-center text-xs whitespace-normal wrap-break-word max-w-[120px]">Date/Time IN</TableHead>
+                      {activeTab === 'completed' && (
+                        <TableHead className="text-center text-xs whitespace-normal wrap-break-word max-w-[120px]">Date/Time OUT</TableHead>
+                      )}
+                      {activeTab === 'rejected' && (
+                        <TableHead className="text-center text-xs whitespace-normal wrap-break-word max-w-[120px]">Date/Time Rejected</TableHead>
+                      )}
                       <TableHead className="text-center text-xs">Name/Reference</TableHead>
                       <TableHead className="text-center text-xs">Status</TableHead>
                     </TableRow>
@@ -471,9 +580,19 @@ export default function DashboardPage() {
                             {record.trackingId}
                           </TableCell>
                           <TableCell className="text-center text-xs">{record.category}</TableCell>
-                          <TableCell className="text-center text-xs">
-                            {record.date}
+                          <TableCell className="text-center text-xs whitespace-normal wrap-break-word max-w-[120px]">
+                            {formatDateTime(record.dateTimeIn) !== '-' ? formatDateTime(record.dateTimeIn) : record.date}
                           </TableCell>
+                          {activeTab === 'completed' && (
+                            <TableCell className="text-center text-xs whitespace-normal wrap-break-word max-w-[120px]">
+                              {formatDateTime(record.dateTimeOut)}
+                            </TableCell>
+                          )}
+                          {activeTab === 'rejected' && (
+                            <TableCell className="text-center text-xs whitespace-normal wrap-break-word max-w-[120px]">
+                              {formatDateTime(record.dateTimeRejected)}
+                            </TableCell>
+                          )}
                           <TableCell className="text-center text-xs">
                             {record.title}
                           </TableCell>
@@ -486,7 +605,7 @@ export default function DashboardPage() {
                       ))
                     ) : (
                       <TableRow>
-                        <TableCell colSpan={6} className="text-center py-8 text-gray-500">
+                        <TableCell colSpan={activeTab === 'pending' ? 6 : 7} className="text-center py-8 text-gray-500">
                           No records found
                         </TableCell>
                       </TableRow>

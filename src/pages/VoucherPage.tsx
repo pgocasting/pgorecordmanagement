@@ -945,8 +945,8 @@ export default function VoucherPage() {
                     <TableRow className="bg-muted/50">
                       <TableHead className="font-semibold py-3 px-4 text-center text-xs">Received By</TableHead>
                       <TableHead className="font-semibold py-3 px-4 text-center text-xs">Tracking ID</TableHead>
-                      <TableHead className="font-semibold py-3 px-4 text-center text-xs">Date/Time IN</TableHead>
-                      <TableHead className="font-semibold py-3 px-4 text-center text-xs">Date/Time OUT</TableHead>
+                      <TableHead className="font-semibold py-3 px-4 text-center text-xs whitespace-normal wrap-break-word max-w-[120px]">Date/Time IN</TableHead>
+                      <TableHead className="font-semibold py-3 px-4 text-center text-xs whitespace-normal wrap-break-word max-w-[120px]">Date/Time OUT</TableHead>
                       <TableHead className="font-semibold py-3 px-4 text-center text-xs">DV No.</TableHead>
                       <TableHead className="font-semibold py-3 px-4 text-center text-xs">Payee</TableHead>
                       <TableHead className="font-semibold py-3 px-4 text-center text-xs">Office</TableHead>
@@ -963,8 +963,8 @@ export default function VoucherPage() {
                         <TableRow key={voucher.id} className="hover:bg-muted/50 transition-colors">
                           <TableCell className="text-sm py-3 px-4 text-center">{voucher.receivedBy || '-'}</TableCell>
                           <TableCell className="text-sm py-3 px-4 text-center font-bold text-primary">{voucher.trackingId}</TableCell>
-                          <TableCell className="text-sm py-3 px-4 text-center">{formatDateTimeWithoutSeconds(voucher.dateTimeIn)}</TableCell>
-                          <TableCell className={`text-sm py-3 px-4 text-center ${voucher.status === 'Completed' ? 'text-green-600 font-medium' : 'text-red-600'}`}>{voucher.dateTimeOut ? formatDateTimeWithoutSeconds(voucher.dateTimeOut) : '-'}</TableCell>
+                          <TableCell className="text-sm py-3 px-4 text-center whitespace-normal wrap-break-word max-w-[120px]">{formatDateTimeWithoutSeconds(voucher.dateTimeIn)}</TableCell>
+                          <TableCell className={`text-sm py-3 px-4 text-center whitespace-normal wrap-break-word max-w-[120px] ${voucher.status === 'Completed' ? 'text-green-600 font-medium' : 'text-red-600'}`}>{voucher.dateTimeOut ? formatDateTimeWithoutSeconds(voucher.dateTimeOut) : '-'}</TableCell>
                           <TableCell className="text-sm py-3 px-4 text-center">{voucher.dvNo}</TableCell>
                           <TableCell className="text-sm py-3 px-4 text-center">{voucher.payee}</TableCell>
                           <TableCell className="text-sm py-3 px-4 text-center">
