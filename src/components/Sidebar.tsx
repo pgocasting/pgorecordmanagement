@@ -83,11 +83,11 @@ export function Sidebar({ onNavigate, recordTypes = [] }: SidebarProps) {
   };
 
   return (
-    <div className={`h-full flex flex-col bg-gradient-to-b from-indigo-600 via-indigo-700 to-indigo-800 shadow-2xl transition-all duration-300 ${isCollapsed ? 'w-20' : 'w-72'}`}>
+    <div className={`h-full flex flex-col bg-white shadow-2xl transition-all duration-300 border-r border-blue-100 ${isCollapsed ? 'w-20' : 'w-72'}`}>
       {/* Logo Section */}
-      <div className={`border-b border-indigo-500/30 relative transition-all duration-300 ${isCollapsed ? 'py-6 px-2' : 'p-6'}`}>
+      <div className={`border-b border-blue-100 bg-gradient-to-r from-blue-50 to-indigo-50 relative transition-all duration-300 ${isCollapsed ? 'py-6 px-2' : 'p-6'}`}>
         <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'gap-4 pr-8'}`}>
-          <div className="shrink-0 bg-white rounded-full p-2 shadow-lg">
+          <div className="shrink-0 bg-white rounded-full p-2 shadow-md ring-2 ring-blue-100">
             <img 
               src="/images/bataan-logo.png" 
               alt="Bataan Logo" 
@@ -99,14 +99,14 @@ export function Sidebar({ onNavigate, recordTypes = [] }: SidebarProps) {
           </div>
           {!isCollapsed && (
             <div className="flex flex-col justify-center min-w-0 flex-1">
-              <h2 className="text-2xl font-bold text-white leading-tight tracking-tight">PGO</h2>
-              <p className="text-sm text-indigo-200 font-medium leading-tight mt-1">Record Management</p>
+              <h2 className="text-2xl font-bold text-blue-600 leading-tight tracking-tight">PGO</h2>
+              <p className="text-sm text-gray-600 font-medium leading-tight mt-1">Record Management</p>
             </div>
           )}
         </div>
         <button
           onClick={() => setIsCollapsed(!isCollapsed)}
-          className="absolute -right-3 top-1/2 -translate-y-1/2 w-7 h-7 bg-white text-indigo-600 rounded-full flex items-center justify-center hover:bg-indigo-50 transition-all shadow-lg z-10 border-2 border-indigo-500 hover:scale-110"
+          className="absolute -right-3 top-1/2 -translate-y-1/2 w-7 h-7 bg-blue-600 text-white rounded-full flex items-center justify-center hover:bg-blue-700 transition-all shadow-lg z-10 border-2 border-white hover:scale-110"
           aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
         >
           {isCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
@@ -114,18 +114,18 @@ export function Sidebar({ onNavigate, recordTypes = [] }: SidebarProps) {
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 p-3 space-y-1 overflow-y-auto scrollbar-thin scrollbar-thumb-indigo-500 scrollbar-track-indigo-800">
+      <nav className="flex-1 p-3 space-y-1 overflow-y-auto scrollbar-thin scrollbar-thumb-blue-200 scrollbar-track-gray-50 bg-white">
         {/* Main Menu */}
         <button
           onClick={() => handleNavigate('/dashboard')}
           className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all text-left group ${
             isActivePath('/dashboard')
-              ? 'bg-white text-indigo-700 shadow-lg'
-              : 'text-white hover:bg-indigo-500/30'
+              ? 'bg-blue-600 text-white shadow-lg shadow-blue-200'
+              : 'text-gray-700 hover:bg-blue-50 hover:text-blue-700'
           }`}
           title={isCollapsed ? 'Dashboard' : ''}
         >
-          <Home className={`h-5 w-5 shrink-0 transition-transform group-hover:scale-110 ${isActivePath('/dashboard') ? 'text-indigo-700' : ''}`} />
+          <Home className={`h-5 w-5 shrink-0 transition-transform group-hover:scale-110`} />
           {!isCollapsed && <span className="text-sm font-semibold">Dashboard</span>}
         </button>
 
@@ -134,12 +134,12 @@ export function Sidebar({ onNavigate, recordTypes = [] }: SidebarProps) {
             onClick={() => handleNavigate('/reports')}
             className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all text-left group ${
               isActivePath('/reports')
-                ? 'bg-white text-indigo-700 shadow-lg'
-                : 'text-white hover:bg-indigo-500/30'
+                ? 'bg-blue-600 text-white shadow-lg shadow-blue-200'
+                : 'text-gray-700 hover:bg-blue-50 hover:text-blue-700'
             }`}
             title={isCollapsed ? 'Reports' : ''}
           >
-            <BarChart3 className={`h-5 w-5 shrink-0 transition-transform group-hover:scale-110 ${isActivePath('/reports') ? 'text-indigo-700' : ''}`} />
+            <BarChart3 className={`h-5 w-5 shrink-0 transition-transform group-hover:scale-110`} />
             {!isCollapsed && <span className="text-sm font-semibold">Reports</span>}
           </button>
         )}
@@ -148,12 +148,12 @@ export function Sidebar({ onNavigate, recordTypes = [] }: SidebarProps) {
           onClick={() => handleNavigate('/receiving-copy')}
           className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all text-left group ${
             isActivePath('/receiving-copy')
-              ? 'bg-white text-indigo-700 shadow-lg'
-              : 'text-white hover:bg-indigo-500/30'
+              ? 'bg-blue-600 text-white shadow-lg shadow-blue-200'
+              : 'text-gray-700 hover:bg-blue-50 hover:text-blue-700'
           }`}
           title={isCollapsed ? 'Receiving Copy' : ''}
         >
-          <Printer className={`h-5 w-5 shrink-0 transition-transform group-hover:scale-110 ${isActivePath('/receiving-copy') ? 'text-indigo-700' : ''}`} />
+          <Printer className={`h-5 w-5 shrink-0 transition-transform group-hover:scale-110`} />
           {!isCollapsed && <span className="text-sm font-semibold">Receiving Copy</span>}
         </button>
 
@@ -164,7 +164,7 @@ export function Sidebar({ onNavigate, recordTypes = [] }: SidebarProps) {
               <>
                 <button
                   onClick={() => setIsRecordsExpanded(!isRecordsExpanded)}
-                  className="w-full flex items-center justify-between gap-3 px-4 py-3 text-white hover:bg-indigo-500/30 rounded-xl transition-all group"
+                  className="w-full flex items-center justify-between gap-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-700 rounded-xl transition-all group"
                 >
                   <div className="flex items-center gap-3">
                     <FileText className="h-5 w-5 shrink-0 transition-transform group-hover:scale-110" />
@@ -187,8 +187,8 @@ export function Sidebar({ onNavigate, recordTypes = [] }: SidebarProps) {
                           onClick={() => handleNavigate(href)}
                           className={`w-full flex items-start px-4 py-2.5 rounded-lg transition-all text-left text-sm ${
                             isActive
-                              ? 'bg-indigo-500/50 text-white font-semibold'
-                              : 'text-indigo-100 hover:bg-indigo-500/20 hover:text-white'
+                              ? 'bg-blue-100 text-blue-700 font-semibold'
+                              : 'text-gray-600 hover:bg-blue-50 hover:text-blue-700'
                           }`}
                         >
                           <span className="mr-2">•</span>
@@ -202,7 +202,7 @@ export function Sidebar({ onNavigate, recordTypes = [] }: SidebarProps) {
             ) : (
               <button
                 onClick={() => handleNavigate('/leave')}
-                className="w-full flex items-center justify-center gap-3 px-4 py-3 text-white hover:bg-indigo-500/30 rounded-xl transition-all"
+                className="w-full flex items-center justify-center gap-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-700 rounded-xl transition-all"
                 title="Records"
               >
                 <FileText className="h-5 w-5 shrink-0" />
@@ -213,13 +213,13 @@ export function Sidebar({ onNavigate, recordTypes = [] }: SidebarProps) {
       </nav>
 
       {/* Date and Time Display */}
-      <div className="p-4 border-t border-indigo-500/30 bg-indigo-900/30">
+      <div className="p-4 border-t border-blue-100 bg-gradient-to-r from-blue-50 to-indigo-50">
         <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'gap-3'}`}>
-          <Clock className="h-5 w-5 text-indigo-300 shrink-0 animate-pulse" />
+          <Clock className="h-5 w-5 text-blue-600 shrink-0 animate-pulse" />
           {!isCollapsed && (
             <div className="flex-1 min-w-0">
-              <p className="text-xs font-medium text-indigo-300 uppercase tracking-wide">Philippine Time</p>
-              <p className="text-sm font-bold text-white truncate mt-0.5">{currentDateTime}</p>
+              <p className="text-xs font-medium text-blue-700 uppercase tracking-wide">Philippine Time</p>
+              <p className="text-sm font-bold text-gray-700 truncate mt-0.5">{currentDateTime}</p>
             </div>
           )}
         </div>
@@ -227,10 +227,10 @@ export function Sidebar({ onNavigate, recordTypes = [] }: SidebarProps) {
 
       {/* Settings Button (Admin Only) */}
       {user?.role === 'admin' && (
-        <div className="p-3 border-t border-indigo-500/30">
+        <div className="p-3 border-t border-blue-100 bg-white">
           <Button
             variant="outline"
-            className={`w-full justify-start gap-3 bg-white/10 text-white border-white/20 hover:bg-white hover:text-indigo-700 transition-all shadow-lg backdrop-blur-sm ${
+            className={`w-full justify-start gap-3 border-blue-200 text-blue-700 hover:bg-blue-600 hover:text-white hover:border-blue-600 transition-all shadow-sm ${
               isCollapsed ? 'px-2' : ''
             }`}
             onClick={() => handleNavigate('/settings')}
