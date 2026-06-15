@@ -564,20 +564,20 @@ export default function ReportPage() {
         </div>
 
         {/* Content Area */}
-        <div className="flex-1 overflow-auto p-4 sm:p-4 flex flex-col gap-4 bg-gray-50">
+        <div className="flex-1 overflow-auto p-3 sm:p-3 flex flex-col gap-2 bg-gray-50">
           {/* Filter Section */}
           <Card className="border-0 shadow-md">
-            <CardHeader className="py-3 border-b bg-gradient-to-r from-gray-50 to-white">
-              <CardTitle className="text-lg font-semibold text-gray-900">Report Filters</CardTitle>
+            <CardHeader className="py-2 border-b bg-gradient-to-r from-gray-50 to-white">
+              <CardTitle className="text-base font-semibold text-gray-900">Report Filters</CardTitle>
             </CardHeader>
-            <CardContent className="pt-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-3">
+            <CardContent className="pt-3 pb-3">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-2">
                 <div className="lg:col-span-1">
-                  <label className="text-sm font-semibold text-gray-700 block mb-2">
+                  <label className="text-xs font-semibold text-gray-700 block mb-1">
                     Report Type
                   </label>
                   <Select value={reportType} onValueChange={(value: any) => setReportType(value)}>
-                    <SelectTrigger className="h-10 text-sm border-gray-300 focus:border-indigo-500 focus:ring-indigo-500">
+                    <SelectTrigger className="h-8 text-xs border-gray-300 focus:border-indigo-500 focus:ring-indigo-500">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -593,11 +593,11 @@ export default function ReportPage() {
                 {reportType === 'monthly' && (
                   <>
                     <div className="lg:col-span-1">
-                      <label className="text-sm font-semibold text-gray-700 block mb-2">
+                      <label className="text-xs font-semibold text-gray-700 block mb-1">
                         Month
                       </label>
                       <Select value={String(selectedMonth)} onValueChange={(v) => setSelectedMonth(Number(v))}>
-                        <SelectTrigger className="h-10 text-sm border-gray-300 focus:border-indigo-500 focus:ring-indigo-500">
+                        <SelectTrigger className="h-8 text-xs border-gray-300 focus:border-indigo-500 focus:ring-indigo-500">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -617,11 +617,11 @@ export default function ReportPage() {
                       </Select>
                     </div>
                     <div className="lg:col-span-1">
-                      <label className="text-sm font-semibold text-gray-700 block mb-2">
+                      <label className="text-xs font-semibold text-gray-700 block mb-1">
                         Year
                       </label>
                       <Select value={String(selectedYear)} onValueChange={(v) => setSelectedYear(Number(v))}>
-                        <SelectTrigger className="h-10 text-sm border-gray-300 focus:border-indigo-500 focus:ring-indigo-500">
+                        <SelectTrigger className="h-8 text-xs border-gray-300 focus:border-indigo-500 focus:ring-indigo-500">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -640,11 +640,11 @@ export default function ReportPage() {
                 )}
 
                 <div className="lg:col-span-1">
-                  <label className="text-sm font-semibold text-gray-700 block mb-2">
+                  <label className="text-xs font-semibold text-gray-700 block mb-1">
                     Category
                   </label>
                   <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                    <SelectTrigger className="h-10 text-sm border-gray-300 focus:border-indigo-500 focus:ring-indigo-500">
+                    <SelectTrigger className="h-8 text-xs border-gray-300 focus:border-indigo-500 focus:ring-indigo-500">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -659,11 +659,11 @@ export default function ReportPage() {
                 </div>
 
                 <div className="lg:col-span-1">
-                  <label className="text-sm font-semibold text-gray-700 block mb-2">
+                  <label className="text-xs font-semibold text-gray-700 block mb-1">
                     Status
                   </label>
                   <Select value={selectedStatus} onValueChange={setSelectedStatus}>
-                    <SelectTrigger className="h-10 text-sm border-gray-300 focus:border-indigo-500 focus:ring-indigo-500">
+                    <SelectTrigger className="h-8 text-xs border-gray-300 focus:border-indigo-500 focus:ring-indigo-500">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -676,25 +676,25 @@ export default function ReportPage() {
                 </div>
 
                 <div className="lg:col-span-1 flex flex-col">
-                  <label className="text-sm font-semibold text-gray-700 block mb-2">
+                  <label className="text-xs font-semibold text-gray-700 block mb-1">
                     Actions
                   </label>
                   <div className="flex gap-2 flex-1">
                     <Button
                       onClick={generateReport}
-                      className="gap-2 bg-blue-600 hover:bg-blue-700 h-10 text-sm flex-1"
+                      className="gap-2 bg-blue-600 hover:bg-blue-700 h-8 text-xs flex-1"
                       disabled={isLoading}
                     >
-                      <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+                      <RefreshCw className={`h-3 w-3 ${isLoading ? 'animate-spin' : ''}`} />
                       <span className="hidden lg:inline">Refresh</span>
                     </Button>
 
                     <Button
                       onClick={exportToPDF}
-                      className="gap-2 bg-green-600 hover:bg-green-700 h-10 text-sm flex-1"
+                      className="gap-2 bg-green-600 hover:bg-green-700 h-8 text-xs flex-1"
                       disabled={reportData.length === 0 || isLoading}
                     >
-                      <FileDown className="h-4 w-4" />
+                      <FileDown className="h-3 w-3" />
                       <span className="hidden lg:inline">Export</span>
                     </Button>
                   </div>
@@ -702,8 +702,8 @@ export default function ReportPage() {
               </div>
 
               {/* Period Display */}
-              <div className="mt-3 px-4 py-2 bg-indigo-50 border border-indigo-100 rounded-lg">
-                <p className="text-sm text-indigo-900">
+              <div className="mt-2 px-3 py-1.5 bg-indigo-50 border border-indigo-100 rounded-lg">
+                <p className="text-xs text-indigo-900">
                   <span className="font-semibold">Report Period:</span>{' '}
                   <span className="font-medium">{dateRange.start}</span> to{' '}
                   <span className="font-medium">{dateRange.end}</span>
@@ -713,84 +713,84 @@ export default function ReportPage() {
           </Card>
 
           {/* Statistics Section */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-2">
             <Card className="border-0 shadow-md hover:shadow-lg transition-shadow bg-gradient-to-br from-indigo-50 to-white">
-              <CardHeader className="pb-2">
+              <CardHeader className="pb-1 pt-2 px-3">
                 <div className="flex items-center justify-between">
-                  <CardTitle className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Total Records</CardTitle>
-                  <div className="w-8 h-8 rounded-lg bg-indigo-100 flex items-center justify-center">
-                    <TrendingUp className="h-4 w-4 text-indigo-600" />
+                  <CardTitle className="text-[10px] font-semibold text-gray-600 uppercase tracking-wide">Total Records</CardTitle>
+                  <div className="w-6 h-6 rounded-lg bg-indigo-100 flex items-center justify-center">
+                    <TrendingUp className="h-3 w-3 text-indigo-600" />
                   </div>
                 </div>
               </CardHeader>
-              <CardContent className="pt-1">
-                <div className="text-3xl font-bold text-indigo-600">{reportStats.total}</div>
-                <p className="text-xs text-gray-500 mt-1">All documents</p>
+              <CardContent className="pt-0 pb-2 px-3">
+                <div className="text-2xl font-bold text-indigo-600">{reportStats.total}</div>
+                <p className="text-[10px] text-gray-500">All documents</p>
               </CardContent>
             </Card>
 
             <Card className="border-0 shadow-md hover:shadow-lg transition-shadow bg-gradient-to-br from-yellow-50 to-white">
-              <CardHeader className="pb-2">
+              <CardHeader className="pb-1 pt-2 px-3">
                 <div className="flex items-center justify-between">
-                  <CardTitle className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Pending</CardTitle>
-                  <div className="w-8 h-8 rounded-lg bg-yellow-100 flex items-center justify-center">
-                    <Clock className="h-4 w-4 text-yellow-600" />
+                  <CardTitle className="text-[10px] font-semibold text-gray-600 uppercase tracking-wide">Pending</CardTitle>
+                  <div className="w-6 h-6 rounded-lg bg-yellow-100 flex items-center justify-center">
+                    <Clock className="h-3 w-3 text-yellow-600" />
                   </div>
                 </div>
               </CardHeader>
-              <CardContent className="pt-1">
-                <div className="text-3xl font-bold text-yellow-600">{reportStats.pending}</div>
-                <p className="text-xs text-gray-500 mt-1">Awaiting action</p>
+              <CardContent className="pt-0 pb-2 px-3">
+                <div className="text-2xl font-bold text-yellow-600">{reportStats.pending}</div>
+                <p className="text-[10px] text-gray-500">Awaiting action</p>
               </CardContent>
             </Card>
 
             <Card className="border-0 shadow-md hover:shadow-lg transition-shadow bg-gradient-to-br from-green-50 to-white">
-              <CardHeader className="pb-2">
+              <CardHeader className="pb-1 pt-2 px-3">
                 <div className="flex items-center justify-between">
-                  <CardTitle className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Completed</CardTitle>
-                  <div className="w-8 h-8 rounded-lg bg-green-100 flex items-center justify-center">
-                    <CheckCircle className="h-4 w-4 text-green-600" />
+                  <CardTitle className="text-[10px] font-semibold text-gray-600 uppercase tracking-wide">Completed</CardTitle>
+                  <div className="w-6 h-6 rounded-lg bg-green-100 flex items-center justify-center">
+                    <CheckCircle className="h-3 w-3 text-green-600" />
                   </div>
                 </div>
               </CardHeader>
-              <CardContent className="pt-1">
-                <div className="text-3xl font-bold text-green-600">{reportStats.completed}</div>
-                <p className="text-xs text-gray-500 mt-1">Successfully processed</p>
+              <CardContent className="pt-0 pb-2 px-3">
+                <div className="text-2xl font-bold text-green-600">{reportStats.completed}</div>
+                <p className="text-[10px] text-gray-500">Successfully processed</p>
               </CardContent>
             </Card>
 
             <Card className="border-0 shadow-md hover:shadow-lg transition-shadow bg-gradient-to-br from-red-50 to-white">
-              <CardHeader className="pb-2">
+              <CardHeader className="pb-1 pt-2 px-3">
                 <div className="flex items-center justify-between">
-                  <CardTitle className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Rejected</CardTitle>
-                  <div className="w-8 h-8 rounded-lg bg-red-100 flex items-center justify-center">
-                    <XCircle className="h-4 w-4 text-red-600" />
+                  <CardTitle className="text-[10px] font-semibold text-gray-600 uppercase tracking-wide">Rejected</CardTitle>
+                  <div className="w-6 h-6 rounded-lg bg-red-100 flex items-center justify-center">
+                    <XCircle className="h-3 w-3 text-red-600" />
                   </div>
                 </div>
               </CardHeader>
-              <CardContent className="pt-1">
-                <div className="text-3xl font-bold text-red-600">{reportStats.rejected}</div>
-                <p className="text-xs text-gray-500 mt-1">Not approved</p>
+              <CardContent className="pt-0 pb-2 px-3">
+                <div className="text-2xl font-bold text-red-600">{reportStats.rejected}</div>
+                <p className="text-[10px] text-gray-500">Not approved</p>
               </CardContent>
             </Card>
 
             <Card className="border-0 shadow-md hover:shadow-lg transition-shadow bg-gradient-to-br from-blue-50 to-white">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Total Amount</CardTitle>
+              <CardHeader className="pb-1 pt-2 px-3">
+                <CardTitle className="text-[10px] font-semibold text-gray-600 uppercase tracking-wide">Total Amount</CardTitle>
               </CardHeader>
-              <CardContent className="pt-1">
-                <div className="text-2xl font-bold text-blue-600">₱{(reportStats.totalAmount || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
-                <p className="text-xs text-gray-500 mt-1">Approved funds</p>
+              <CardContent className="pt-0 pb-2 px-3">
+                <div className="text-lg font-bold text-blue-600">₱{(reportStats.totalAmount || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+                <p className="text-[10px] text-gray-500">Approved funds</p>
               </CardContent>
             </Card>
 
             <Card className="border-0 shadow-md hover:shadow-lg transition-shadow bg-gradient-to-br from-red-50 to-white">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Rejected Amount</CardTitle>
+              <CardHeader className="pb-1 pt-2 px-3">
+                <CardTitle className="text-[10px] font-semibold text-gray-600 uppercase tracking-wide">Rejected Amount</CardTitle>
               </CardHeader>
-              <CardContent className="pt-1">
-                <div className="text-2xl font-bold text-red-600">₱{(reportStats.rejectedAmount || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
-                <p className="text-xs text-gray-500 mt-1">Declined funds</p>
+              <CardContent className="pt-0 pb-2 px-3">
+                <div className="text-lg font-bold text-red-600">₱{(reportStats.rejectedAmount || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+                <p className="text-[10px] text-gray-500">Declined funds</p>
               </CardContent>
             </Card>
           </div>
