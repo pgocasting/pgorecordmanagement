@@ -72,6 +72,7 @@ interface PurchaseRequest {
   receivedBy: string;
   dateTimeIn: string;
   dateTimeOut?: string;
+  fpp?: string;
   fullName: string;
   designation: string;
   amount?: string | number;
@@ -214,6 +215,7 @@ export default function PurchaseRequestPage() {
     trackingId: '',
     dateTimeIn: '',
     dateTimeOut: '',
+    fpp: '',
     fullName: '',
     designation: '',
     amount: '',
@@ -381,6 +383,7 @@ export default function PurchaseRequestPage() {
         trackingId: '',
         dateTimeIn: '',
         dateTimeOut: '',
+        fpp: '',
         fullName: '',
         designation: '',
         amount: '',
@@ -434,6 +437,7 @@ export default function PurchaseRequestPage() {
         trackingId: '',
         dateTimeIn: '',
         dateTimeOut: '',
+        fpp: '',
         fullName: '',
         designation: '',
         amount: '',
@@ -460,6 +464,7 @@ export default function PurchaseRequestPage() {
         trackingId: request.trackingId,
         dateTimeIn: request.dateTimeIn,
         dateTimeOut: request.dateTimeOut || '',
+        fpp: request.fpp || '',
         fullName: request.fullName,
         designation: request.designation,
         amount: (request.amount || (request as any).estimatedCost || 0).toString(),
@@ -528,6 +533,7 @@ export default function PurchaseRequestPage() {
         trackingId: '',
         dateTimeIn: '',
         dateTimeOut: '',
+        fpp: '',
         fullName: '',
         designation: '',
         amount: '',
@@ -777,6 +783,7 @@ export default function PurchaseRequestPage() {
                           trackingId: nextTrackingId,
                           dateTimeIn: getCurrentDateTime(),
                           dateTimeOut: '',
+                          fpp: '',
                           fullName: '',
                           designation: '',
                           amount: '',
@@ -822,6 +829,42 @@ export default function PurchaseRequestPage() {
                         />
                       </div>
                     )}
+                    <div className="space-y-2">
+                      <Label htmlFor="fpp">FPP</Label>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="outline"
+                            role="combobox"
+                            className="w-full justify-between"
+                          >
+                            {formData.fpp || "Select FPP..."}
+                            <Search className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-full p-0" align="start">
+                          <Command>
+                            <CommandInput placeholder="Search FPP..." />
+                            <CommandList>
+                              <CommandEmpty>No FPP found.</CommandEmpty>
+                              <CommandGroup>
+                                {['FPP 1', 'FPP 2', 'FPP 3', 'FPP 4', 'FPP 5'].map((option) => (
+                                  <CommandItem
+                                    key={option}
+                                    value={option}
+                                    onSelect={(currentValue) => {
+                                      handleSelectChange('fpp', currentValue);
+                                    }}
+                                  >
+                                    {option}
+                                  </CommandItem>
+                                ))}
+                              </CommandGroup>
+                            </CommandList>
+                          </Command>
+                        </PopoverContent>
+                      </Popover>
+                    </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label htmlFor="dateTimeIn">Date/Time IN *</Label>
@@ -1020,6 +1063,7 @@ export default function PurchaseRequestPage() {
                         <TableHead className="font-semibold py-3 px-4 text-center text-xs">Tracking ID</TableHead>
                         <TableHead className="font-semibold py-3 px-4 text-center text-xs whitespace-normal wrap-break-word max-w-[120px]">Date/Time IN</TableHead>
                         <TableHead className="font-semibold py-3 px-4 text-center text-xs whitespace-normal wrap-break-word max-w-[120px]">Date/Time OUT</TableHead>
+                        <TableHead className="font-semibold py-3 px-4 text-center text-xs">FPP</TableHead>
                         <TableHead className="font-semibold py-3 px-4 text-center text-xs">Full Name</TableHead>
                         <TableHead className="font-semibold py-3 px-4 text-center text-xs whitespace-normal wrap-break-word max-w-[240px]">Purpose</TableHead>
                         <TableHead className="font-semibold py-3 px-4 text-center text-xs">Amount</TableHead>
@@ -1042,6 +1086,7 @@ export default function PurchaseRequestPage() {
                         <TableCell className="text-sm py-3 px-4 text-center font-bold text-primary">{request.trackingId}</TableCell>
                         <TableCell className="text-sm py-3 px-4 text-center whitespace-normal wrap-break-word max-w-[120px]">{formatDateTimeWithoutSeconds(request.dateTimeIn)}</TableCell>
                         <TableCell className={`text-sm py-3 px-4 text-center whitespace-normal wrap-break-word max-w-[120px] ${request.status === 'Completed' ? 'text-green-600 font-medium' : 'text-red-600'}`}>{request.dateTimeOut ? formatDateTimeWithoutSeconds(request.dateTimeOut) : '-'}</TableCell>
+                        <TableCell className="text-sm py-3 px-4 text-center">{request.fpp || '-'}</TableCell>
                         <TableCell className="text-sm py-3 px-4 text-center">{request.fullName}</TableCell>
                         <TableCell className="text-sm py-3 px-4 text-center whitespace-normal wrap-break-word max-w-[240px]">{request.purpose}</TableCell>
                         <TableCell className="text-sm py-3 px-4 text-center">{formatAmount(request.amount || (request as any).estimatedCost)}</TableCell>

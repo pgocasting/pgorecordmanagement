@@ -69,6 +69,7 @@ interface Voucher {
   receivedBy: string;
   dateTimeIn: string;
   dateTimeOut?: string;
+  fpp?: string;
   dvNo: string;
   payee: string;
   particulars: string;
@@ -286,6 +287,7 @@ export default function VoucherPage() {
     trackingId: '',
     dateTimeIn: '',
     receivedBy: '',
+    fpp: '',
     dvNo: '',
     payee: '',
     particulars: '',
@@ -440,6 +442,7 @@ export default function VoucherPage() {
         trackingId: '',
         dateTimeIn: '',
         receivedBy: '',
+        fpp: '',
         dvNo: '',
         payee: '',
         particulars: '',
@@ -496,6 +499,7 @@ export default function VoucherPage() {
         trackingId: '',
         dateTimeIn: '',
         receivedBy: '',
+        fpp: '',
         dvNo: '',
         payee: '',
         particulars: '',
@@ -525,6 +529,7 @@ export default function VoucherPage() {
         trackingId: voucher.trackingId,
         dateTimeIn: voucher.dateTimeIn,
         receivedBy: voucher.receivedBy || '',
+        fpp: voucher.fpp || '',
         dvNo: voucher.dvNo,
         payee: voucher.payee,
         particulars: voucher.particulars,
@@ -554,6 +559,7 @@ export default function VoucherPage() {
         trackingId: '',
         dateTimeIn: '',
         receivedBy: '',
+        fpp: '',
         dvNo: '',
         payee: '',
         particulars: '',
@@ -845,6 +851,7 @@ export default function VoucherPage() {
                           trackingId: nextTrackingId,
                           dateTimeIn: getCurrentDateTime(),
                           receivedBy: '',
+                          fpp: '',
                           dvNo: '',
                           payee: '',
                           particulars: '',
@@ -908,6 +915,43 @@ export default function VoucherPage() {
                             className="h-8 text-xs"
                           />
                         </div>
+                      </div>
+
+                      <div className="space-y-1">
+                        <Label htmlFor="fpp" className="text-xs font-medium">FPP</Label>
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <Button
+                              variant="outline"
+                              role="combobox"
+                              className="w-full justify-between h-8 text-xs"
+                            >
+                              {formData.fpp || "Select FPP..."}
+                              <Search className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-full p-0" align="start">
+                            <Command>
+                              <CommandInput placeholder="Search FPP..." />
+                              <CommandList>
+                                <CommandEmpty>No FPP found.</CommandEmpty>
+                                <CommandGroup>
+                                  {['FPP 1', 'FPP 2', 'FPP 3', 'FPP 4', 'FPP 5'].map((option) => (
+                                    <CommandItem
+                                      key={option}
+                                      value={option}
+                                      onSelect={(currentValue) => {
+                                        handleSelectChange('fpp', currentValue);
+                                      }}
+                                    >
+                                      {option}
+                                    </CommandItem>
+                                  ))}
+                                </CommandGroup>
+                              </CommandList>
+                            </Command>
+                          </PopoverContent>
+                        </Popover>
                       </div>
 
                       <div className="grid grid-cols-2 gap-3">
@@ -1129,6 +1173,7 @@ export default function VoucherPage() {
                         <TableHead className="font-semibold py-3 px-4 text-center text-xs bg-muted/50">Tracking ID</TableHead>
                         <TableHead className="font-semibold py-3 px-4 text-center text-xs whitespace-normal wrap-break-word max-w-[120px] bg-muted/50">Date/Time IN</TableHead>
                         <TableHead className="font-semibold py-3 px-4 text-center text-xs whitespace-normal wrap-break-word max-w-[120px] bg-muted/50">Date/Time OUT</TableHead>
+                        <TableHead className="font-semibold py-3 px-4 text-center text-xs bg-muted/50">FPP</TableHead>
                         <TableHead className="font-semibold py-3 px-4 text-center text-xs bg-muted/50">DV No.</TableHead>
                         <TableHead className="font-semibold py-3 px-4 text-center text-xs bg-muted/50">Payee</TableHead>
                         <TableHead className="font-semibold py-3 px-4 text-center text-xs bg-muted/50">Office</TableHead>
@@ -1147,6 +1192,7 @@ export default function VoucherPage() {
                             <TableCell className="text-sm py-3 px-4 text-center font-bold text-primary">{voucher.trackingId}</TableCell>
                             <TableCell className="text-sm py-3 px-4 text-center whitespace-normal wrap-break-word max-w-[120px]">{formatDateTimeWithoutSeconds(voucher.dateTimeIn)}</TableCell>
                             <TableCell className={`text-sm py-3 px-4 text-center whitespace-normal wrap-break-word max-w-[120px] ${voucher.status === 'Completed' ? 'text-green-600 font-medium' : 'text-red-600'}`}>{voucher.dateTimeOut ? formatDateTimeWithoutSeconds(voucher.dateTimeOut) : '-'}</TableCell>
+                            <TableCell className="text-sm py-3 px-4 text-center">{voucher.fpp || '-'}</TableCell>
                             <TableCell className="text-sm py-3 px-4 text-center">{voucher.dvNo}</TableCell>
                             <TableCell className="text-sm py-3 px-4 text-center">{voucher.payee}</TableCell>
                             <TableCell className="text-sm py-3 px-4 text-center">
