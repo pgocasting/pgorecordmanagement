@@ -813,8 +813,8 @@ export default function ReportPage() {
                       <TableHead className="text-center text-xs font-semibold bg-gray-100">Name/Reference</TableHead>
                       <TableHead className="text-center text-xs font-semibold bg-gray-100">Designation/Type</TableHead>
                       <TableHead className="text-center text-xs font-semibold bg-gray-100 min-w-[200px]">Purpose/Description</TableHead>
-                      <TableHead className="text-center text-xs font-semibold bg-gray-100">Amount</TableHead>
-                      <TableHead className="text-center text-xs font-semibold bg-gray-100">Status</TableHead>
+                      <TableHead className="text-center text-xs font-semibold bg-gray-100 whitespace-nowrap">Amount</TableHead>
+                      <TableHead className="text-center text-xs font-semibold bg-gray-100 whitespace-nowrap">Status</TableHead>
                       <TableHead className="text-center text-xs font-semibold bg-gray-100">Action</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -876,12 +876,12 @@ export default function ReportPage() {
                             <TableCell className="text-center text-xs text-gray-600 min-w-[200px]">
                               {record.purpose || record.description || record.particulars || '-'}
                             </TableCell>
-                            <TableCell className="text-center text-sm font-semibold text-blue-700">
+                            <TableCell className="text-center text-sm font-semibold text-blue-700 whitespace-nowrap">
                               {formatAmount(record.amount || record.estimatedCost)}
                             </TableCell>
-                            <TableCell className="text-center">
+                            <TableCell className="text-center whitespace-nowrap">
                               <span
-                                className={`px-3 py-1.5 rounded-full text-xs font-semibold inline-flex items-center gap-1.5 ${
+                                className={`px-3 py-1.5 rounded-full text-xs font-semibold inline-flex items-center gap-1.5 whitespace-nowrap ${
                                   record.status === 'Completed'
                                     ? 'bg-green-100 text-green-700'
                                     : record.status === 'Approved'
