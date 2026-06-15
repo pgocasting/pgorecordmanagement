@@ -199,9 +199,49 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
+
+  /* Better table layout */
+  table {
+    table-layout: auto;
+  }
+
+  td, th {
+    min-width: 80px;
+  }
+
+  /* Ensure proper text wrapping in all table cells */
+  td, th {
+    word-wrap: break-word;
+    word-break: break-word;
+    overflow-wrap: break-word;
+  }
 }
 
 @layer utilities {
+  /* Table cell text wrapping utilities */
+  .table-cell-wrap {
+    white-space: normal;
+    word-wrap: break-word;
+    word-break: break-word;
+    overflow-wrap: break-word;
+    hyphens: auto;
+  }
+
+  .table-cell-wrap-sm {
+    max-width: 120px;
+    min-width: 100px;
+  }
+
+  .table-cell-wrap-md {
+    max-width: 180px;
+    min-width: 140px;
+  }
+
+  .table-cell-wrap-lg {
+    max-width: 280px;
+    min-width: 200px;
+  }
+
   @keyframes pgo-loading-bar-slide {
     0% {
       transform: translateX(-120%);
