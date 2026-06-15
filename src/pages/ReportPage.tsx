@@ -1184,16 +1184,6 @@ export default function ReportPage() {
                   <p className="text-sm">{selectedRecord.timeOutRemarks}</p>
                 </div>
               )}
-
-              {/* Show any other fields that might exist */}
-              <div className="col-span-2 border-t pt-2 mt-2">
-                <details className="text-xs">
-                  <summary className="cursor-pointer text-gray-600 hover:text-gray-900 font-medium">Show all fields</summary>
-                  <pre className="mt-2 p-2 bg-gray-50 rounded text-xs overflow-x-auto">
-                    {JSON.stringify(selectedRecord, null, 2)}
-                  </pre>
-                </details>
-              </div>
             </div>
           )}
         </DialogContent>
