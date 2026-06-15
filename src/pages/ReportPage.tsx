@@ -932,7 +932,7 @@ export default function ReportPage() {
                       />
                       <div className="flex items-center gap-3 text-base text-gray-800">
                         <RefreshCw className="h-5 w-5 animate-spin text-indigo-600" />
-                        <span className="font-semibold">Loading report data...</span>
+                        <span className="font-semibold">Loading...</span>
                       </div>
                       <div className="w-48 h-1.5 bg-gray-200 rounded-full overflow-hidden relative">
                         <div className="h-full bg-gradient-to-r from-indigo-400 via-indigo-600 to-indigo-400 rounded-full absolute left-0 animate-[loading-slide_1.5s_ease-in-out_infinite]" style={{width: '50%'}}></div>
