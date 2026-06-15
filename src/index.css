@@ -242,6 +242,19 @@
     min-width: 200px;
   }
 
+  /* Loading animation for progress bar */
+  @keyframes loading-slide {
+    0% {
+      transform: translateX(-100%);
+    }
+    50% {
+      transform: translateX(150%);
+    }
+    100% {
+      transform: translateX(-100%);
+    }
+  }
+
   @keyframes pgo-loading-bar-slide {
     0% {
       transform: translateX(-120%);
