@@ -796,23 +796,23 @@ export default function ReportPage() {
           </div>
 
           {/* Report Table */}
-          <Card className="border-0 shadow-md relative flex-1 flex flex-col overflow-hidden">
-            <CardHeader className="py-3 border-b bg-gradient-to-r from-gray-50 to-white">
+          <Card className="border-0 shadow-md flex flex-col overflow-hidden min-h-[500px]">
+            <CardHeader className="py-3 border-b bg-gradient-to-r from-gray-50 to-white shrink-0">
               <CardTitle className="text-lg font-semibold text-gray-900">Report Details</CardTitle>
             </CardHeader>
-            <CardContent className="flex-1 flex flex-col pt-3 min-h-0">
-              <div className="relative flex-1 overflow-x-auto overflow-y-auto min-h-0 rounded-lg border border-gray-200">
+            <CardContent className="flex-1 flex flex-col p-0 min-h-0">
+              <div className="flex-1 overflow-auto min-h-0">
                 <Table>
                   <TableHeader className="sticky top-0 z-10">
                     <TableRow className="bg-gradient-to-r from-gray-100 to-gray-50 border-b-2 border-gray-200">
                       <TableHead className="text-center text-xs font-semibold bg-gray-100">Received By</TableHead>
                       <TableHead className="text-center text-xs font-semibold bg-gray-100">Tracking ID</TableHead>
                       <TableHead className="text-center text-xs font-semibold bg-gray-100">Category</TableHead>
-                      <TableHead className="text-center text-xs font-semibold whitespace-normal wrap-break-word max-w-[160px] bg-gray-100">Date/Time IN</TableHead>
-                      <TableHead className="text-center text-xs font-semibold whitespace-normal wrap-break-word max-w-[160px] bg-gray-100">Date/Time OUT</TableHead>
+                      <TableHead className="text-center text-xs font-semibold bg-gray-100 min-w-[140px]">Date/Time IN</TableHead>
+                      <TableHead className="text-center text-xs font-semibold bg-gray-100 min-w-[140px]">Date/Time OUT</TableHead>
                       <TableHead className="text-center text-xs font-semibold bg-gray-100">Name/Reference</TableHead>
                       <TableHead className="text-center text-xs font-semibold bg-gray-100">Designation/Type</TableHead>
-                      <TableHead className="text-center text-xs font-semibold bg-gray-100">Purpose/Description</TableHead>
+                      <TableHead className="text-center text-xs font-semibold bg-gray-100 min-w-[200px]">Purpose/Description</TableHead>
                       <TableHead className="text-center text-xs font-semibold bg-gray-100">Amount</TableHead>
                       <TableHead className="text-center text-xs font-semibold bg-gray-100">Status</TableHead>
                       <TableHead className="text-center text-xs font-semibold bg-gray-100">Action</TableHead>
@@ -847,7 +847,7 @@ export default function ReportPage() {
                               {record.trackingId}
                             </TableCell>
                             <TableCell className="text-center text-sm font-medium">{record.category}</TableCell>
-                            <TableCell className="text-center text-xs text-gray-600 whitespace-normal wrap-break-word max-w-[160px]">
+                            <TableCell className="text-center text-xs text-gray-600 min-w-[140px]">
                               {record.dateTimeIn ? new Date(record.dateTimeIn).toLocaleString('en-US', { 
                                 month: 'short', 
                                 day: '2-digit', 
@@ -857,7 +857,7 @@ export default function ReportPage() {
                                 hour12: true 
                               }) : '-'}
                             </TableCell>
-                            <TableCell className="text-center text-xs text-gray-600 whitespace-normal wrap-break-word max-w-[160px]">
+                            <TableCell className="text-center text-xs text-gray-600 min-w-[140px]">
                               {record.dateTimeOut ? new Date(record.dateTimeOut).toLocaleString('en-US', { 
                                 month: 'short', 
                                 day: '2-digit', 
@@ -873,7 +873,7 @@ export default function ReportPage() {
                             <TableCell className="text-center text-sm text-gray-600">
                               {record.designation || record.leaveType || record.type || '-'}
                             </TableCell>
-                            <TableCell className="text-center text-xs text-gray-600 max-w-[200px] truncate" title={record.purpose || record.description || record.particulars || ''}>
+                            <TableCell className="text-center text-xs text-gray-600 min-w-[200px]">
                               {record.purpose || record.description || record.particulars || '-'}
                             </TableCell>
                             <TableCell className="text-center text-sm font-semibold text-blue-700">
@@ -918,6 +918,7 @@ export default function ReportPage() {
                       )}
                     </TableBody>
                   </Table>
+                </div>
                 {isLoading && (
                   <div className="absolute inset-0 z-20 bg-white/90 backdrop-blur-sm flex flex-col items-center justify-center">
                     <div className="flex flex-col items-center gap-4 bg-white p-8 rounded-2xl shadow-2xl border border-gray-100">
@@ -939,10 +940,9 @@ export default function ReportPage() {
                     </div>
                   </div>
                 )}
-              </div>
               
               {/* Pagination Controls */}
-              <div className="flex items-center justify-between gap-4 mt-3 pt-3 border-t shrink-0">
+              <div className="flex items-center justify-between gap-4 p-4 border-t shrink-0 bg-white">
                   <div className="flex items-center gap-3 text-sm">
                     <span className="text-gray-700 font-medium">Rows per page:</span>
                     <Select value={String(rowsPerPage)} onValueChange={(v) => { setRowsPerPage(Number(v)); setCurrentPage(1); }}>
