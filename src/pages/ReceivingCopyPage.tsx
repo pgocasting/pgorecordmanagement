@@ -492,7 +492,7 @@ export default function ReceivingCopyPage() {
                       <th className="border border-gray-300 px-2 py-2 text-left text-sm font-semibold text-gray-900">Requesting Office</th>
                       <th className="border border-gray-300 px-2 py-2 text-left text-sm font-semibold text-gray-900">Particulars</th>
                       <th className="border border-gray-300 px-2 py-2 text-left text-sm font-semibold text-gray-900">Amount</th>
-                      <th className="border border-gray-300 px-2 py-2 text-left text-sm font-semibold text-gray-900">Received / Created By</th>
+                      <th className="border border-gray-300 px-2 py-2 text-left text-sm font-semibold text-gray-900">Received by</th>
                       <th className="border border-gray-300 px-2 py-2 text-left text-sm font-semibold text-gray-900 print-hide">Remarks</th>
                     </tr>
                   </thead>
