@@ -205,7 +205,7 @@ export default function PurchaseRequestPage() {
   }>>([]);
   const [designationOptions, setDesignationOptions] = useState<string[]>([]);
   const [designationDropdownOpen, setDesignationDropdownOpen] = useState(false);
-  const [fppOptions, setFppOptions] = useState<string[]>([]);
+  const [fppOptions, setFppOptions] = useState<Array<{id?: string; code: string; description?: string; category?: string}>>([]);
   const [fppDropdownOpen, setFppDropdownOpen] = useState(false);
   const [returnConfirmOpen, setReturnConfirmOpen] = useState(false);
   const [requestToReturn, setRequestToReturn] = useState<string | null>(null);
@@ -253,8 +253,8 @@ export default function PurchaseRequestPage() {
     const loadFPPs = async () => {
       try {
         const fpps = await fppService.getFPPs();
-        // Extract just the codes for dropdown options
-        setFppOptions(fpps.map(f => f.code));
+        // Keep the full objects for displaying code + description
+        setFppOptions(fpps);
       } catch (error) {
         console.error('Error loading FPPs:', error);
         setFppOptions([]);
@@ -866,12 +866,23 @@ export default function PurchaseRequestPage() {
                             className="w-full justify-between"
                           >
                             <span className="truncate flex-1 text-left">
-                              {formData.fpp || "Select FPP..."}
+                              {formData.fpp ? (
+                                <span>
+                                  <span className="font-medium">{formData.fpp}</span>
+                                  {fppOptions.find(f => f.code === formData.fpp)?.description && (
+                                    <span className="text-muted-foreground text-sm ml-2">
+                                      - {fppOptions.find(f => f.code === formData.fpp)?.description}
+                                    </span>
+                                  )}
+                                </span>
+                              ) : (
+                                "Select FPP..."
+                              )}
                             </span>
                             <Search className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                           </Button>
                         </PopoverTrigger>
-                        <PopoverContent className="w-[400px] p-0" align="start" onWheel={(e) => e.stopPropagation()}>
+                        <PopoverContent className="w-[500px] p-0" align="start" onWheel={(e) => e.stopPropagation()}>
                           <Command className="max-h-none" shouldFilter={true}>
                             <CommandInput placeholder="Search FPP..." />
                             <CommandList
@@ -882,15 +893,20 @@ export default function PurchaseRequestPage() {
                               <CommandGroup>
                                 {fppOptions.map((option) => (
                                   <CommandItem
-                                    key={option}
-                                    value={option}
-                                    onSelect={(currentValue) => {
-                                      handleSelectChange('fpp', currentValue);
+                                    key={option.id || option.code}
+                                    value={`${option.code} ${option.description || ''}`}
+                                    onSelect={() => {
+                                      handleSelectChange('fpp', option.code);
                                       setFppDropdownOpen(false);
                                     }}
-                                    className="cursor-pointer hover:bg-gray-50 py-2"
+                                    className="flex flex-col items-start py-3 px-3 cursor-pointer hover:bg-gray-50"
                                   >
-                                    {option}
+                                    <span className="font-medium text-gray-900">{option.code}</span>
+                                    {option.description && (
+                                      <span className="text-sm text-muted-foreground mt-1">
+                                        {option.description}
+                                      </span>
+                                    )}
                                   </CommandItem>
                                 ))}
                               </CommandGroup>
