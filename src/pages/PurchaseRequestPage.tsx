@@ -912,7 +912,7 @@ export default function PurchaseRequestPage() {
                               variant="outline"
                               role="combobox"
                               aria-expanded={designationDropdownOpen}
-                              className="w-full justify-between truncate"
+                              className="w-full justify-between"
                             >
                               <span className="truncate flex-1 text-left">
                                 {formData.designation || "Select office..."}
@@ -920,10 +920,13 @@ export default function PurchaseRequestPage() {
                               <Search className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                             </Button>
                           </PopoverTrigger>
-                          <PopoverContent className="w-full p-0" align="start">
-                            <Command>
+                          <PopoverContent className="w-[400px] p-0" align="start" onWheel={(e) => e.stopPropagation()}>
+                            <Command className="max-h-none" shouldFilter={true}>
                               <CommandInput placeholder="Search office..." />
-                              <CommandList>
+                              <CommandList
+                                style={{ maxHeight: '300px', overflowY: 'auto', overflowX: 'hidden' }}
+                                onWheel={(e) => e.stopPropagation()}
+                              >
                                 <CommandEmpty>No office found.</CommandEmpty>
                                 <CommandGroup>
                                   {designationOptions.map((option) => (
@@ -934,6 +937,7 @@ export default function PurchaseRequestPage() {
                                         handleSelectChange('designation', currentValue);
                                         setDesignationDropdownOpen(false);
                                       }}
+                                      className="cursor-pointer hover:bg-gray-50 py-2"
                                     >
                                       {option}
                                     </CommandItem>

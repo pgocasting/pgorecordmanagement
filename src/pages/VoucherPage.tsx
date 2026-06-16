@@ -953,12 +953,14 @@ export default function VoucherPage() {
                               aria-expanded={fppDropdownOpen}
                               className="w-full justify-between h-8 text-xs"
                             >
-                              {formData.fpp || "Select FPP..."}
+                              <span className="truncate flex-1 text-left">
+                                {formData.fpp || "Select FPP..."}
+                              </span>
                               <Search className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                             </Button>
                           </PopoverTrigger>
-                          <PopoverContent className="w-full p-0" align="start" onWheel={(e) => e.stopPropagation()}>
-                            <Command shouldFilter={true}>
+                          <PopoverContent className="w-[400px] p-0" align="start" onWheel={(e) => e.stopPropagation()}>
+                            <Command className="max-h-none" shouldFilter={true}>
                               <CommandInput placeholder="Search FPP..." />
                               <CommandList 
                                 style={{ maxHeight: '300px', overflowY: 'auto', overflowX: 'hidden' }}
@@ -974,7 +976,7 @@ export default function VoucherPage() {
                                         handleSelectChange('fpp', currentValue);
                                         setFppDropdownOpen(false);
                                       }}
-                                      className="cursor-pointer hover:bg-gray-50"
+                                      className="cursor-pointer hover:bg-gray-50 py-2"
                                     >
                                       {option}
                                     </CommandItem>
@@ -1035,7 +1037,7 @@ export default function VoucherPage() {
                                 variant="outline"
                                 role="combobox"
                                 aria-expanded={designationDropdownOpen}
-                                className="w-full h-8 text-xs justify-between truncate"
+                                className="w-full h-8 text-xs justify-between"
                               >
                                 <span className="truncate flex-1 text-left">
                                   {formData.designationOffice || "Select office..."}
@@ -1043,10 +1045,13 @@ export default function VoucherPage() {
                                 <Search className="ml-2 h-3 w-3 shrink-0 opacity-50" />
                               </Button>
                             </PopoverTrigger>
-                            <PopoverContent className="w-full p-0" align="start">
-                              <Command>
+                            <PopoverContent className="w-[400px] p-0" align="start" onWheel={(e) => e.stopPropagation()}>
+                              <Command className="max-h-none" shouldFilter={true}>
                                 <CommandInput placeholder="Search office..." />
-                                <CommandList>
+                                <CommandList
+                                  style={{ maxHeight: '300px', overflowY: 'auto', overflowX: 'hidden' }}
+                                  onWheel={(e) => e.stopPropagation()}
+                                >
                                   <CommandEmpty>No office found.</CommandEmpty>
                                   <CommandGroup>
                                     {designationOptions.map((option) => (
@@ -1057,6 +1062,7 @@ export default function VoucherPage() {
                                           handleSelectChange('designationOffice', currentValue);
                                           setDesignationDropdownOpen(false);
                                         }}
+                                        className="cursor-pointer hover:bg-gray-50 py-2"
                                       >
                                         {option}
                                       </CommandItem>
