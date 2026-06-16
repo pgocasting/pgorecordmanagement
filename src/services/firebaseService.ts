@@ -728,10 +728,14 @@ export const accountCodeService = {
 
   async deleteAccountCode(code: string) {
     try {
+      console.log('accountCodeService.deleteAccountCode called with:', code);
       const existingDocs = await getItems<AccountCode>('accountCodes');
+      console.log('Existing account code docs:', existingDocs);
       const docToDelete = existingDocs.find(d => d.code === code);
+      console.log('Doc to delete:', docToDelete);
       if (docToDelete) {
-        await deleteItem('accountCodes', docToDelete.id);
+        const deleteResult = await deleteItem('accountCodes', docToDelete.id);
+        console.log('Delete item result:', deleteResult);
       }
       return true;
     } catch (error) {
@@ -804,10 +808,14 @@ export const fppService = {
 
   async deleteFPP(fpp: string) {
     try {
+      console.log('fppService.deleteFPP called with:', fpp);
       const existingDocs = await getItems<FPP>('fpps');
+      console.log('Existing FPP docs:', existingDocs);
       const docToDelete = existingDocs.find(d => d.name === fpp);
+      console.log('Doc to delete:', docToDelete);
       if (docToDelete) {
-        await deleteItem('fpps', docToDelete.id);
+        const deleteResult = await deleteItem('fpps', docToDelete.id);
+        console.log('Delete item result:', deleteResult);
       }
       return true;
     } catch (error) {

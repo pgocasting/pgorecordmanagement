@@ -619,11 +619,33 @@ export default function SettingsPage() {
       setError('Account code is required');
       return;
     }
-    if (accountCodes.includes(newAccountCode.trim())) {
-      setError('This account code already exists');
+    
+    // Parse multiple account codes from textarea (comma or line separated)
+    const rawAccountCodes = newAccountCode
+      .split(/[,\n]/)
+      .map(ac => ac.trim())
+      .filter(ac => ac.length > 0);
+    
+    if (rawAccountCodes.length === 0) {
+      setError('Please enter at least one account code');
       return;
     }
-    setConfirmAction({ type: 'add', value: newAccountCode.trim(), category: 'accountCode' });
+    
+    // Check for duplicates with existing account codes
+    const duplicates = rawAccountCodes.filter(ac => accountCodes.includes(ac));
+    if (duplicates.length > 0) {
+      setError(`These account codes already exist: ${duplicates.join(', ')}`);
+      return;
+    }
+    
+    // Check for duplicates within the input
+    const uniqueAccountCodes = [...new Set(rawAccountCodes)];
+    if (uniqueAccountCodes.length < rawAccountCodes.length) {
+      setError('You have duplicate account codes in your input');
+      return;
+    }
+    
+    setConfirmAction({ type: 'add', value: JSON.stringify(uniqueAccountCodes), category: 'accountCode' });
     setConfirmDialogOpen(true);
   };
 
@@ -647,6 +669,7 @@ export default function SettingsPage() {
   };
 
   const handleDeleteAccountCode = (code: string) => {
+    console.log('handleDeleteAccountCode called with:', code);
     setConfirmAction({ type: 'delete', value: code, category: 'accountCode' });
     setConfirmDialogOpen(true);
   };
@@ -659,11 +682,33 @@ export default function SettingsPage() {
       setError('FPP name is required');
       return;
     }
-    if (fpps.includes(newFpp.trim())) {
-      setError('This FPP already exists');
+    
+    // Parse multiple FPPs from textarea (comma or line separated)
+    const rawFpps = newFpp
+      .split(/[,\n]/)
+      .map(f => f.trim())
+      .filter(f => f.length > 0);
+    
+    if (rawFpps.length === 0) {
+      setError('Please enter at least one FPP');
       return;
     }
-    setConfirmAction({ type: 'add', value: newFpp.trim(), category: 'fpp' });
+    
+    // Check for duplicates with existing FPPs
+    const duplicates = rawFpps.filter(f => fpps.includes(f));
+    if (duplicates.length > 0) {
+      setError(`These FPPs already exist: ${duplicates.join(', ')}`);
+      return;
+    }
+    
+    // Check for duplicates within the input
+    const uniqueFpps = [...new Set(rawFpps)];
+    if (uniqueFpps.length < rawFpps.length) {
+      setError('You have duplicate FPPs in your input');
+      return;
+    }
+    
+    setConfirmAction({ type: 'add', value: JSON.stringify(uniqueFpps), category: 'fpp' });
     setConfirmDialogOpen(true);
   };
 
@@ -687,6 +732,7 @@ export default function SettingsPage() {
   };
 
   const handleDeleteFpp = (fpp: string) => {
+    console.log('handleDeleteFpp called with:', fpp);
     setConfirmAction({ type: 'delete', value: fpp, category: 'fpp' });
     setConfirmDialogOpen(true);
   };
@@ -728,10 +774,13 @@ export default function SettingsPage() {
         window.dispatchEvent(new Event('designationsUpdated'));
       } else if (category === 'accountCode') {
         if (confirmAction.type === 'add' && confirmAction.value) {
-          await accountCodeService.addAccountCode(confirmAction.value);
+          const accountCodesToAdd = JSON.parse(confirmAction.value);
+          for (const accountCode of accountCodesToAdd) {
+            await accountCodeService.addAccountCode(accountCode);
+          }
           const updated = await accountCodeService.getAccountCodes();
           setAccountCodes(updated);
-          setSuccess('Account code added successfully!');
+          setSuccess(`${accountCodesToAdd.length} account code(s) added successfully!`);
           setNewAccountCode('');
           setAccountCodeDialogOpen(false);
           setEditingAccountCode(null);
@@ -746,8 +795,11 @@ export default function SettingsPage() {
           setAccountCodeDialogOpen(false);
           setError('');
         } else if (confirmAction.type === 'delete' && confirmAction.value) {
-          await accountCodeService.deleteAccountCode(confirmAction.value);
+          console.log('Deleting account code:', confirmAction.value);
+          const result = await accountCodeService.deleteAccountCode(confirmAction.value);
+          console.log('Delete result:', result);
           const updated = await accountCodeService.getAccountCodes();
+          console.log('Updated account codes after delete:', updated);
           setAccountCodes(updated);
           setSuccess('Account code deleted successfully!');
           setError('');
@@ -755,10 +807,13 @@ export default function SettingsPage() {
         window.dispatchEvent(new Event('accountCodesUpdated'));
       } else if (category === 'fpp') {
         if (confirmAction.type === 'add' && confirmAction.value) {
-          await fppService.addFPP(confirmAction.value);
+          const fppsToAdd = JSON.parse(confirmAction.value);
+          for (const fpp of fppsToAdd) {
+            await fppService.addFPP(fpp);
+          }
           const updated = await fppService.getFPPs();
           setFpps(updated);
-          setSuccess('FPP added successfully!');
+          setSuccess(`${fppsToAdd.length} FPP(s) added successfully!`);
           setNewFpp('');
           setFppDialogOpen(false);
           setEditingFpp(null);
@@ -773,8 +828,11 @@ export default function SettingsPage() {
           setFppDialogOpen(false);
           setError('');
         } else if (confirmAction.type === 'delete' && confirmAction.value) {
-          await fppService.deleteFPP(confirmAction.value);
+          console.log('Deleting FPP:', confirmAction.value);
+          const result = await fppService.deleteFPP(confirmAction.value);
+          console.log('Delete result:', result);
           const updated = await fppService.getFPPs();
+          console.log('Updated FPPs after delete:', updated);
           setFpps(updated);
           setSuccess('FPP deleted successfully!');
           setError('');
@@ -1831,19 +1889,36 @@ export default function SettingsPage() {
                         <DialogHeader>
                           <DialogTitle>{editingAccountCode ? 'Edit Account Code' : 'Add New Account Code'}</DialogTitle>
                           <DialogDescription>
-                            {editingAccountCode ? 'Update the account code' : 'Enter account code'}
+                            {editingAccountCode ? 'Update the account code' : 'Paste one or more account codes (separated by commas or new lines)'}
                           </DialogDescription>
                         </DialogHeader>
                         <div className="space-y-4">
                           <div className="space-y-2">
-                            <Label htmlFor="accountCodeName">Account Code</Label>
-                            <Input
-                              id="accountCodeName"
-                              placeholder="e.g., 5020301000"
-                              value={newAccountCode}
-                              onChange={(e) => setNewAccountCode(e.target.value)}
-                              disabled={isLoading}
-                            />
+                            <Label htmlFor="accountCodeName">Account Code{!editingAccountCode && 's'}</Label>
+                            {editingAccountCode ? (
+                              <Input
+                                id="accountCodeName"
+                                placeholder="e.g., 5020301000"
+                                value={newAccountCode}
+                                onChange={(e) => setNewAccountCode(e.target.value)}
+                                disabled={isLoading}
+                              />
+                            ) : (
+                              <>
+                                <textarea
+                                  id="accountCodeName"
+                                  placeholder="Paste account codes here (comma or line separated)&#10;&#10;e.g.:&#10;5-01-01-010&#10;5-01-02-010&#10;5-01-02-020"
+                                  value={newAccountCode}
+                                  onChange={(e) => setNewAccountCode(e.target.value)}
+                                  disabled={isLoading}
+                                  rows={8}
+                                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
+                                />
+                                <p className="text-xs text-gray-500 mt-1">
+                                  You can paste multiple account codes separated by commas or new lines
+                                </p>
+                              </>
+                            )}
                           </div>
                           <div className="flex gap-2 pt-4">
                             <Button
@@ -1958,19 +2033,36 @@ export default function SettingsPage() {
                         <DialogHeader>
                           <DialogTitle>{editingFpp ? 'Edit FPP' : 'Add New FPP'}</DialogTitle>
                           <DialogDescription>
-                            {editingFpp ? 'Update the FPP name' : 'Enter FPP name'}
+                            {editingFpp ? 'Update the FPP name' : 'Paste one or more FPPs (separated by commas or new lines)'}
                           </DialogDescription>
                         </DialogHeader>
                         <div className="space-y-4">
                           <div className="space-y-2">
-                            <Label htmlFor="fppName">FPP Name</Label>
-                            <Input
-                              id="fppName"
-                              placeholder="e.g., FPP 1, FPP 2023"
-                              value={newFpp}
-                              onChange={(e) => setNewFpp(e.target.value)}
-                              disabled={isLoading}
-                            />
+                            <Label htmlFor="fppName">FPP Name{!editingFpp && 's'}</Label>
+                            {editingFpp ? (
+                              <Input
+                                id="fppName"
+                                placeholder="e.g., FPP 1, FPP 2023"
+                                value={newFpp}
+                                onChange={(e) => setNewFpp(e.target.value)}
+                                disabled={isLoading}
+                              />
+                            ) : (
+                              <>
+                                <textarea
+                                  id="fppName"
+                                  placeholder="Paste FPPs here (comma or line separated)&#10;&#10;e.g.:&#10;FPP 1&#10;FPP 2&#10;FPP 3"
+                                  value={newFpp}
+                                  onChange={(e) => setNewFpp(e.target.value)}
+                                  disabled={isLoading}
+                                  rows={8}
+                                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
+                                />
+                                <p className="text-xs text-gray-500 mt-1">
+                                  You can paste multiple FPPs separated by commas or new lines
+                                </p>
+                              </>
+                            )}
                           </div>
                           <div className="flex gap-2 pt-4">
                             <Button
@@ -2192,11 +2284,11 @@ export default function SettingsPage() {
             {confirmAction.type === 'edit' && confirmAction.category === 'designation' && `Are you sure you want to update this designation to "${confirmAction.value}"?`}
             {confirmAction.type === 'delete' && confirmAction.category === 'designation' && `Are you sure you want to delete "${confirmAction.value}"? This action cannot be undone.`}
             
-            {confirmAction.type === 'add' && confirmAction.category === 'accountCode' && `Are you sure you want to add "${confirmAction.value}" as a new account code?`}
+            {confirmAction.type === 'add' && confirmAction.category === 'accountCode' && `Are you sure you want to add the account code(s)?`}
             {confirmAction.type === 'edit' && confirmAction.category === 'accountCode' && `Are you sure you want to update this account code to "${confirmAction.value}"?`}
             {confirmAction.type === 'delete' && confirmAction.category === 'accountCode' && `Are you sure you want to delete "${confirmAction.value}"? This action cannot be undone.`}
             
-            {confirmAction.type === 'add' && confirmAction.category === 'fpp' && `Are you sure you want to add "${confirmAction.value}" as a new FPP?`}
+            {confirmAction.type === 'add' && confirmAction.category === 'fpp' && `Are you sure you want to add the FPP(s)?`}
             {confirmAction.type === 'edit' && confirmAction.category === 'fpp' && `Are you sure you want to update this FPP to "${confirmAction.value}"?`}
             {confirmAction.type === 'delete' && confirmAction.category === 'fpp' && `Are you sure you want to delete "${confirmAction.value}"? This action cannot be undone.`}
           </p>
