@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { obligationRequestService, designationService } from '@/services/firebaseService';
+import { obligationRequestService, designationService, accountCodeService } from '@/services/firebaseService';
 import { Sidebar } from '@/components/Sidebar';
 import { Button } from '@/components/ui/button';
 import {
@@ -218,6 +218,9 @@ export default function ObligationRequestPage() {
   const [selectedRequest, setSelectedRequest] = useState<ObligationRequest | null>(null);
   const [designationOptions, setDesignationOptions] = useState<string[]>([]);
   const [designationDropdownOpen, setDesignationDropdownOpen] = useState(false);
+  const [accountCodeOptions, setAccountCodeOptions] = useState<Array<{id?: string; code: string; description?: string; category?: string}>>([]);
+  const [accountCodesByCategory, setAccountCodesByCategory] = useState<Record<string, Array<{id?: string; code: string; description?: string; category?: string}>>>({});
+  const [accountCodeDropdownOpen, setAccountCodeDropdownOpen] = useState(false);
 
   useEffect(() => {
     const loadDesignations = async () => {
@@ -230,6 +233,33 @@ export default function ObligationRequestPage() {
       }
     };
     loadDesignations();
+  }, []);
+
+  useEffect(() => {
+    const loadAccountCodes = async () => {
+      try {
+        const accountCodes = await accountCodeService.getAccountCodes();
+        setAccountCodeOptions(accountCodes);
+        
+        const grouped = await accountCodeService.getAccountCodesByCategory();
+        setAccountCodesByCategory(grouped);
+      } catch (error) {
+        console.error('Error loading account codes:', error);
+        setAccountCodeOptions([]);
+        setAccountCodesByCategory({});
+      }
+    };
+    loadAccountCodes();
+    
+    // Listen for account code updates from settings page
+    const handleAccountCodesUpdate = () => {
+      loadAccountCodes();
+    };
+    window.addEventListener('accountCodesUpdated', handleAccountCodesUpdate);
+    
+    return () => {
+      window.removeEventListener('accountCodesUpdated', handleAccountCodesUpdate);
+    };
   }, []);
 
   const [formData, setFormData] = useState({
@@ -849,13 +879,69 @@ export default function ObligationRequestPage() {
                     )}
                     <div className="space-y-2">
                       <Label htmlFor="accountCode">Account Code</Label>
-                      <Input
-                        id="accountCode"
-                        name="accountCode"
-                        placeholder="Enter Account Code"
-                        value={formData.accountCode}
-                        onChange={handleInputChange}
-                      />
+                      <Popover open={accountCodeDropdownOpen} onOpenChange={setAccountCodeDropdownOpen}>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="outline"
+                            role="combobox"
+                            aria-expanded={accountCodeDropdownOpen}
+                            className="w-full justify-between"
+                          >
+                            <span className="truncate flex-1 text-left">
+                              {formData.accountCode ? (
+                                <span>
+                                  <span className="font-medium">{formData.accountCode}</span>
+                                  {accountCodeOptions.find(ac => ac.code === formData.accountCode)?.description && (
+                                    <span className="text-muted-foreground text-sm ml-2">
+                                      - {accountCodeOptions.find(ac => ac.code === formData.accountCode)?.description}
+                                    </span>
+                                  )}
+                                </span>
+                              ) : (
+                                "Select account code..."
+                              )}
+                            </span>
+                            <Search className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-[500px] p-0" align="start" onWheel={(e) => e.stopPropagation()}>
+                          <Command className="max-h-none" shouldFilter={true}>
+                            <CommandInput placeholder="Search account code..." />
+                            <CommandList 
+                              style={{ maxHeight: '350px', overflowY: 'auto', overflowX: 'hidden' }}
+                              onWheel={(e) => e.stopPropagation()}
+                            >
+                              <CommandEmpty>No account code found.</CommandEmpty>
+                              {Object.entries(accountCodesByCategory).sort(([a], [b]) => a.localeCompare(b)).map(([category, codes]) => (
+                                <CommandGroup 
+                                  key={category} 
+                                  heading={category}
+                                  className="[&_[cmdk-group-heading]]:bg-gradient-to-r [&_[cmdk-group-heading]]:from-teal-50 [&_[cmdk-group-heading]]:to-teal-100 [&_[cmdk-group-heading]]:text-teal-900 [&_[cmdk-group-heading]]:font-semibold [&_[cmdk-group-heading]]:px-3 [&_[cmdk-group-heading]]:py-2 [&_[cmdk-group-heading]]:sticky [&_[cmdk-group-heading]]:top-0 [&_[cmdk-group-heading]]:z-10 [&_[cmdk-group-heading]]:text-sm [&_[cmdk-group-heading]]:border-b [&_[cmdk-group-heading]]:border-teal-200"
+                                >
+                                  {codes.map((option) => (
+                                    <CommandItem
+                                      key={option.id || option.code}
+                                      value={`${option.code} ${option.description || ''} ${category}`}
+                                      onSelect={() => {
+                                        handleSelectChange('accountCode', option.code);
+                                        setAccountCodeDropdownOpen(false);
+                                      }}
+                                      className="flex flex-col items-start py-3 px-3 cursor-pointer hover:bg-gray-50"
+                                    >
+                                      <span className="font-medium text-gray-900">{option.code}</span>
+                                      {option.description && (
+                                        <span className="text-sm text-muted-foreground mt-1">
+                                          {option.description}
+                                        </span>
+                                      )}
+                                    </CommandItem>
+                                  ))}
+                                </CommandGroup>
+                              ))}
+                            </CommandList>
+                          </Command>
+                        </PopoverContent>
+                      </Popover>
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
