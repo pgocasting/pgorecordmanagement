@@ -838,7 +838,7 @@ export const fppService = {
       const existingDocs = await getItems<FPP>('fpps');
       const docToUpdate = existingDocs.find(d => d.code === oldCode);
       if (docToUpdate) {
-        await updateItem('fpps', docToUpdate.id, { code: newCode, description, category });
+        await updateItem<FPP>('fpps', docToUpdate.id, { code: newCode, description, category } as Partial<FPP>);
       }
       return true;
     } catch (error) {

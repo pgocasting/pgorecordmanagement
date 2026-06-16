@@ -253,10 +253,11 @@ export default function PurchaseRequestPage() {
     const loadFPPs = async () => {
       try {
         const fpps = await fppService.getFPPs();
-        setFppOptions(fpps);
+        // Extract just the codes for dropdown options
+        setFppOptions(fpps.map(f => f.code));
       } catch (error) {
         console.error('Error loading FPPs:', error);
-        setFppOptions(['FPP 1', 'FPP 2', 'FPP 3', 'FPP 4', 'FPP 5']);
+        setFppOptions([]);
       }
     };
     loadFPPs();
