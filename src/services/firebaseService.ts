@@ -770,28 +770,48 @@ export const accountCodeService = {
 // FPP Service
 interface FPP {
   id: string;
-  name: string;
+  code: string;
+  description?: string;
+  category?: string;
 }
 
 export const fppService = {
   async getFPPs() {
     try {
       const fpps = await getItems<FPP>('fpps');
-      return fpps.length > 0 ? fpps.map(f => f.name) : ['FPP 1', 'FPP 2', 'FPP 3', 'FPP 4', 'FPP 5'];
+      return fpps.length > 0 ? fpps.map(f => ({ id: f.id, code: f.code, description: f.description, category: f.category })) : [];
     } catch (error) {
       console.error('Error getting FPPs:', error);
-      return ['FPP 1', 'FPP 2', 'FPP 3', 'FPP 4', 'FPP 5'];
+      return [];
     }
   },
 
-  async setFPPs(fpps: string[]) {
+  async getFPPsByCategory() {
+    try {
+      const fpps = await this.getFPPs();
+      const grouped: Record<string, Array<{id?: string; code: string; description?: string; category?: string}>> = {};
+      for (const fpp of fpps) {
+        const category = fpp.category || 'Uncategorized';
+        if (!grouped[category]) {
+          grouped[category] = [];
+        }
+        grouped[category].push(fpp);
+      }
+      return grouped;
+    } catch (error) {
+      console.error('Error grouping FPPs by category:', error);
+      return {};
+    }
+  },
+
+  async setFPPs(fpps: Array<{code: string; description?: string; category?: string}>) {
     try {
       const existingDocs = await getItems<FPP>('fpps');
       for (const existingDoc of existingDocs) {
         await deleteItem('fpps', existingDoc.id);
       }
       for (const fpp of fpps) {
-        await addItem<FPP>('fpps', { name: fpp } as any);
+        await addItem<FPP>('fpps', { code: fpp.code, description: fpp.description, category: fpp.category } as any);
       }
       return true;
     } catch (error) {
@@ -800,11 +820,11 @@ export const fppService = {
     }
   },
 
-  async addFPP(fpp: string) {
+  async addFPP(code: string, description?: string, category?: string) {
     try {
       const fpps = await this.getFPPs();
-      if (!fpps.includes(fpp)) {
-        await addItem<FPP>('fpps', { name: fpp } as any);
+      if (!fpps.find(f => f.code === code)) {
+        await addItem<FPP>('fpps', { code, description, category } as any);
       }
       return true;
     } catch (error) {
@@ -813,13 +833,12 @@ export const fppService = {
     }
   },
 
-  async updateFPP(oldFPP: string, newFPP: string) {
+  async updateFPP(oldCode: string, newCode: string, description?: string, category?: string) {
     try {
-      const fpps = await this.getFPPs();
-      const index = fpps.indexOf(oldFPP);
-      if (index !== -1) {
-        fpps[index] = newFPP;
-        await this.setFPPs(fpps);
+      const existingDocs = await getItems<FPP>('fpps');
+      const docToUpdate = existingDocs.find(d => d.code === oldCode);
+      if (docToUpdate) {
+        await updateItem('fpps', docToUpdate.id, { code: newCode, description, category });
       }
       return true;
     } catch (error) {
@@ -828,12 +847,12 @@ export const fppService = {
     }
   },
 
-  async deleteFPP(fpp: string) {
+  async deleteFPP(code: string) {
     try {
-      console.log('fppService.deleteFPP called with:', fpp);
+      console.log('fppService.deleteFPP called with:', code);
       const existingDocs = await getItems<FPP>('fpps');
       console.log('Existing FPP docs:', existingDocs);
-      const docToDelete = existingDocs.find(d => d.name === fpp);
+      const docToDelete = existingDocs.find(d => d.code === code);
       console.log('Doc to delete:', docToDelete);
       if (docToDelete) {
         const deleteResult = await deleteItem('fpps', docToDelete.id);

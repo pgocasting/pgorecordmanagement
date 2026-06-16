@@ -77,9 +77,13 @@ export default function SettingsPage() {
   const [editingAccountCode, setEditingAccountCode] = useState<{code: string; description?: string; category?: string} | null>(null);
   const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({});
   const [fppDialogOpen, setFppDialogOpen] = useState(false);
-  const [fpps, setFpps] = useState<string[]>([]);
+  const [fpps, setFpps] = useState<Array<{id?: string; code: string; description?: string; category?: string}>>([]);
+  const [fppsByCategory, setFppsByCategory] = useState<Record<string, Array<{id?: string; code: string; description?: string; category?: string}>>>({});
   const [newFpp, setNewFpp] = useState('');
-  const [editingFpp, setEditingFpp] = useState<string | null>(null);
+  const [newFppDescription, setNewFppDescription] = useState('');
+  const [newFppCategory, setNewFppCategory] = useState('');
+  const [editingFpp, setEditingFpp] = useState<{code: string; description?: string; category?: string} | null>(null);
+  const [expandedFppCategories, setExpandedFppCategories] = useState<Record<string, boolean>>({});
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
   const [confirmAction, setConfirmAction] = useState<{ type: 'add' | 'edit' | 'delete'; value?: string; category?: 'designation' | 'accountCode' | 'fpp' }>({ type: 'add' });
   const [pageVisibility, setPageVisibility] = useState<Record<string, boolean>>({});
@@ -148,9 +152,20 @@ export default function SettingsPage() {
       try {
         const firestoreFPPs = await fppService.getFPPs();
         setFpps(firestoreFPPs);
+        
+        const grouped = await fppService.getFPPsByCategory();
+        setFppsByCategory(grouped);
+        
+        // Expand all categories by default
+        const expanded: Record<string, boolean> = {};
+        Object.keys(grouped).forEach(category => {
+          expanded[category] = true;
+        });
+        setExpandedFppCategories(expanded);
       } catch (err) {
         console.error('Failed to load FPPs:', err);
-        setFpps(['FPP 1', 'FPP 2', 'FPP 3', 'FPP 4', 'FPP 5']);
+        setFpps([]);
+        setFppsByCategory({});
       }
     };
     loadFPPs();
@@ -721,62 +736,90 @@ export default function SettingsPage() {
   const handleAddFpp = () => {
     setError('');
     setSuccess('');
-    if (!newFpp.trim()) {
-      setError('FPP name is required');
+    
+    if (!newFppCategory.trim()) {
+      setError('Category is required');
       return;
     }
     
-    // Parse multiple FPPs from textarea (comma or line separated)
-    const rawFpps = newFpp
-      .split(/[,\n]/)
-      .map(f => f.trim())
-      .filter(f => f.length > 0);
+    if (!newFpp.trim()) {
+      setError('FPP code is required');
+      return;
+    }
     
-    if (rawFpps.length === 0) {
+    // Parse multiple FPPs from textarea (line separated)
+    // Format: "Description\tCode" or just "Code"
+    const lines = newFpp
+      .split('\n')
+      .map(line => line.trim())
+      .filter(line => line.length > 0);
+    
+    if (lines.length === 0) {
       setError('Please enter at least one FPP');
       return;
     }
     
+    const fppsToAdd: Array<{code: string; description?: string; category: string}> = [];
+    
+    for (const line of lines) {
+      // Try to parse as "Description\tCode" or "Description   Code"
+      const parts = line.split(/\t+|\s{2,}/);
+      
+      if (parts.length >= 2) {
+        // Has description and code
+        const description = parts.slice(0, -1).join(' ').trim();
+        const code = parts[parts.length - 1].trim();
+        fppsToAdd.push({ code, description, category: newFppCategory.trim() });
+      } else {
+        // Just code
+        fppsToAdd.push({ code: line, category: newFppCategory.trim() });
+      }
+    }
+    
     // Check for duplicates with existing FPPs
-    const duplicates = rawFpps.filter(f => fpps.includes(f));
+    const existingCodes = fpps.map(f => f.code);
+    const duplicates = fppsToAdd.filter(f => existingCodes.includes(f.code));
     if (duplicates.length > 0) {
-      setError(`These FPPs already exist: ${duplicates.join(', ')}`);
+      setError(`These FPPs already exist: ${duplicates.map(d => d.code).join(', ')}`);
       return;
     }
     
-    // Check for duplicates within the input
-    const uniqueFpps = [...new Set(rawFpps)];
-    if (uniqueFpps.length < rawFpps.length) {
-      setError('You have duplicate FPPs in your input');
-      return;
-    }
-    
-    setConfirmAction({ type: 'add', value: JSON.stringify(uniqueFpps), category: 'fpp' });
+    setConfirmAction({ type: 'add', value: JSON.stringify(fppsToAdd), category: 'fpp' });
     setConfirmDialogOpen(true);
   };
 
-  const handleEditFpp = (oldFpp: string) => {
+  const handleEditFpp = (oldFpp: {code: string; description?: string; category?: string}) => {
     setError('');
     setSuccess('');
     if (!newFpp.trim()) {
-      setError('FPP name is required');
+      setError('FPP code is required');
       return;
     }
-    if (newFpp.trim() === oldFpp) {
-      setError('New FPP must be different from current');
+    if (newFpp.trim() === oldFpp.code && newFppDescription === (oldFpp.description || '') && newFppCategory === (oldFpp.category || '')) {
+      setError('No changes detected');
       return;
     }
-    if (fpps.includes(newFpp.trim())) {
+    const existingCodes = fpps.map(f => f.code);
+    if (newFpp.trim() !== oldFpp.code && existingCodes.includes(newFpp.trim())) {
       setError('This FPP already exists');
       return;
     }
-    setConfirmAction({ type: 'edit', value: newFpp.trim(), category: 'fpp' });
+    setConfirmAction({ 
+      type: 'edit', 
+      value: JSON.stringify({ 
+        oldCode: oldFpp.code, 
+        newCode: newFpp.trim(), 
+        description: newFppDescription.trim() || undefined,
+        category: newFppCategory.trim() || undefined
+      }), 
+      category: 'fpp' 
+    });
     setConfirmDialogOpen(true);
   };
 
-  const handleDeleteFpp = (fpp: string) => {
-    console.log('handleDeleteFpp called with:', fpp);
-    setConfirmAction({ type: 'delete', value: fpp, category: 'fpp' });
+  const handleDeleteFpp = (code: string) => {
+    console.log('handleDeleteFpp called with:', code);
+    setConfirmAction({ type: 'delete', value: code, category: 'fpp' });
     setConfirmDialogOpen(true);
   };
 
@@ -862,22 +905,31 @@ export default function SettingsPage() {
       } else if (category === 'fpp') {
         if (confirmAction.type === 'add' && confirmAction.value) {
           const fppsToAdd = JSON.parse(confirmAction.value);
-          for (const fpp of fppsToAdd) {
-            await fppService.addFPP(fpp);
+          for (const f of fppsToAdd) {
+            await fppService.addFPP(f.code, f.description, f.category);
           }
           const updated = await fppService.getFPPs();
           setFpps(updated);
+          const grouped = await fppService.getFPPsByCategory();
+          setFppsByCategory(grouped);
           setSuccess(`${fppsToAdd.length} FPP(s) added successfully!`);
           setNewFpp('');
+          setNewFppDescription('');
+          setNewFppCategory('');
           setFppDialogOpen(false);
           setEditingFpp(null);
           setError('');
         } else if (confirmAction.type === 'edit' && confirmAction.value && editingFpp) {
-          await fppService.updateFPP(editingFpp, confirmAction.value);
+          const updateData = JSON.parse(confirmAction.value);
+          await fppService.updateFPP(updateData.oldCode, updateData.newCode, updateData.description, updateData.category);
           const updated = await fppService.getFPPs();
           setFpps(updated);
+          const grouped = await fppService.getFPPsByCategory();
+          setFppsByCategory(grouped);
           setSuccess('FPP updated successfully!');
           setNewFpp('');
+          setNewFppDescription('');
+          setNewFppCategory('');
           setEditingFpp(null);
           setFppDialogOpen(false);
           setError('');
@@ -888,6 +940,8 @@ export default function SettingsPage() {
           const updated = await fppService.getFPPs();
           console.log('Updated FPPs after delete:', updated);
           setFpps(updated);
+          const grouped = await fppService.getFPPsByCategory();
+          setFppsByCategory(grouped);
           setSuccess('FPP deleted successfully!');
           setError('');
         }
@@ -2140,6 +2194,8 @@ export default function SettingsPage() {
                       setFppDialogOpen(open);
                       if (!open) {
                         setNewFpp('');
+                        setNewFppDescription('');
+                        setNewFppCategory('');
                         setEditingFpp(null);
                       }
                     }}>
@@ -2149,41 +2205,68 @@ export default function SettingsPage() {
                           Add FPP
                         </Button>
                       </DialogTrigger>
-                      <DialogContent className="sm:max-w-md">
+                      <DialogContent className="sm:max-w-lg">
                         <DialogHeader>
-                          <DialogTitle>{editingFpp ? 'Edit FPP' : 'Add New FPP'}</DialogTitle>
+                          <DialogTitle>{editingFpp ? 'Edit FPP' : 'Add FPPs'}</DialogTitle>
                           <DialogDescription>
-                            {editingFpp ? 'Update the FPP name' : 'Paste one or more FPPs (separated by commas or new lines)'}
+                            {editingFpp ? 'Update the FPP details' : 'Enter category and paste FPPs with descriptions'}
                           </DialogDescription>
                         </DialogHeader>
                         <div className="space-y-4">
                           <div className="space-y-2">
-                            <Label htmlFor="fppName">FPP Name{!editingFpp && 's'}</Label>
-                            {editingFpp ? (
-                              <Input
-                                id="fppName"
-                                placeholder="e.g., FPP 1, FPP 2023"
-                                value={newFpp}
-                                onChange={(e) => setNewFpp(e.target.value)}
-                                disabled={isLoading}
-                              />
-                            ) : (
-                              <>
-                                <textarea
+                            <Label htmlFor="fppCategory">Category *</Label>
+                            <Input
+                              id="fppCategory"
+                              placeholder="e.g., FY 2024, FY 2025"
+                              value={newFppCategory}
+                              onChange={(e) => setNewFppCategory(e.target.value)}
+                              disabled={isLoading}
+                            />
+                          </div>
+                          
+                          {editingFpp ? (
+                            <>
+                              <div className="space-y-2">
+                                <Label htmlFor="fppName">FPP Code *</Label>
+                                <Input
                                   id="fppName"
-                                  placeholder="Paste FPPs here (comma or line separated)&#10;&#10;e.g.:&#10;FPP 1&#10;FPP 2&#10;FPP 3"
+                                  placeholder="e.g., FPP-001"
                                   value={newFpp}
                                   onChange={(e) => setNewFpp(e.target.value)}
                                   disabled={isLoading}
-                                  rows={8}
-                                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
+                                />
+                              </div>
+                              <div className="space-y-2">
+                                <Label htmlFor="fppDescription">Description</Label>
+                                <Input
+                                  id="fppDescription"
+                                  placeholder="e.g., Q1 Budget FY 2024"
+                                  value={newFppDescription}
+                                  onChange={(e) => setNewFppDescription(e.target.value)}
+                                  disabled={isLoading}
+                                />
+                              </div>
+                            </>
+                          ) : (
+                            <>
+                              <div className="space-y-2">
+                                <Label htmlFor="fppName">FPP Codes *</Label>
+                                <textarea
+                                  id="fppName"
+                                  placeholder="Paste from Excel (Description and Code separated by tab or multiple spaces):&#10;&#10;Q1 Budget FY 2024    FPP-001&#10;Q2 Budget FY 2024    FPP-002&#10;Q3 Budget FY 2024    FPP-003&#10;&#10;Or just codes:&#10;FPP-001&#10;FPP-002"
+                                  value={newFpp}
+                                  onChange={(e) => setNewFpp(e.target.value)}
+                                  disabled={isLoading}
+                                  rows={10}
+                                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none font-mono"
                                 />
                                 <p className="text-xs text-gray-500 mt-1">
-                                  You can paste multiple FPPs separated by commas or new lines
+                                  Paste from Excel with descriptions and codes. Each line should have the description and code separated by tab or multiple spaces.
                                 </p>
-                              </>
-                            )}
-                          </div>
+                              </div>
+                            </>
+                          )}
+                          
                           <div className="flex gap-2 pt-4">
                             <Button
                               type="button"
@@ -2192,6 +2275,8 @@ export default function SettingsPage() {
                               onClick={() => {
                                 setFppDialogOpen(false);
                                 setNewFpp('');
+                                setNewFppDescription('');
+                                setNewFppCategory('');
                                 setEditingFpp(null);
                               }}
                               disabled={isLoading}
@@ -2219,42 +2304,79 @@ export default function SettingsPage() {
                   </div>
                 </CardHeader>
                 <CardContent className="flex-1 overflow-auto min-h-0">
-                  {fpps.length > 0 ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                      {fpps.map((fpp) => (
-                        <div
-                          key={fpp}
-                          className="flex items-center justify-between p-4 bg-white rounded-lg border border-gray-200 hover:border-indigo-300 hover:shadow-sm transition-all"
-                        >
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-semibold text-gray-900">{fpp}</p>
-                          </div>
-                          <div className="flex gap-1 shrink-0 ml-4">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => {
-                                setNewFpp(fpp);
-                                setEditingFpp(fpp);
-                                setFppDialogOpen(true);
-                              }}
-                              className="h-8 w-8 p-0 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded"
-                              title="Edit"
-                            >
-                              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                  {Object.keys(fppsByCategory).length > 0 ? (
+                    <div className="space-y-3">
+                      {Object.entries(fppsByCategory).sort(([a], [b]) => a.localeCompare(b)).map(([category, codes]) => (
+                        <div key={category} className="border rounded-lg overflow-hidden">
+                          {/* Category Header */}
+                          <button
+                            onClick={() => setExpandedFppCategories(prev => ({ ...prev, [category]: !prev[category] }))}
+                            className="w-full flex items-center justify-between p-4 bg-gradient-to-r from-indigo-50 to-blue-50 hover:from-indigo-100 hover:to-blue-100 transition-colors"
+                          >
+                            <div className="flex items-center gap-2">
+                              <svg
+                                className={`h-5 w-5 transition-transform ${expandedFppCategories[category] ? 'transform rotate-90' : ''}`}
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                               </svg>
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleDeleteFpp(fpp)}
-                              className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50 rounded"
-                              title="Delete"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
+                              <h3 className="font-bold text-base text-indigo-900">{category}</h3>
+                            </div>
+                            <span className="text-sm text-indigo-600 bg-white px-3 py-1 rounded-full font-medium">
+                              {codes.length} {codes.length === 1 ? 'code' : 'codes'}
+                            </span>
+                          </button>
+                          
+                          {/* FPPs List */}
+                          {expandedFppCategories[category] && (
+                            <div className="p-2 bg-white">
+                              <div className="grid grid-cols-1 gap-2">
+                                {codes.map((fpp) => (
+                                  <div
+                                    key={fpp.code}
+                                    className="flex items-start justify-between p-3 bg-white rounded border border-gray-200 hover:border-indigo-300 hover:shadow-sm transition-all"
+                                  >
+                                    <div className="flex-1 min-w-0">
+                                      <p className="text-sm font-bold text-gray-900 font-mono">{fpp.code}</p>
+                                      {fpp.description && (
+                                        <p className="text-sm text-gray-600 mt-1">{fpp.description}</p>
+                                      )}
+                                    </div>
+                                    <div className="flex gap-1 shrink-0 ml-4">
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => {
+                                          setNewFpp(fpp.code);
+                                          setNewFppDescription(fpp.description || '');
+                                          setNewFppCategory(fpp.category || '');
+                                          setEditingFpp(fpp);
+                                          setFppDialogOpen(true);
+                                        }}
+                                        className="h-8 w-8 p-0 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded"
+                                        title="Edit"
+                                      >
+                                        <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                        </svg>
+                                      </Button>
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => handleDeleteFpp(fpp.code)}
+                                        className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50 rounded"
+                                        title="Delete"
+                                      >
+                                        <Trash2 className="h-4 w-4" />
+                                      </Button>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
                         </div>
                       ))}
                     </div>
