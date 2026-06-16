@@ -69,9 +69,13 @@ export default function SettingsPage() {
   const [newDesignation, setNewDesignation] = useState('');
   const [editingDesignation, setEditingDesignation] = useState<string | null>(null);
   const [accountCodeDialogOpen, setAccountCodeDialogOpen] = useState(false);
-  const [accountCodes, setAccountCodes] = useState<string[]>([]);
+  const [accountCodes, setAccountCodes] = useState<Array<{id?: string; code: string; description?: string; category?: string}>>([]);
+  const [accountCodesByCategory, setAccountCodesByCategory] = useState<Record<string, Array<{id?: string; code: string; description?: string; category?: string}>>>({});
   const [newAccountCode, setNewAccountCode] = useState('');
-  const [editingAccountCode, setEditingAccountCode] = useState<string | null>(null);
+  const [newAccountCodeDescription, setNewAccountCodeDescription] = useState('');
+  const [newAccountCodeCategory, setNewAccountCodeCategory] = useState('');
+  const [editingAccountCode, setEditingAccountCode] = useState<{code: string; description?: string; category?: string} | null>(null);
+  const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({});
   const [fppDialogOpen, setFppDialogOpen] = useState(false);
   const [fpps, setFpps] = useState<string[]>([]);
   const [newFpp, setNewFpp] = useState('');
@@ -119,9 +123,20 @@ export default function SettingsPage() {
       try {
         const firestoreAccountCodes = await accountCodeService.getAccountCodes();
         setAccountCodes(firestoreAccountCodes);
+        
+        const grouped = await accountCodeService.getAccountCodesByCategory();
+        setAccountCodesByCategory(grouped);
+        
+        // Expand all categories by default
+        const expanded: Record<string, boolean> = {};
+        Object.keys(grouped).forEach(category => {
+          expanded[category] = true;
+        });
+        setExpandedCategories(expanded);
       } catch (err) {
         console.error('Failed to load account codes:', err);
         setAccountCodes([]);
+        setAccountCodesByCategory({});
       }
     };
     loadAccountCodes();
@@ -615,56 +630,84 @@ export default function SettingsPage() {
   const handleAddAccountCode = () => {
     setError('');
     setSuccess('');
+    
+    if (!newAccountCodeCategory.trim()) {
+      setError('Category is required');
+      return;
+    }
+    
     if (!newAccountCode.trim()) {
       setError('Account code is required');
       return;
     }
     
-    // Parse multiple account codes from textarea (comma or line separated)
-    const rawAccountCodes = newAccountCode
-      .split(/[,\n]/)
-      .map(ac => ac.trim())
-      .filter(ac => ac.length > 0);
+    // Parse multiple account codes from textarea (line separated)
+    // Format: "Description\tCode" or just "Code"
+    const lines = newAccountCode
+      .split('\n')
+      .map(line => line.trim())
+      .filter(line => line.length > 0);
     
-    if (rawAccountCodes.length === 0) {
+    if (lines.length === 0) {
       setError('Please enter at least one account code');
       return;
     }
     
+    const accountCodesToAdd: Array<{code: string; description?: string; category: string}> = [];
+    
+    for (const line of lines) {
+      // Try to parse as "Description\tCode" or "Description   Code"
+      const parts = line.split(/\t+|\s{2,}/);
+      
+      if (parts.length >= 2) {
+        // Has description and code
+        const description = parts.slice(0, -1).join(' ').trim();
+        const code = parts[parts.length - 1].trim();
+        accountCodesToAdd.push({ code, description, category: newAccountCodeCategory.trim() });
+      } else {
+        // Just code
+        accountCodesToAdd.push({ code: line, category: newAccountCodeCategory.trim() });
+      }
+    }
+    
     // Check for duplicates with existing account codes
-    const duplicates = rawAccountCodes.filter(ac => accountCodes.includes(ac));
+    const existingCodes = accountCodes.map(ac => ac.code);
+    const duplicates = accountCodesToAdd.filter(ac => existingCodes.includes(ac.code));
     if (duplicates.length > 0) {
-      setError(`These account codes already exist: ${duplicates.join(', ')}`);
+      setError(`These account codes already exist: ${duplicates.map(d => d.code).join(', ')}`);
       return;
     }
     
-    // Check for duplicates within the input
-    const uniqueAccountCodes = [...new Set(rawAccountCodes)];
-    if (uniqueAccountCodes.length < rawAccountCodes.length) {
-      setError('You have duplicate account codes in your input');
-      return;
-    }
-    
-    setConfirmAction({ type: 'add', value: JSON.stringify(uniqueAccountCodes), category: 'accountCode' });
+    setConfirmAction({ type: 'add', value: JSON.stringify(accountCodesToAdd), category: 'accountCode' });
     setConfirmDialogOpen(true);
   };
 
-  const handleEditAccountCode = (oldCode: string) => {
+  const handleEditAccountCode = (oldCode: {code: string; description?: string; category?: string}) => {
     setError('');
     setSuccess('');
     if (!newAccountCode.trim()) {
       setError('Account code is required');
       return;
     }
-    if (newAccountCode.trim() === oldCode) {
-      setError('New account code must be different from current');
+    if (newAccountCode.trim() === oldCode.code && newAccountCodeDescription === (oldCode.description || '') && newAccountCodeCategory === (oldCode.category || '')) {
+      setError('No changes detected');
       return;
     }
-    if (accountCodes.includes(newAccountCode.trim())) {
+    const existingCodes = accountCodes.map(ac => ac.code);
+    if (newAccountCode.trim() !== oldCode.code && existingCodes.includes(newAccountCode.trim())) {
       setError('This account code already exists');
       return;
     }
-    setConfirmAction({ type: 'edit', value: newAccountCode.trim(), category: 'accountCode' });
+    setConfirmAction({ 
+      type: 'edit', 
+      value: JSON.stringify({ 
+        oldCode: oldCode.code, 
+        newCode: newAccountCode.trim(), 
+        description: newAccountCodeDescription.trim() || undefined,
+        category: newAccountCodeCategory.trim() || undefined
+      }), 
+      category: 'accountCode' 
+    });
     setConfirmDialogOpen(true);
   };
 
@@ -775,22 +818,31 @@ export default function SettingsPage() {
       } else if (category === 'accountCode') {
         if (confirmAction.type === 'add' && confirmAction.value) {
           const accountCodesToAdd = JSON.parse(confirmAction.value);
-          for (const accountCode of accountCodesToAdd) {
-            await accountCodeService.addAccountCode(accountCode);
+          for (const ac of accountCodesToAdd) {
+            await accountCodeService.addAccountCode(ac.code, ac.description, ac.category);
           }
           const updated = await accountCodeService.getAccountCodes();
           setAccountCodes(updated);
+          const grouped = await accountCodeService.getAccountCodesByCategory();
+          setAccountCodesByCategory(grouped);
           setSuccess(`${accountCodesToAdd.length} account code(s) added successfully!`);
           setNewAccountCode('');
+          setNewAccountCodeDescription('');
+          setNewAccountCodeCategory('');
           setAccountCodeDialogOpen(false);
           setEditingAccountCode(null);
           setError('');
         } else if (confirmAction.type === 'edit' && confirmAction.value && editingAccountCode) {
-          await accountCodeService.updateAccountCode(editingAccountCode, confirmAction.value);
+          const updateData = JSON.parse(confirmAction.value);
+          await accountCodeService.updateAccountCode(updateData.oldCode, updateData.newCode, updateData.description, updateData.category);
           const updated = await accountCodeService.getAccountCodes();
           setAccountCodes(updated);
+          const grouped = await accountCodeService.getAccountCodesByCategory();
+          setAccountCodesByCategory(grouped);
           setSuccess('Account code updated successfully!');
           setNewAccountCode('');
+          setNewAccountCodeDescription('');
+          setNewAccountCodeCategory('');
           setEditingAccountCode(null);
           setAccountCodeDialogOpen(false);
           setError('');
@@ -801,6 +853,8 @@ export default function SettingsPage() {
           const updated = await accountCodeService.getAccountCodes();
           console.log('Updated account codes after delete:', updated);
           setAccountCodes(updated);
+          const grouped = await accountCodeService.getAccountCodesByCategory();
+          setAccountCodesByCategory(grouped);
           setSuccess('Account code deleted successfully!');
           setError('');
         }
@@ -1885,41 +1939,68 @@ export default function SettingsPage() {
                           Add Account Code
                         </Button>
                       </DialogTrigger>
-                      <DialogContent className="sm:max-w-md">
+                      <DialogContent className="sm:max-w-lg">
                         <DialogHeader>
-                          <DialogTitle>{editingAccountCode ? 'Edit Account Code' : 'Add New Account Code'}</DialogTitle>
+                          <DialogTitle>{editingAccountCode ? 'Edit Account Code' : 'Add Account Codes'}</DialogTitle>
                           <DialogDescription>
-                            {editingAccountCode ? 'Update the account code' : 'Paste one or more account codes (separated by commas or new lines)'}
+                            {editingAccountCode ? 'Update the account code details' : 'Enter category and paste account codes with descriptions'}
                           </DialogDescription>
                         </DialogHeader>
                         <div className="space-y-4">
                           <div className="space-y-2">
-                            <Label htmlFor="accountCodeName">Account Code{!editingAccountCode && 's'}</Label>
-                            {editingAccountCode ? (
-                              <Input
-                                id="accountCodeName"
-                                placeholder="e.g., 5020301000"
-                                value={newAccountCode}
-                                onChange={(e) => setNewAccountCode(e.target.value)}
-                                disabled={isLoading}
-                              />
-                            ) : (
-                              <>
-                                <textarea
+                            <Label htmlFor="accountCodeCategory">Category *</Label>
+                            <Input
+                              id="accountCodeCategory"
+                              placeholder="e.g., PERSONAL SERVICES"
+                              value={newAccountCodeCategory}
+                              onChange={(e) => setNewAccountCodeCategory(e.target.value)}
+                              disabled={isLoading}
+                            />
+                          </div>
+                          
+                          {editingAccountCode ? (
+                            <>
+                              <div className="space-y-2">
+                                <Label htmlFor="accountCodeName">Account Code *</Label>
+                                <Input
                                   id="accountCodeName"
-                                  placeholder="Paste account codes here (comma or line separated)&#10;&#10;e.g.:&#10;5-01-01-010&#10;5-01-02-010&#10;5-01-02-020"
+                                  placeholder="e.g., 5-01-01-010"
                                   value={newAccountCode}
                                   onChange={(e) => setNewAccountCode(e.target.value)}
                                   disabled={isLoading}
-                                  rows={8}
-                                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
+                                />
+                              </div>
+                              <div className="space-y-2">
+                                <Label htmlFor="accountCodeDescription">Description</Label>
+                                <Input
+                                  id="accountCodeDescription"
+                                  placeholder="e.g., Salaries and Wages - Regular"
+                                  value={newAccountCodeDescription}
+                                  onChange={(e) => setNewAccountCodeDescription(e.target.value)}
+                                  disabled={isLoading}
+                                />
+                              </div>
+                            </>
+                          ) : (
+                            <>
+                              <div className="space-y-2">
+                                <Label htmlFor="accountCodeName">Account Codes *</Label>
+                                <textarea
+                                  id="accountCodeName"
+                                  placeholder="Paste from Excel (Description and Code separated by tab or multiple spaces):&#10;&#10;Salaries and Wages - Regular    5-01-01-010&#10;Personnel Economic Relief Allowance (PERA)    5-01-02-010&#10;Representation Allowance (RA)    5-01-02-020&#10;&#10;Or just codes:&#10;5-01-01-010&#10;5-01-02-010"
+                                  value={newAccountCode}
+                                  onChange={(e) => setNewAccountCode(e.target.value)}
+                                  disabled={isLoading}
+                                  rows={10}
+                                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none font-mono"
                                 />
                                 <p className="text-xs text-gray-500 mt-1">
-                                  You can paste multiple account codes separated by commas or new lines
+                                  Paste from Excel with descriptions and codes. Each line should have the description and code separated by tab or multiple spaces.
                                 </p>
-                              </>
-                            )}
-                          </div>
+                              </div>
+                            </>
+                          )}
+                          
                           <div className="flex gap-2 pt-4">
                             <Button
                               type="button"
@@ -1928,6 +2009,8 @@ export default function SettingsPage() {
                               onClick={() => {
                                 setAccountCodeDialogOpen(false);
                                 setNewAccountCode('');
+                                setNewAccountCodeDescription('');
+                                setNewAccountCodeCategory('');
                                 setEditingAccountCode(null);
                               }}
                               disabled={isLoading}
@@ -1955,42 +2038,79 @@ export default function SettingsPage() {
                   </div>
                 </CardHeader>
                 <CardContent className="flex-1 overflow-auto min-h-0">
-                  {accountCodes.length > 0 ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                      {accountCodes.map((accountCode) => (
-                        <div
-                          key={accountCode}
-                          className="flex items-center justify-between p-4 bg-white rounded-lg border border-gray-200 hover:border-indigo-300 hover:shadow-sm transition-all"
-                        >
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-semibold text-gray-900">{accountCode}</p>
-                          </div>
-                          <div className="flex gap-1 shrink-0 ml-4">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => {
-                                setNewAccountCode(accountCode);
-                                setEditingAccountCode(accountCode);
-                                setAccountCodeDialogOpen(true);
-                              }}
-                              className="h-8 w-8 p-0 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded"
-                              title="Edit"
-                            >
-                              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                  {Object.keys(accountCodesByCategory).length > 0 ? (
+                    <div className="space-y-3">
+                      {Object.entries(accountCodesByCategory).sort(([a], [b]) => a.localeCompare(b)).map(([category, codes]) => (
+                        <div key={category} className="border rounded-lg overflow-hidden">
+                          {/* Category Header */}
+                          <button
+                            onClick={() => setExpandedCategories(prev => ({ ...prev, [category]: !prev[category] }))}
+                            className="w-full flex items-center justify-between p-4 bg-gradient-to-r from-indigo-50 to-blue-50 hover:from-indigo-100 hover:to-blue-100 transition-colors"
+                          >
+                            <div className="flex items-center gap-2">
+                              <svg
+                                className={`h-5 w-5 transition-transform ${expandedCategories[category] ? 'transform rotate-90' : ''}`}
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                               </svg>
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleDeleteAccountCode(accountCode)}
-                              className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50 rounded"
-                              title="Delete"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
+                              <h3 className="font-bold text-base text-indigo-900">{category}</h3>
+                            </div>
+                            <span className="text-sm text-indigo-600 bg-white px-3 py-1 rounded-full font-medium">
+                              {codes.length} {codes.length === 1 ? 'code' : 'codes'}
+                            </span>
+                          </button>
+                          
+                          {/* Codes List */}
+                          {expandedCategories[category] && (
+                            <div className="p-2 bg-white">
+                              <div className="grid grid-cols-1 gap-2">
+                                {codes.map((accountCode) => (
+                                  <div
+                                    key={accountCode.code}
+                                    className="flex items-start justify-between p-3 bg-white rounded border border-gray-200 hover:border-indigo-300 hover:shadow-sm transition-all"
+                                  >
+                                    <div className="flex-1 min-w-0">
+                                      <p className="text-sm font-bold text-gray-900 font-mono">{accountCode.code}</p>
+                                      {accountCode.description && (
+                                        <p className="text-sm text-gray-600 mt-1">{accountCode.description}</p>
+                                      )}
+                                    </div>
+                                    <div className="flex gap-1 shrink-0 ml-4">
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => {
+                                          setNewAccountCode(accountCode.code);
+                                          setNewAccountCodeDescription(accountCode.description || '');
+                                          setNewAccountCodeCategory(accountCode.category || '');
+                                          setEditingAccountCode(accountCode);
+                                          setAccountCodeDialogOpen(true);
+                                        }}
+                                        className="h-8 w-8 p-0 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded"
+                                        title="Edit"
+                                      >
+                                        <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                        </svg>
+                                      </Button>
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => handleDeleteAccountCode(accountCode.code)}
+                                        className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50 rounded"
+                                        title="Delete"
+                                      >
+                                        <Trash2 className="h-4 w-4" />
+                                      </Button>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
                         </div>
                       ))}
                     </div>

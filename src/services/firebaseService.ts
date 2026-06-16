@@ -669,16 +669,38 @@ export const systemSettingsService = {
 interface AccountCode {
   id: string;
   code: string;
+  description?: string;
+  category?: string;
 }
 
 export const accountCodeService = {
   async getAccountCodes() {
     try {
       const accountCodes = await getItems<AccountCode>('accountCodes');
-      return accountCodes.length > 0 ? accountCodes.map(ac => ac.code) : [];
+      return accountCodes.length > 0 ? accountCodes : [];
     } catch (error) {
       console.error('Error getting account codes:', error);
       return [];
+    }
+  },
+
+  async getAccountCodesByCategory() {
+    try {
+      const accountCodes = await getItems<AccountCode>('accountCodes');
+      const grouped: Record<string, AccountCode[]> = {};
+      
+      accountCodes.forEach(ac => {
+        const category = ac.category || 'Uncategorized';
+        if (!grouped[category]) {
+          grouped[category] = [];
+        }
+        grouped[category].push(ac);
+      });
+      
+      return grouped;
+    } catch (error) {
+      console.error('Error getting account codes by category:', error);
+      return {};
     }
   },
 
@@ -698,12 +720,9 @@ export const accountCodeService = {
     }
   },
 
-  async addAccountCode(code: string) {
+  async addAccountCode(code: string, description?: string, category?: string) {
     try {
-      const accountCodes = await this.getAccountCodes();
-      if (!accountCodes.includes(code)) {
-        await addItem<AccountCode>('accountCodes', { code } as any);
-      }
+      await addItem<AccountCode>('accountCodes', { code, description, category } as any);
       return true;
     } catch (error) {
       console.error('Error adding account code:', error);
@@ -711,13 +730,16 @@ export const accountCodeService = {
     }
   },
 
-  async updateAccountCode(oldCode: string, newCode: string) {
+  async updateAccountCode(oldCode: string, newCode: string, description?: string, category?: string) {
     try {
-      const accountCodes = await this.getAccountCodes();
-      const index = accountCodes.indexOf(oldCode);
-      if (index !== -1) {
-        accountCodes[index] = newCode;
-        await this.setAccountCodes(accountCodes);
+      const existingDocs = await getItems<AccountCode>('accountCodes');
+      const docToUpdate = existingDocs.find(d => d.code === oldCode);
+      if (docToUpdate) {
+        await updateItem<AccountCode>('accountCodes', docToUpdate.id, { 
+          code: newCode, 
+          description, 
+          category 
+        } as any);
       }
       return true;
     } catch (error) {
