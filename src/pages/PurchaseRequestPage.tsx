@@ -21,13 +21,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import {
   Command,
   CommandEmpty,
   CommandGroup,
@@ -213,6 +206,7 @@ export default function PurchaseRequestPage() {
   const [designationOptions, setDesignationOptions] = useState<string[]>([]);
   const [designationDropdownOpen, setDesignationDropdownOpen] = useState(false);
   const [fppOptions, setFppOptions] = useState<string[]>([]);
+  const [fppDropdownOpen, setFppDropdownOpen] = useState(false);
   const [returnConfirmOpen, setReturnConfirmOpen] = useState(false);
   const [requestToReturn, setRequestToReturn] = useState<string | null>(null);
   const [returnData, setReturnData] = useState({
@@ -863,21 +857,47 @@ export default function PurchaseRequestPage() {
                     )}
                     <div className="space-y-2">
                       <Label htmlFor="fpp">FPP</Label>
-                      <Select
-                        value={formData.fpp || ''}
-                        onValueChange={(value) => handleSelectChange('fpp', value)}
-                      >
-                        <SelectTrigger className="w-full">
-                          <SelectValue placeholder="Select FPP..." />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {fppOptions.map((option) => (
-                            <SelectItem key={option} value={option}>
-                              {option}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      <Popover open={fppDropdownOpen} onOpenChange={setFppDropdownOpen}>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="outline"
+                            role="combobox"
+                            aria-expanded={fppDropdownOpen}
+                            className="w-full justify-between"
+                          >
+                            <span className="truncate flex-1 text-left">
+                              {formData.fpp || "Select FPP..."}
+                            </span>
+                            <Search className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-[400px] p-0" align="start" onWheel={(e) => e.stopPropagation()}>
+                          <Command className="max-h-none" shouldFilter={true}>
+                            <CommandInput placeholder="Search FPP..." />
+                            <CommandList
+                              style={{ maxHeight: '300px', overflowY: 'auto', overflowX: 'hidden' }}
+                              onWheel={(e) => e.stopPropagation()}
+                            >
+                              <CommandEmpty>No FPP found.</CommandEmpty>
+                              <CommandGroup>
+                                {fppOptions.map((option) => (
+                                  <CommandItem
+                                    key={option}
+                                    value={option}
+                                    onSelect={(currentValue) => {
+                                      handleSelectChange('fpp', currentValue);
+                                      setFppDropdownOpen(false);
+                                    }}
+                                    className="cursor-pointer hover:bg-gray-50 py-2"
+                                  >
+                                    {option}
+                                  </CommandItem>
+                                ))}
+                              </CommandGroup>
+                            </CommandList>
+                          </Command>
+                        </PopoverContent>
+                      </Popover>
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
