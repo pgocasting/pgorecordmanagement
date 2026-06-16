@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { purchaseRequestService, designationService } from '@/services/firebaseService';
+import { purchaseRequestService, designationService, fppService } from '@/services/firebaseService';
 import { Sidebar } from '@/components/Sidebar';
 import { Button } from '@/components/ui/button';
 import {
@@ -205,6 +205,8 @@ export default function PurchaseRequestPage() {
   }>>([]);
   const [designationOptions, setDesignationOptions] = useState<string[]>([]);
   const [designationDropdownOpen, setDesignationDropdownOpen] = useState(false);
+  const [fppOptions, setFppOptions] = useState<string[]>([]);
+  const [fppDropdownOpen, setFppDropdownOpen] = useState(false);
   const [returnConfirmOpen, setReturnConfirmOpen] = useState(false);
   const [requestToReturn, setRequestToReturn] = useState<string | null>(null);
   const [returnData, setReturnData] = useState({
@@ -245,6 +247,29 @@ export default function PurchaseRequestPage() {
       }
     };
     loadDesignations();
+  }, []);
+
+  useEffect(() => {
+    const loadFPPs = async () => {
+      try {
+        const fpps = await fppService.getFPPs();
+        setFppOptions(fpps);
+      } catch (error) {
+        console.error('Error loading FPPs:', error);
+        setFppOptions(['FPP 1', 'FPP 2', 'FPP 3', 'FPP 4', 'FPP 5']);
+      }
+    };
+    loadFPPs();
+    
+    // Listen for FPP updates from settings page
+    const handleFPPsUpdate = () => {
+      loadFPPs();
+    };
+    window.addEventListener('fppsUpdated', handleFPPsUpdate);
+    
+    return () => {
+      window.removeEventListener('fppsUpdated', handleFPPsUpdate);
+    };
   }, []);
 
   useEffect(() => {
@@ -831,30 +856,36 @@ export default function PurchaseRequestPage() {
                     )}
                     <div className="space-y-2">
                       <Label htmlFor="fpp">FPP</Label>
-                      <Popover>
+                      <Popover open={fppDropdownOpen} onOpenChange={setFppDropdownOpen}>
                         <PopoverTrigger asChild>
                           <Button
                             variant="outline"
                             role="combobox"
+                            aria-expanded={fppDropdownOpen}
                             className="w-full justify-between"
                           >
                             {formData.fpp || "Select FPP..."}
                             <Search className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                           </Button>
                         </PopoverTrigger>
-                        <PopoverContent className="w-full p-0" align="start">
-                          <Command>
+                        <PopoverContent className="w-full p-0" align="start" onWheel={(e) => e.stopPropagation()}>
+                          <Command shouldFilter={true}>
                             <CommandInput placeholder="Search FPP..." />
-                            <CommandList>
+                            <CommandList 
+                              style={{ maxHeight: '300px', overflowY: 'auto', overflowX: 'hidden' }}
+                              onWheel={(e) => e.stopPropagation()}
+                            >
                               <CommandEmpty>No FPP found.</CommandEmpty>
                               <CommandGroup>
-                                {['FPP 1', 'FPP 2', 'FPP 3', 'FPP 4', 'FPP 5'].map((option) => (
+                                {fppOptions.map((option) => (
                                   <CommandItem
                                     key={option}
                                     value={option}
                                     onSelect={(currentValue) => {
                                       handleSelectChange('fpp', currentValue);
+                                      setFppDropdownOpen(false);
                                     }}
+                                    className="cursor-pointer hover:bg-gray-50"
                                   >
                                     {option}
                                   </CommandItem>
