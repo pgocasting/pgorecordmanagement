@@ -994,10 +994,12 @@ export default function SettingsPage() {
         ) : (
           // Admin View - Full Settings with Tabs
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-5">
+            <TabsList className="grid w-full grid-cols-7">
               <TabsTrigger value="profile">Profile</TabsTrigger>
               {isSystemAdmin && <TabsTrigger value="users">User Management</TabsTrigger>}
               <TabsTrigger value="designations">Designations</TabsTrigger>
+              <TabsTrigger value="accountCodes">Account Codes</TabsTrigger>
+              <TabsTrigger value="fpps">FPP</TabsTrigger>
               {isSystemAdmin && <TabsTrigger value="pages">Pages</TabsTrigger>}
               {isSystemAdmin && <TabsTrigger value="system">System Settings</TabsTrigger>}
             </TabsList>
@@ -1622,6 +1624,314 @@ export default function SettingsPage() {
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
                       </svg>
                       <p className="text-sm font-medium">No designations yet</p>
+                      <p className="text-xs mt-1">Add one to get started</p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {/* Account Codes Tab */}
+            <TabsContent value="accountCodes" className="space-y-4">
+              <Card className="flex flex-col max-h-[70vh]">
+                <CardHeader className="pb-3 shrink-0">
+                  <div className="flex items-center justify-between gap-2">
+                    <div>
+                      <CardTitle className="text-lg">Account Codes</CardTitle>
+                      <CardDescription className="text-xs">Manage account codes for obligation requests</CardDescription>
+                    </div>
+                    <Dialog>
+                      <DialogTrigger asChild>
+                        <Button className="gap-2 h-8 text-xs" onClick={() => setNewAccountCode('')}>
+                          <Plus className="h-3 w-3" />
+                          Add Account Code
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent className="sm:max-w-md">
+                        <DialogHeader>
+                          <DialogTitle>{editingAccountCode ? 'Edit Account Code' : 'Add New Account Code'}</DialogTitle>
+                          <DialogDescription>
+                            {editingAccountCode ? 'Update the account code' : 'Enter account code'}
+                          </DialogDescription>
+                        </DialogHeader>
+                        <div className="space-y-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="accountCodeName">Account Code</Label>
+                            <Input
+                              id="accountCodeName"
+                              placeholder="e.g., 5020301000"
+                              value={newAccountCode}
+                              onChange={(e) => setNewAccountCode(e.target.value)}
+                              disabled={isLoading}
+                            />
+                          </div>
+                          <div className="flex gap-2 pt-4">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              className="flex-1"
+                              onClick={() => {
+                                setNewAccountCode('');
+                                setEditingAccountCode(null);
+                              }}
+                              disabled={isLoading}
+                            >
+                              Cancel
+                            </Button>
+                            <Button
+                              type="button"
+                              className="flex-1"
+                              onClick={async () => {
+                                if (!newAccountCode.trim()) {
+                                  setError('Account code is required');
+                                  return;
+                                }
+                                setIsLoading(true);
+                                try {
+                                  if (editingAccountCode) {
+                                    await accountCodeService.updateAccountCode(editingAccountCode, newAccountCode);
+                                    setSuccess('Account code updated successfully!');
+                                  } else {
+                                    await accountCodeService.addAccountCode(newAccountCode);
+                                    setSuccess('Account code added successfully!');
+                                  }
+                                  const updated = await accountCodeService.getAccountCodes();
+                                  setAccountCodes(updated);
+                                  setNewAccountCode('');
+                                  setEditingAccountCode(null);
+                                  window.dispatchEvent(new Event('accountCodesUpdated'));
+                                } catch (err) {
+                                  setError(err instanceof Error ? err.message : 'Failed to save account code');
+                                } finally {
+                                  setIsLoading(false);
+                                  setTimeout(() => setSuccess(''), 3000);
+                                }
+                              }}
+                              disabled={isLoading}
+                            >
+                              {isLoading ? (editingAccountCode ? 'Updating...' : 'Adding...') : (editingAccountCode ? 'Update' : 'Add')}
+                            </Button>
+                          </div>
+                        </div>
+                      </DialogContent>
+                    </Dialog>
+                  </div>
+                </CardHeader>
+                <CardContent className="flex-1 overflow-auto min-h-0">
+                  {accountCodes.length > 0 ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                      {accountCodes.map((accountCode) => (
+                        <div
+                          key={accountCode}
+                          className="flex items-center justify-between p-4 bg-white rounded-lg border border-gray-200 hover:border-indigo-300 hover:shadow-sm transition-all"
+                        >
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-semibold text-gray-900">{accountCode}</p>
+                          </div>
+                          <div className="flex gap-1 shrink-0 ml-4">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                setNewAccountCode(accountCode);
+                                setEditingAccountCode(accountCode);
+                              }}
+                              className="h-8 w-8 p-0 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded"
+                              title="Edit"
+                            >
+                              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                              </svg>
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={async () => {
+                                if (window.confirm(`Delete account code "${accountCode}"?`)) {
+                                  setIsLoading(true);
+                                  try {
+                                    await accountCodeService.deleteAccountCode(accountCode);
+                                    const updated = await accountCodeService.getAccountCodes();
+                                    setAccountCodes(updated);
+                                    setSuccess('Account code deleted successfully!');
+                                    window.dispatchEvent(new Event('accountCodesUpdated'));
+                                  } catch (err) {
+                                    setError('Failed to delete account code');
+                                  } finally {
+                                    setIsLoading(false);
+                                    setTimeout(() => setSuccess(''), 3000);
+                                  }
+                                }
+                              }}
+                              className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50 rounded"
+                              title="Delete"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-12 text-gray-500">
+                      <svg className="h-12 w-12 mx-auto mb-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                      </svg>
+                      <p className="text-sm font-medium">No account codes yet</p>
+                      <p className="text-xs mt-1">Add one to get started</p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {/* FPP Tab */}
+            <TabsContent value="fpps" className="space-y-4">
+              <Card className="flex flex-col max-h-[70vh]">
+                <CardHeader className="pb-3 shrink-0">
+                  <div className="flex items-center justify-between gap-2">
+                    <div>
+                      <CardTitle className="text-lg">FPP (Financial Planning & Programming)</CardTitle>
+                      <CardDescription className="text-xs">Manage FPP options for purchase requests and vouchers</CardDescription>
+                    </div>
+                    <Dialog>
+                      <DialogTrigger asChild>
+                        <Button className="gap-2 h-8 text-xs" onClick={() => setNewFPP('')}>
+                          <Plus className="h-3 w-3" />
+                          Add FPP
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent className="sm:max-w-md">
+                        <DialogHeader>
+                          <DialogTitle>{editingFPP ? 'Edit FPP' : 'Add New FPP'}</DialogTitle>
+                          <DialogDescription>
+                            {editingFPP ? 'Update the FPP name' : 'Enter FPP name'}
+                          </DialogDescription>
+                        </DialogHeader>
+                        <div className="space-y-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="fppName">FPP Name</Label>
+                            <Input
+                              id="fppName"
+                              placeholder="e.g., FPP 1, FPP 2023"
+                              value={newFPP}
+                              onChange={(e) => setNewFPP(e.target.value)}
+                              disabled={isLoading}
+                            />
+                          </div>
+                          <div className="flex gap-2 pt-4">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              className="flex-1"
+                              onClick={() => {
+                                setNewFPP('');
+                                setEditingFPP(null);
+                              }}
+                              disabled={isLoading}
+                            >
+                              Cancel
+                            </Button>
+                            <Button
+                              type="button"
+                              className="flex-1"
+                              onClick={async () => {
+                                if (!newFPP.trim()) {
+                                  setError('FPP name is required');
+                                  return;
+                                }
+                                setIsLoading(true);
+                                try {
+                                  if (editingFPP) {
+                                    await fppService.updateFPP(editingFPP, newFPP);
+                                    setSuccess('FPP updated successfully!');
+                                  } else {
+                                    await fppService.addFPP(newFPP);
+                                    setSuccess('FPP added successfully!');
+                                  }
+                                  const updated = await fppService.getFPPs();
+                                  setFPPs(updated);
+                                  setNewFPP('');
+                                  setEditingFPP(null);
+                                  window.dispatchEvent(new Event('fppsUpdated'));
+                                } catch (err) {
+                                  setError(err instanceof Error ? err.message : 'Failed to save FPP');
+                                } finally {
+                                  setIsLoading(false);
+                                  setTimeout(() => setSuccess(''), 3000);
+                                }
+                              }}
+                              disabled={isLoading}
+                            >
+                              {isLoading ? (editingFPP ? 'Updating...' : 'Adding...') : (editingFPP ? 'Update' : 'Add')}
+                            </Button>
+                          </div>
+                        </div>
+                      </DialogContent>
+                    </Dialog>
+                  </div>
+                </CardHeader>
+                <CardContent className="flex-1 overflow-auto min-h-0">
+                  {fpps.length > 0 ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                      {fpps.map((fpp) => (
+                        <div
+                          key={fpp}
+                          className="flex items-center justify-between p-4 bg-white rounded-lg border border-gray-200 hover:border-indigo-300 hover:shadow-sm transition-all"
+                        >
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-semibold text-gray-900">{fpp}</p>
+                          </div>
+                          <div className="flex gap-1 shrink-0 ml-4">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                setNewFPP(fpp);
+                                setEditingFPP(fpp);
+                              }}
+                              className="h-8 w-8 p-0 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded"
+                              title="Edit"
+                            >
+                              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                              </svg>
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={async () => {
+                                if (window.confirm(`Delete FPP "${fpp}"?`)) {
+                                  setIsLoading(true);
+                                  try {
+                                    await fppService.deleteFPP(fpp);
+                                    const updated = await fppService.getFPPs();
+                                    setFPPs(updated);
+                                    setSuccess('FPP deleted successfully!');
+                                    window.dispatchEvent(new Event('fppsUpdated'));
+                                  } catch (err) {
+                                    setError('Failed to delete FPP');
+                                  } finally {
+                                    setIsLoading(false);
+                                    setTimeout(() => setSuccess(''), 3000);
+                                  }
+                                }
+                              }}
+                              className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50 rounded"
+                              title="Delete"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-12 text-gray-500">
+                      <svg className="h-12 w-12 mx-auto mb-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                      </svg>
+                      <p className="text-sm font-medium">No FPPs yet</p>
                       <p className="text-xs mt-1">Add one to get started</p>
                     </div>
                   )}
