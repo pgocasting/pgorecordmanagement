@@ -8,7 +8,7 @@ interface User {
   username: string;
   email: string;
   name: string;
-  role: 'admin' | 'user';
+  role: 'admin' | 'user' | 'viewer';
   password: string;
   avatar?: string;
 }
@@ -28,7 +28,7 @@ interface AuthContextType {
   isLoading: boolean;
   login: (username: string, password: string, rememberMe?: boolean) => Promise<void>;
   logout: () => void;
-  addUser: (username: string, password: string, name: string, role: 'admin' | 'user', avatar?: string, email?: string) => Promise<void>;
+  addUser: (username: string, password: string, name: string, role: 'admin' | 'user' | 'viewer', avatar?: string, email?: string) => Promise<void>;
   getAllUsers: () => User[];
   deleteUser: (userId: string) => Promise<void>;
   updateUser: (userId: string, updates: Partial<User>) => Promise<void>;
@@ -352,7 +352,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     sessionStorage.removeItem('currentUser');
   };
 
-  const addUser = async (username: string, password: string, name: string, role: 'admin' | 'user', avatar?: string, email?: string): Promise<void> => {
+  const addUser = async (username: string, password: string, name: string, role: 'admin' | 'user' | 'viewer', avatar?: string, email?: string): Promise<void> => {
     try {
       // Check if user already exists in Firebase
       const usersRef = collection(db, 'users');

@@ -301,7 +301,7 @@ export default function SettingsPage() {
     name: '',
     password: '',
     confirmPassword: '',
-    role: 'user' as 'admin' | 'user',
+    role: 'user' as 'admin' | 'user' | 'viewer',
   });
   const [editingUserId, setEditingUserId] = useState<string | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -320,7 +320,7 @@ export default function SettingsPage() {
   const handleRoleChange = (value: string) => {
     setFormData(prev => ({
       ...prev,
-      role: value as 'admin' | 'user'
+      role: value as 'admin' | 'user' | 'viewer'
     }));
   };
 
@@ -390,16 +390,16 @@ export default function SettingsPage() {
     setIsEditDialogOpen(true);
   };
 
-  const handleToggleAdminRole = async (userId: string, currentRole: 'admin' | 'user', userName: string) => {
+  const handleToggleAdminRole = async (userId: string, currentRole: 'admin' | 'user' | 'viewer', userName: string) => {
     const newRole = currentRole === 'admin' ? 'user' : 'admin';
     const action = newRole === 'admin' ? 'grant' : 'revoke';
     
     setIsLoading(true);
     try {
-      await updateUser(userId, { role: newRole as 'admin' | 'user' });
+      await updateUser(userId, { role: newRole as 'admin' | 'user' | 'viewer' });
       const updatedUsers = users.map(u => 
         u.id === userId 
-          ? { ...u, role: newRole as 'admin' | 'user' }
+          ? { ...u, role: newRole as 'admin' | 'user' | 'viewer' }
           : u
       );
       setUsers(updatedUsers);
@@ -1479,6 +1479,7 @@ export default function SettingsPage() {
                         <SelectContent>
                           <SelectItem value="user">User</SelectItem>
                           <SelectItem value="admin">Admin</SelectItem>
+                          <SelectItem value="viewer">Viewer</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
@@ -1585,6 +1586,7 @@ export default function SettingsPage() {
                         <SelectContent>
                           <SelectItem value="user">User</SelectItem>
                           <SelectItem value="admin">Admin</SelectItem>
+                          <SelectItem value="viewer">Viewer</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
