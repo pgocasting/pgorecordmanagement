@@ -561,9 +561,11 @@ export const designationService = {
 
   async deleteDesignation(designation: string) {
     try {
-      const designations = await this.getDesignations();
-      const filtered = designations.filter(d => d !== designation);
-      await this.setDesignations(filtered);
+      const existingDocs = await getItems<Designation>('designations');
+      const docToDelete = existingDocs.find(d => d.name === designation);
+      if (docToDelete) {
+        await deleteItem('designations', docToDelete.id);
+      }
       return true;
     } catch (error) {
       console.error('Error deleting designation:', error);
@@ -658,6 +660,158 @@ export const systemSettingsService = {
       return true;
     } catch (error) {
       console.error('Error setting allowUserThemes setting:', error);
+      return false;
+    }
+  }
+};
+
+// Account Code Service
+interface AccountCode {
+  id: string;
+  code: string;
+}
+
+export const accountCodeService = {
+  async getAccountCodes() {
+    try {
+      const accountCodes = await getItems<AccountCode>('accountCodes');
+      return accountCodes.length > 0 ? accountCodes.map(ac => ac.code) : [];
+    } catch (error) {
+      console.error('Error getting account codes:', error);
+      return [];
+    }
+  },
+
+  async setAccountCodes(codes: string[]) {
+    try {
+      const existingDocs = await getItems<AccountCode>('accountCodes');
+      for (const existingDoc of existingDocs) {
+        await deleteItem('accountCodes', existingDoc.id);
+      }
+      for (const code of codes) {
+        await addItem<AccountCode>('accountCodes', { code } as any);
+      }
+      return true;
+    } catch (error) {
+      console.error('Error setting account codes:', error);
+      return false;
+    }
+  },
+
+  async addAccountCode(code: string) {
+    try {
+      const accountCodes = await this.getAccountCodes();
+      if (!accountCodes.includes(code)) {
+        await addItem<AccountCode>('accountCodes', { code } as any);
+      }
+      return true;
+    } catch (error) {
+      console.error('Error adding account code:', error);
+      return false;
+    }
+  },
+
+  async updateAccountCode(oldCode: string, newCode: string) {
+    try {
+      const accountCodes = await this.getAccountCodes();
+      const index = accountCodes.indexOf(oldCode);
+      if (index !== -1) {
+        accountCodes[index] = newCode;
+        await this.setAccountCodes(accountCodes);
+      }
+      return true;
+    } catch (error) {
+      console.error('Error updating account code:', error);
+      return false;
+    }
+  },
+
+  async deleteAccountCode(code: string) {
+    try {
+      const existingDocs = await getItems<AccountCode>('accountCodes');
+      const docToDelete = existingDocs.find(d => d.code === code);
+      if (docToDelete) {
+        await deleteItem('accountCodes', docToDelete.id);
+      }
+      return true;
+    } catch (error) {
+      console.error('Error deleting account code:', error);
+      return false;
+    }
+  }
+};
+
+// FPP Service
+interface FPP {
+  id: string;
+  name: string;
+}
+
+export const fppService = {
+  async getFPPs() {
+    try {
+      const fpps = await getItems<FPP>('fpps');
+      return fpps.length > 0 ? fpps.map(f => f.name) : ['FPP 1', 'FPP 2', 'FPP 3', 'FPP 4', 'FPP 5'];
+    } catch (error) {
+      console.error('Error getting FPPs:', error);
+      return ['FPP 1', 'FPP 2', 'FPP 3', 'FPP 4', 'FPP 5'];
+    }
+  },
+
+  async setFPPs(fpps: string[]) {
+    try {
+      const existingDocs = await getItems<FPP>('fpps');
+      for (const existingDoc of existingDocs) {
+        await deleteItem('fpps', existingDoc.id);
+      }
+      for (const fpp of fpps) {
+        await addItem<FPP>('fpps', { name: fpp } as any);
+      }
+      return true;
+    } catch (error) {
+      console.error('Error setting FPPs:', error);
+      return false;
+    }
+  },
+
+  async addFPP(fpp: string) {
+    try {
+      const fpps = await this.getFPPs();
+      if (!fpps.includes(fpp)) {
+        await addItem<FPP>('fpps', { name: fpp } as any);
+      }
+      return true;
+    } catch (error) {
+      console.error('Error adding FPP:', error);
+      return false;
+    }
+  },
+
+  async updateFPP(oldFPP: string, newFPP: string) {
+    try {
+      const fpps = await this.getFPPs();
+      const index = fpps.indexOf(oldFPP);
+      if (index !== -1) {
+        fpps[index] = newFPP;
+        await this.setFPPs(fpps);
+      }
+      return true;
+    } catch (error) {
+      console.error('Error updating FPP:', error);
+      return false;
+    }
+  },
+
+  async deleteFPP(fpp: string) {
+    try {
+      const existingDocs = await getItems<FPP>('fpps');
+      const docToDelete = existingDocs.find(d => d.name === fpp);
+      if (docToDelete) {
+        await deleteItem('fpps', docToDelete.id);
+      }
+      return true;
+    } catch (error) {
+      console.error('Error deleting FPP:', error);
       return false;
     }
   }

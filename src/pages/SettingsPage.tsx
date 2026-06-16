@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { designationService, pageVisibilityService, systemSettingsService } from '@/services/firebaseService';
+import { designationService, pageVisibilityService, systemSettingsService, accountCodeService, fppService } from '@/services/firebaseService';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -68,8 +68,16 @@ export default function SettingsPage() {
   const [designations, setDesignations] = useState<string[]>([]);
   const [newDesignation, setNewDesignation] = useState('');
   const [editingDesignation, setEditingDesignation] = useState<string | null>(null);
+  const [accountCodeDialogOpen, setAccountCodeDialogOpen] = useState(false);
+  const [accountCodes, setAccountCodes] = useState<string[]>([]);
+  const [newAccountCode, setNewAccountCode] = useState('');
+  const [editingAccountCode, setEditingAccountCode] = useState<string | null>(null);
+  const [fppDialogOpen, setFppDialogOpen] = useState(false);
+  const [fpps, setFpps] = useState<string[]>([]);
+  const [newFpp, setNewFpp] = useState('');
+  const [editingFpp, setEditingFpp] = useState<string | null>(null);
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
-  const [confirmAction, setConfirmAction] = useState<{ type: 'add' | 'edit' | 'delete'; value?: string }>({ type: 'add' });
+  const [confirmAction, setConfirmAction] = useState<{ type: 'add' | 'edit' | 'delete'; value?: string; category?: 'designation' | 'accountCode' | 'fpp' }>({ type: 'add' });
   const [pageVisibility, setPageVisibility] = useState<Record<string, boolean>>({});
   const [isPageVisibilityLoading, setIsPageVisibilityLoading] = useState(false);
   const [allowUserThemes, setAllowUserThemes] = useState(true);
@@ -103,6 +111,34 @@ export default function SettingsPage() {
       }
     };
     loadDesignations();
+  }, []);
+
+  // Load account codes from Firestore on mount
+  useEffect(() => {
+    const loadAccountCodes = async () => {
+      try {
+        const firestoreAccountCodes = await accountCodeService.getAccountCodes();
+        setAccountCodes(firestoreAccountCodes);
+      } catch (err) {
+        console.error('Failed to load account codes:', err);
+        setAccountCodes([]);
+      }
+    };
+    loadAccountCodes();
+  }, []);
+
+  // Load FPPs from Firestore on mount
+  useEffect(() => {
+    const loadFPPs = async () => {
+      try {
+        const firestoreFPPs = await fppService.getFPPs();
+        setFpps(firestoreFPPs);
+      } catch (err) {
+        console.error('Failed to load FPPs:', err);
+        setFpps(['FPP 1', 'FPP 2', 'FPP 3', 'FPP 4', 'FPP 5']);
+      }
+    };
+    loadFPPs();
   }, []);
 
   useEffect(() => {
@@ -547,7 +583,7 @@ export default function SettingsPage() {
       return;
     }
     
-    setConfirmAction({ type: 'add', value: JSON.stringify(uniqueDesignations) });
+    setConfirmAction({ type: 'add', value: JSON.stringify(uniqueDesignations), category: 'designation' });
     setConfirmDialogOpen(true);
   };
 
@@ -566,50 +602,188 @@ export default function SettingsPage() {
       setError('This designation already exists');
       return;
     }
-    setConfirmAction({ type: 'edit', value: newDesignation });
+    setConfirmAction({ type: 'edit', value: newDesignation, category: 'designation' });
     setConfirmDialogOpen(true);
   };
 
   const handleDeleteDesignation = (designation: string) => {
-    setConfirmAction({ type: 'delete', value: designation });
+    setConfirmAction({ type: 'delete', value: designation, category: 'designation' });
+    setConfirmDialogOpen(true);
+  };
+
+  // Account Code handlers
+  const handleAddAccountCode = () => {
+    setError('');
+    setSuccess('');
+    if (!newAccountCode.trim()) {
+      setError('Account code is required');
+      return;
+    }
+    if (accountCodes.includes(newAccountCode.trim())) {
+      setError('This account code already exists');
+      return;
+    }
+    setConfirmAction({ type: 'add', value: newAccountCode.trim(), category: 'accountCode' });
+    setConfirmDialogOpen(true);
+  };
+
+  const handleEditAccountCode = (oldCode: string) => {
+    setError('');
+    setSuccess('');
+    if (!newAccountCode.trim()) {
+      setError('Account code is required');
+      return;
+    }
+    if (newAccountCode.trim() === oldCode) {
+      setError('New account code must be different from current');
+      return;
+    }
+    if (accountCodes.includes(newAccountCode.trim())) {
+      setError('This account code already exists');
+      return;
+    }
+    setConfirmAction({ type: 'edit', value: newAccountCode.trim(), category: 'accountCode' });
+    setConfirmDialogOpen(true);
+  };
+
+  const handleDeleteAccountCode = (code: string) => {
+    setConfirmAction({ type: 'delete', value: code, category: 'accountCode' });
+    setConfirmDialogOpen(true);
+  };
+
+  // FPP handlers
+  const handleAddFpp = () => {
+    setError('');
+    setSuccess('');
+    if (!newFpp.trim()) {
+      setError('FPP name is required');
+      return;
+    }
+    if (fpps.includes(newFpp.trim())) {
+      setError('This FPP already exists');
+      return;
+    }
+    setConfirmAction({ type: 'add', value: newFpp.trim(), category: 'fpp' });
+    setConfirmDialogOpen(true);
+  };
+
+  const handleEditFpp = (oldFpp: string) => {
+    setError('');
+    setSuccess('');
+    if (!newFpp.trim()) {
+      setError('FPP name is required');
+      return;
+    }
+    if (newFpp.trim() === oldFpp) {
+      setError('New FPP must be different from current');
+      return;
+    }
+    if (fpps.includes(newFpp.trim())) {
+      setError('This FPP already exists');
+      return;
+    }
+    setConfirmAction({ type: 'edit', value: newFpp.trim(), category: 'fpp' });
+    setConfirmDialogOpen(true);
+  };
+
+  const handleDeleteFpp = (fpp: string) => {
+    setConfirmAction({ type: 'delete', value: fpp, category: 'fpp' });
     setConfirmDialogOpen(true);
   };
 
   const confirmDesignationAction = async () => {
     setIsLoading(true);
     try {
-      if (confirmAction.type === 'add' && confirmAction.value) {
-        const designationsToAdd = JSON.parse(confirmAction.value);
-        for (const designation of designationsToAdd) {
-          await designationService.addDesignation(designation);
+      const category = confirmAction.category || 'designation';
+      
+      if (category === 'designation') {
+        if (confirmAction.type === 'add' && confirmAction.value) {
+          const designationsToAdd = JSON.parse(confirmAction.value);
+          for (const designation of designationsToAdd) {
+            await designationService.addDesignation(designation);
+          }
+          const updated = await designationService.getDesignations();
+          setDesignations(updated);
+          setSuccess(`${designationsToAdd.length} designation(s) added successfully!`);
+          setNewDesignation('');
+          setDesignationDialogOpen(false);
+          setEditingDesignation(null);
+          setError('');
+        } else if (confirmAction.type === 'edit' && confirmAction.value && editingDesignation) {
+          await designationService.updateDesignation(editingDesignation, confirmAction.value);
+          const updated = await designationService.getDesignations();
+          setDesignations(updated);
+          setSuccess('Designation updated successfully!');
+          setNewDesignation('');
+          setEditingDesignation(null);
+          setDesignationDialogOpen(false);
+          setError('');
+        } else if (confirmAction.type === 'delete' && confirmAction.value) {
+          await designationService.deleteDesignation(confirmAction.value);
+          const updated = await designationService.getDesignations();
+          setDesignations(updated);
+          setSuccess('Designation deleted successfully!');
+          setError('');
         }
-        const updated = await designationService.getDesignations();
-        setDesignations(updated);
-        setSuccess(`${designationsToAdd.length} designation(s) added successfully!`);
-        setNewDesignation('');
-        setDesignationDialogOpen(false);
-        setEditingDesignation(null);
-        setError('');
-      } else if (confirmAction.type === 'edit' && confirmAction.value && editingDesignation) {
-        await designationService.updateDesignation(editingDesignation, confirmAction.value);
-        const updated = await designationService.getDesignations();
-        setDesignations(updated);
-        setSuccess('Designation updated successfully!');
-        setNewDesignation('');
-        setEditingDesignation(null);
-        setDesignationDialogOpen(false);
-        setError('');
-      } else if (confirmAction.type === 'delete' && confirmAction.value) {
-        await designationService.deleteDesignation(confirmAction.value);
-        const updated = await designationService.getDesignations();
-        setDesignations(updated);
-        setSuccess('Designation deleted successfully!');
-        setError('');
+        window.dispatchEvent(new Event('designationsUpdated'));
+      } else if (category === 'accountCode') {
+        if (confirmAction.type === 'add' && confirmAction.value) {
+          await accountCodeService.addAccountCode(confirmAction.value);
+          const updated = await accountCodeService.getAccountCodes();
+          setAccountCodes(updated);
+          setSuccess('Account code added successfully!');
+          setNewAccountCode('');
+          setAccountCodeDialogOpen(false);
+          setEditingAccountCode(null);
+          setError('');
+        } else if (confirmAction.type === 'edit' && confirmAction.value && editingAccountCode) {
+          await accountCodeService.updateAccountCode(editingAccountCode, confirmAction.value);
+          const updated = await accountCodeService.getAccountCodes();
+          setAccountCodes(updated);
+          setSuccess('Account code updated successfully!');
+          setNewAccountCode('');
+          setEditingAccountCode(null);
+          setAccountCodeDialogOpen(false);
+          setError('');
+        } else if (confirmAction.type === 'delete' && confirmAction.value) {
+          await accountCodeService.deleteAccountCode(confirmAction.value);
+          const updated = await accountCodeService.getAccountCodes();
+          setAccountCodes(updated);
+          setSuccess('Account code deleted successfully!');
+          setError('');
+        }
+        window.dispatchEvent(new Event('accountCodesUpdated'));
+      } else if (category === 'fpp') {
+        if (confirmAction.type === 'add' && confirmAction.value) {
+          await fppService.addFPP(confirmAction.value);
+          const updated = await fppService.getFPPs();
+          setFpps(updated);
+          setSuccess('FPP added successfully!');
+          setNewFpp('');
+          setFppDialogOpen(false);
+          setEditingFpp(null);
+          setError('');
+        } else if (confirmAction.type === 'edit' && confirmAction.value && editingFpp) {
+          await fppService.updateFPP(editingFpp, confirmAction.value);
+          const updated = await fppService.getFPPs();
+          setFpps(updated);
+          setSuccess('FPP updated successfully!');
+          setNewFpp('');
+          setEditingFpp(null);
+          setFppDialogOpen(false);
+          setError('');
+        } else if (confirmAction.type === 'delete' && confirmAction.value) {
+          await fppService.deleteFPP(confirmAction.value);
+          const updated = await fppService.getFPPs();
+          setFpps(updated);
+          setSuccess('FPP deleted successfully!');
+          setError('');
+        }
+        window.dispatchEvent(new Event('fppsUpdated'));
       }
-      window.dispatchEvent(new Event('designationsUpdated'));
     } catch (err) {
-      console.error('Error updating designation:', err);
-      setError(err instanceof Error ? err.message : 'Failed to update designation');
+      console.error('Error updating:', err);
+      setError(err instanceof Error ? err.message : 'Failed to update');
     } finally {
       setIsLoading(false);
       setConfirmDialogOpen(false);
@@ -1640,9 +1814,15 @@ export default function SettingsPage() {
                       <CardTitle className="text-lg">Account Codes</CardTitle>
                       <CardDescription className="text-xs">Manage account codes for obligation requests</CardDescription>
                     </div>
-                    <Dialog>
+                    <Dialog open={accountCodeDialogOpen} onOpenChange={(open) => {
+                      setAccountCodeDialogOpen(open);
+                      if (!open) {
+                        setNewAccountCode('');
+                        setEditingAccountCode(null);
+                      }
+                    }}>
                       <DialogTrigger asChild>
-                        <Button className="gap-2 h-8 text-xs" onClick={() => setNewAccountCode('')}>
+                        <Button className="gap-2 h-8 text-xs">
                           <Plus className="h-3 w-3" />
                           Add Account Code
                         </Button>
@@ -1671,6 +1851,7 @@ export default function SettingsPage() {
                               variant="outline"
                               className="flex-1"
                               onClick={() => {
+                                setAccountCodeDialogOpen(false);
                                 setNewAccountCode('');
                                 setEditingAccountCode(null);
                               }}
@@ -1681,30 +1862,11 @@ export default function SettingsPage() {
                             <Button
                               type="button"
                               className="flex-1"
-                              onClick={async () => {
-                                if (!newAccountCode.trim()) {
-                                  setError('Account code is required');
-                                  return;
-                                }
-                                setIsLoading(true);
-                                try {
-                                  if (editingAccountCode) {
-                                    await accountCodeService.updateAccountCode(editingAccountCode, newAccountCode);
-                                    setSuccess('Account code updated successfully!');
-                                  } else {
-                                    await accountCodeService.addAccountCode(newAccountCode);
-                                    setSuccess('Account code added successfully!');
-                                  }
-                                  const updated = await accountCodeService.getAccountCodes();
-                                  setAccountCodes(updated);
-                                  setNewAccountCode('');
-                                  setEditingAccountCode(null);
-                                  window.dispatchEvent(new Event('accountCodesUpdated'));
-                                } catch (err) {
-                                  setError(err instanceof Error ? err.message : 'Failed to save account code');
-                                } finally {
-                                  setIsLoading(false);
-                                  setTimeout(() => setSuccess(''), 3000);
+                              onClick={() => {
+                                if (editingAccountCode) {
+                                  handleEditAccountCode(editingAccountCode);
+                                } else {
+                                  handleAddAccountCode();
                                 }
                               }}
                               disabled={isLoading}
@@ -1735,6 +1897,7 @@ export default function SettingsPage() {
                               onClick={() => {
                                 setNewAccountCode(accountCode);
                                 setEditingAccountCode(accountCode);
+                                setAccountCodeDialogOpen(true);
                               }}
                               className="h-8 w-8 p-0 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded"
                               title="Edit"
@@ -1746,23 +1909,7 @@ export default function SettingsPage() {
                             <Button
                               variant="ghost"
                               size="sm"
-                              onClick={async () => {
-                                if (window.confirm(`Delete account code "${accountCode}"?`)) {
-                                  setIsLoading(true);
-                                  try {
-                                    await accountCodeService.deleteAccountCode(accountCode);
-                                    const updated = await accountCodeService.getAccountCodes();
-                                    setAccountCodes(updated);
-                                    setSuccess('Account code deleted successfully!');
-                                    window.dispatchEvent(new Event('accountCodesUpdated'));
-                                  } catch (err) {
-                                    setError('Failed to delete account code');
-                                  } finally {
-                                    setIsLoading(false);
-                                    setTimeout(() => setSuccess(''), 3000);
-                                  }
-                                }
-                              }}
+                              onClick={() => handleDeleteAccountCode(accountCode)}
                               className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50 rounded"
                               title="Delete"
                             >
@@ -1794,18 +1941,24 @@ export default function SettingsPage() {
                       <CardTitle className="text-lg">FPP (Financial Planning & Programming)</CardTitle>
                       <CardDescription className="text-xs">Manage FPP options for purchase requests and vouchers</CardDescription>
                     </div>
-                    <Dialog>
+                    <Dialog open={fppDialogOpen} onOpenChange={(open) => {
+                      setFppDialogOpen(open);
+                      if (!open) {
+                        setNewFpp('');
+                        setEditingFpp(null);
+                      }
+                    }}>
                       <DialogTrigger asChild>
-                        <Button className="gap-2 h-8 text-xs" onClick={() => setNewFPP('')}>
+                        <Button className="gap-2 h-8 text-xs">
                           <Plus className="h-3 w-3" />
                           Add FPP
                         </Button>
                       </DialogTrigger>
                       <DialogContent className="sm:max-w-md">
                         <DialogHeader>
-                          <DialogTitle>{editingFPP ? 'Edit FPP' : 'Add New FPP'}</DialogTitle>
+                          <DialogTitle>{editingFpp ? 'Edit FPP' : 'Add New FPP'}</DialogTitle>
                           <DialogDescription>
-                            {editingFPP ? 'Update the FPP name' : 'Enter FPP name'}
+                            {editingFpp ? 'Update the FPP name' : 'Enter FPP name'}
                           </DialogDescription>
                         </DialogHeader>
                         <div className="space-y-4">
@@ -1814,8 +1967,8 @@ export default function SettingsPage() {
                             <Input
                               id="fppName"
                               placeholder="e.g., FPP 1, FPP 2023"
-                              value={newFPP}
-                              onChange={(e) => setNewFPP(e.target.value)}
+                              value={newFpp}
+                              onChange={(e) => setNewFpp(e.target.value)}
                               disabled={isLoading}
                             />
                           </div>
@@ -1825,8 +1978,9 @@ export default function SettingsPage() {
                               variant="outline"
                               className="flex-1"
                               onClick={() => {
-                                setNewFPP('');
-                                setEditingFPP(null);
+                                setFppDialogOpen(false);
+                                setNewFpp('');
+                                setEditingFpp(null);
                               }}
                               disabled={isLoading}
                             >
@@ -1835,35 +1989,16 @@ export default function SettingsPage() {
                             <Button
                               type="button"
                               className="flex-1"
-                              onClick={async () => {
-                                if (!newFPP.trim()) {
-                                  setError('FPP name is required');
-                                  return;
-                                }
-                                setIsLoading(true);
-                                try {
-                                  if (editingFPP) {
-                                    await fppService.updateFPP(editingFPP, newFPP);
-                                    setSuccess('FPP updated successfully!');
-                                  } else {
-                                    await fppService.addFPP(newFPP);
-                                    setSuccess('FPP added successfully!');
-                                  }
-                                  const updated = await fppService.getFPPs();
-                                  setFPPs(updated);
-                                  setNewFPP('');
-                                  setEditingFPP(null);
-                                  window.dispatchEvent(new Event('fppsUpdated'));
-                                } catch (err) {
-                                  setError(err instanceof Error ? err.message : 'Failed to save FPP');
-                                } finally {
-                                  setIsLoading(false);
-                                  setTimeout(() => setSuccess(''), 3000);
+                              onClick={() => {
+                                if (editingFpp) {
+                                  handleEditFpp(editingFpp);
+                                } else {
+                                  handleAddFpp();
                                 }
                               }}
                               disabled={isLoading}
                             >
-                              {isLoading ? (editingFPP ? 'Updating...' : 'Adding...') : (editingFPP ? 'Update' : 'Add')}
+                              {isLoading ? (editingFpp ? 'Updating...' : 'Adding...') : (editingFpp ? 'Update' : 'Add')}
                             </Button>
                           </div>
                         </div>
@@ -1887,8 +2022,9 @@ export default function SettingsPage() {
                               variant="ghost"
                               size="sm"
                               onClick={() => {
-                                setNewFPP(fpp);
-                                setEditingFPP(fpp);
+                                setNewFpp(fpp);
+                                setEditingFpp(fpp);
+                                setFppDialogOpen(true);
                               }}
                               className="h-8 w-8 p-0 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded"
                               title="Edit"
@@ -1900,23 +2036,7 @@ export default function SettingsPage() {
                             <Button
                               variant="ghost"
                               size="sm"
-                              onClick={async () => {
-                                if (window.confirm(`Delete FPP "${fpp}"?`)) {
-                                  setIsLoading(true);
-                                  try {
-                                    await fppService.deleteFPP(fpp);
-                                    const updated = await fppService.getFPPs();
-                                    setFPPs(updated);
-                                    setSuccess('FPP deleted successfully!');
-                                    window.dispatchEvent(new Event('fppsUpdated'));
-                                  } catch (err) {
-                                    setError('Failed to delete FPP');
-                                  } finally {
-                                    setIsLoading(false);
-                                    setTimeout(() => setSuccess(''), 3000);
-                                  }
-                                }
-                              }}
+                              onClick={() => handleDeleteFpp(fpp)}
                               className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50 rounded"
                               title="Delete"
                             >
@@ -2039,20 +2159,46 @@ export default function SettingsPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Designation Action Confirmation Dialog */}
+      {/* Confirmation Dialog for Designation, Account Code, and FPP */}
       <Dialog open={confirmDialogOpen} onOpenChange={setConfirmDialogOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>
-              {confirmAction.type === 'add' && 'Add Designation'}
-              {confirmAction.type === 'edit' && 'Update Designation'}
-              {confirmAction.type === 'delete' && 'Delete Designation'}
+              {confirmAction.category === 'designation' && (
+                <>
+                  {confirmAction.type === 'add' && 'Add Designation'}
+                  {confirmAction.type === 'edit' && 'Update Designation'}
+                  {confirmAction.type === 'delete' && 'Delete Designation'}
+                </>
+              )}
+              {confirmAction.category === 'accountCode' && (
+                <>
+                  {confirmAction.type === 'add' && 'Add Account Code'}
+                  {confirmAction.type === 'edit' && 'Update Account Code'}
+                  {confirmAction.type === 'delete' && 'Delete Account Code'}
+                </>
+              )}
+              {confirmAction.category === 'fpp' && (
+                <>
+                  {confirmAction.type === 'add' && 'Add FPP'}
+                  {confirmAction.type === 'edit' && 'Update FPP'}
+                  {confirmAction.type === 'delete' && 'Delete FPP'}
+                </>
+              )}
             </DialogTitle>
           </DialogHeader>
           <p className="text-sm text-gray-600 py-4">
-            {confirmAction.type === 'add' && `Are you sure you want to add "${confirmAction.value}" as a new designation?`}
-            {confirmAction.type === 'edit' && `Are you sure you want to update this designation to "${confirmAction.value}"?`}
-            {confirmAction.type === 'delete' && `Are you sure you want to delete "${confirmAction.value}"? This action cannot be undone.`}
+            {confirmAction.type === 'add' && confirmAction.category === 'designation' && `Are you sure you want to add the designation(s)?`}
+            {confirmAction.type === 'edit' && confirmAction.category === 'designation' && `Are you sure you want to update this designation to "${confirmAction.value}"?`}
+            {confirmAction.type === 'delete' && confirmAction.category === 'designation' && `Are you sure you want to delete "${confirmAction.value}"? This action cannot be undone.`}
+            
+            {confirmAction.type === 'add' && confirmAction.category === 'accountCode' && `Are you sure you want to add "${confirmAction.value}" as a new account code?`}
+            {confirmAction.type === 'edit' && confirmAction.category === 'accountCode' && `Are you sure you want to update this account code to "${confirmAction.value}"?`}
+            {confirmAction.type === 'delete' && confirmAction.category === 'accountCode' && `Are you sure you want to delete "${confirmAction.value}"? This action cannot be undone.`}
+            
+            {confirmAction.type === 'add' && confirmAction.category === 'fpp' && `Are you sure you want to add "${confirmAction.value}" as a new FPP?`}
+            {confirmAction.type === 'edit' && confirmAction.category === 'fpp' && `Are you sure you want to update this FPP to "${confirmAction.value}"?`}
+            {confirmAction.type === 'delete' && confirmAction.category === 'fpp' && `Are you sure you want to delete "${confirmAction.value}"? This action cannot be undone.`}
           </p>
           <div className="flex gap-3 justify-end">
             <Button
