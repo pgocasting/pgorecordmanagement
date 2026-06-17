@@ -173,6 +173,7 @@ export default function PurchaseRequestPage() {
 
   const navigate = useNavigate();
   const { logout, user } = useAuth();
+  const isViewer = user?.role === 'viewer';
   const [purchaseRequests, setPurchaseRequests] = useState<PurchaseRequest[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState<'Pending' | 'Completed' | 'Rejected'>('Pending');
@@ -748,9 +749,16 @@ export default function PurchaseRequestPage() {
               <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500 to-cyan-600 flex items-center justify-center shadow-md">
                 <ShoppingCart className="h-5 w-5 text-white" />
               </div>
-              <div>
-                <h1 className="text-2xl font-bold bg-gradient-to-r from-cyan-600 to-cyan-500 bg-clip-text text-transparent">Purchase Request Records</h1>
-                <p className="text-sm text-gray-500">Manage procurement and purchase requests</p>
+              <div className="flex items-center gap-3">
+                <div>
+                  <h1 className="text-2xl font-bold bg-gradient-to-r from-cyan-600 to-cyan-500 bg-clip-text text-transparent">Purchase Request Records</h1>
+                  <p className="text-sm text-gray-500">Manage procurement and purchase requests</p>
+                </div>
+                {isViewer && (
+                  <Badge variant="secondary" className="bg-gray-100 text-gray-700 border border-gray-300">
+                    Read-Only Mode
+                  </Badge>
+                )}
               </div>
             </div>
             
@@ -799,30 +807,31 @@ export default function PurchaseRequestPage() {
                     className="pl-10 h-10 border-gray-300 focus:border-cyan-500 focus:ring-cyan-500"
                   />
                 </div>
-                <Dialog open={isDialogOpen} onOpenChange={handleDialogOpenChange}>
-                  <DialogTrigger asChild>
-                    <Button
-                      className="gap-2 bg-cyan-600 hover:bg-cyan-700 w-full sm:w-auto h-10"
-                      onClick={() => {
-                        setEditingId(null);
-                        setFormData({
-                          trackingId: nextTrackingId,
-                          dateTimeIn: getCurrentDateTime(),
-                          dateTimeOut: '',
-                          fpp: '',
-                          fullName: '',
-                          designation: '',
-                          amount: '',
-                          purpose: '',
-                          remarks: '',
-                          remarksHistory: []
-                        });
-                      }}
-                    >
-                      <Plus className="h-4 w-4" />
-                      Add Record
-                    </Button>
-                  </DialogTrigger>
+                {!isViewer && (
+                  <Dialog open={isDialogOpen} onOpenChange={handleDialogOpenChange}>
+                    <DialogTrigger asChild>
+                      <Button
+                        className="gap-2 bg-cyan-600 hover:bg-cyan-700 w-full sm:w-auto h-10"
+                        onClick={() => {
+                          setEditingId(null);
+                          setFormData({
+                            trackingId: nextTrackingId,
+                            dateTimeIn: getCurrentDateTime(),
+                            dateTimeOut: '',
+                            fpp: '',
+                            fullName: '',
+                            designation: '',
+                            amount: '',
+                            purpose: '',
+                            remarks: '',
+                            remarksHistory: []
+                          });
+                        }}
+                      >
+                        <Plus className="h-4 w-4" />
+                        Add Record
+                      </Button>
+                    </DialogTrigger>
                 <DialogContent className="max-w-2xl">
                   <DialogHeader>
                     <DialogTitle>{editingId ? 'Edit' : 'Add New'} Purchase Request</DialogTitle>
@@ -1030,6 +1039,7 @@ export default function PurchaseRequestPage() {
                   </Button>
                 </DialogContent>
                 </Dialog>
+                )}
 
       {/* Return Confirmation Modal */}
       <Dialog open={returnConfirmOpen} onOpenChange={setReturnConfirmOpen}>
@@ -1123,13 +1133,13 @@ export default function PurchaseRequestPage() {
                         <TableHead className="font-semibold py-3 px-4 text-center text-xs">Amount</TableHead>
                         <TableHead className="font-semibold py-3 px-4 text-center text-xs">Status</TableHead>
                         <TableHead className="font-semibold py-3 px-4 text-center text-xs">Remarks</TableHead>
-                        <TableHead className="font-semibold py-3 px-4 text-center text-xs">Actions</TableHead>
+                        {!isViewer && <TableHead className="font-semibold py-3 px-4 text-center text-xs">Actions</TableHead>}
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                   {filteredPurchaseRequests.length === 0 ? (
                     <TableRow key="empty-state">
-                      <TableCell colSpan={10} className="text-center py-8 text-muted-foreground">
+                      <TableCell colSpan={isViewer ? 10 : 11} className="text-center py-8 text-muted-foreground">
                         {purchaseRequests.length === 0 ? 'No purchase requests found. Click "Add Purchase Request" to create one.' : 'No purchase requests match your search.'}
                       </TableCell>
                     </TableRow>
@@ -1187,60 +1197,62 @@ export default function PurchaseRequestPage() {
                             </div>
                           ) : '-'}
                         </TableCell>
-                        <TableCell className="text-sm py-3 px-4">
-                          <div className="flex flex-col items-center gap-1">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleViewRequest(request.id)}
-                              className="h-8 w-16 text-blue-600 border-blue-600 hover:bg-blue-50 hover:text-blue-700"
-                            >
-                              View
-                            </Button>
-                            {(request.status === 'Pending' || request.status === 'Approved' || user?.role === 'admin') && (
-                              <>
+                        {!isViewer && (
+                          <TableCell className="text-sm py-3 px-4">
+                            <div className="flex flex-col items-center gap-1">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleViewRequest(request.id)}
+                                className="h-8 w-16 text-blue-600 border-blue-600 hover:bg-blue-50 hover:text-blue-700"
+                              >
+                                View
+                              </Button>
+                              {(request.status === 'Pending' || request.status === 'Approved' || user?.role === 'admin') && (
+                                <>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => handleEditRequest(request.id)}
+                                    className="h-8 w-16 text-orange-600 border-orange-600 hover:bg-orange-50 hover:text-orange-700"
+                                  >
+                                    Edit
+                                  </Button>
+                                </>
+                              )}
+                              {request.status === 'Pending' && (
                                 <Button
                                   variant="outline"
                                   size="sm"
-                                  onClick={() => handleEditRequest(request.id)}
-                                  className="h-8 w-16 text-orange-600 border-orange-600 hover:bg-orange-50 hover:text-orange-700"
+                                  onClick={() => handleRejectRequest(request.id)}
+                                  className="h-8 w-16 text-red-600 border-red-600 hover:bg-red-50 hover:text-red-700"
                                 >
-                                  Edit
+                                  Reject
                                 </Button>
-                              </>
-                            )}
-                            {request.status === 'Pending' && (
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleRejectRequest(request.id)}
-                                className="h-8 w-16 text-red-600 border-red-600 hover:bg-red-50 hover:text-red-700"
-                              >
-                                Reject
-                              </Button>
-                            )}
-                            {(request.status === 'Pending' || request.status === 'Approved') && (
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleTimeOut(request.id)}
-                                className="h-8 w-16 text-green-600 border-green-600 hover:bg-green-50 hover:text-green-700"
-                              >
-                                Out
-                              </Button>
-                            )}
-                            {(request.status === 'Completed' || request.status === 'Rejected') && (
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleReturnRequest(request.id)}
-                                className="h-8 w-16 text-purple-600 border-purple-600 hover:bg-purple-50 hover:text-purple-700"
-                              >
-                                Return
-                              </Button>
-                            )}
-                          </div>
-                        </TableCell>
+                              )}
+                              {(request.status === 'Pending' || request.status === 'Approved') && (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleTimeOut(request.id)}
+                                  className="h-8 w-16 text-green-600 border-green-600 hover:bg-green-50 hover:text-green-700"
+                                >
+                                  Out
+                                </Button>
+                              )}
+                              {(request.status === 'Completed' || request.status === 'Rejected') && (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleReturnRequest(request.id)}
+                                  className="h-8 w-16 text-purple-600 border-purple-600 hover:bg-purple-50 hover:text-purple-700"
+                                >
+                                  Return
+                                </Button>
+                              )}
+                            </div>
+                          </TableCell>
+                        )}
                       </TableRow>
                     ))
                   )}
