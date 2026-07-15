@@ -920,22 +920,15 @@ export default function ReportPage() {
                   </Table>
                 </div>
                 {isLoading && (
-                  <div className="absolute inset-0 z-20 bg-white/90 backdrop-blur-sm flex flex-col items-center justify-center">
-                    <div className="flex flex-col items-center gap-4 bg-white p-8 rounded-2xl shadow-2xl border border-gray-100">
+                  <div className="absolute inset-0 z-20 bg-white/90 backdrop-blur-sm flex items-center justify-center">
+                    <div className="pgo-logo-spinner" role="status" aria-label="Loading">
+                      <div className="pgo-logo-spinner__ring" aria-hidden="true" />
                       <img
                         src="/images/bataan-logo.png"
-                        alt="Bataan Logo"
-                        className="h-16 w-16 object-contain drop-shadow-lg animate-pulse"
-                        onError={(e) => {
-                          (e.currentTarget as HTMLImageElement).style.display = 'none';
-                        }}
+                        alt="Bataan"
+                        className="h-20 w-20 object-contain"
+                        draggable={false}
                       />
-                      <div className="flex items-center gap-3 text-base text-gray-800">
-                        <span className="font-semibold">Loading...</span>
-                      </div>
-                      <div className="w-48 h-1.5 bg-gray-200 rounded-full overflow-hidden relative">
-                        <div className="h-full bg-gradient-to-r from-indigo-400 via-indigo-600 to-indigo-400 rounded-full absolute left-0 animate-[loading-slide_1.5s_ease-in-out_infinite]" style={{width: '50%'}}></div>
-                      </div>
                     </div>
                   </div>
                 )}

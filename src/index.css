@@ -320,19 +320,92 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
+    filter: drop-shadow(0 0 20px rgba(59, 130, 246, 0.3));
+    animation: pgo-logo-glow 2s ease-in-out infinite;
+  }
+
+  .pgo-logo-spinner img {
+    animation: pgo-logo-pulse 2s ease-in-out infinite;
   }
 
   .pgo-logo-spinner__ring {
     position: absolute;
     top: 50%;
     left: 50%;
+    transform: translate(-50%, -50%);
     width: 106px;
     height: 106px;
     border-radius: 9999px;
-    border: 3px solid rgba(0, 0, 0, 0.12);
-    border-top-color: rgba(0, 0, 0, 0.65);
-    animation: pgo-logo-spin 0.95s linear infinite;
+    border: 3px solid transparent;
+    border-top-color: rgba(59, 130, 246, 0.8);
+    border-right-color: rgba(59, 130, 246, 0.5);
+    border-bottom-color: rgba(59, 130, 246, 0.3);
+    border-left-color: rgba(59, 130, 246, 0.1);
+    animation: pgo-logo-wave 1.5s ease-in-out infinite;
     pointer-events: none;
+    box-shadow: 0 0 15px rgba(59, 130, 246, 0.4), inset 0 0 10px rgba(59, 130, 246, 0.2);
+  }
+
+  .pgo-logo-spinner__ring::before,
+  .pgo-logo-spinner__ring::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    border-radius: 9999px;
+    border: 3px solid transparent;
+  }
+
+  .pgo-logo-spinner__ring::before {
+    width: 126px;
+    height: 126px;
+    border-top-color: rgba(59, 130, 246, 0.5);
+    border-right-color: rgba(59, 130, 246, 0.3);
+    border-bottom-color: rgba(59, 130, 246, 0.2);
+    animation: pgo-logo-wave 1.5s ease-in-out infinite 0.3s;
+    box-shadow: 0 0 12px rgba(59, 130, 246, 0.3);
+  }
+
+  .pgo-logo-spinner__ring::after {
+    width: 146px;
+    height: 146px;
+    border-top-color: rgba(59, 130, 246, 0.3);
+    border-right-color: rgba(59, 130, 246, 0.2);
+    border-bottom-color: rgba(59, 130, 246, 0.1);
+    animation: pgo-logo-wave 1.5s ease-in-out infinite 0.6s;
+    box-shadow: 0 0 10px rgba(59, 130, 246, 0.2);
+  }
+
+  @keyframes pgo-logo-wave {
+    0%, 100% {
+      transform: translate(-50%, -50%) rotate(0deg) scale(1);
+      opacity: 1;
+    }
+    50% {
+      transform: translate(-50%, -50%) rotate(180deg) scale(1.05);
+      opacity: 0.8;
+    }
+  }
+
+  @keyframes pgo-logo-glow {
+    0%, 100% {
+      filter: drop-shadow(0 0 20px rgba(59, 130, 246, 0.3));
+    }
+    50% {
+      filter: drop-shadow(0 0 30px rgba(59, 130, 246, 0.6));
+    }
+  }
+
+  @keyframes pgo-logo-pulse {
+    0%, 100% {
+      transform: scale(1);
+      opacity: 1;
+    }
+    50% {
+      transform: scale(1.05);
+      opacity: 0.9;
+    }
   }
 
   @keyframes pgo-logo-shimmer-sweep {
