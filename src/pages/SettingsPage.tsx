@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { designationService, pageVisibilityService, systemSettingsService, accountCodeService, fppService } from '@/services/firebaseService';
+import { designationService, pageVisibilityService, systemSettingsService, accountCodeService, fppService, fundsService } from '@/services/firebaseService';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -84,8 +84,12 @@ export default function SettingsPage() {
   const [newFppCategory, setNewFppCategory] = useState('');
   const [editingFpp, setEditingFpp] = useState<{code: string; description?: string; category?: string} | null>(null);
   const [expandedFppCategories, setExpandedFppCategories] = useState<Record<string, boolean>>({});
+  const [fundsDialogOpen, setFundsDialogOpen] = useState(false);
+  const [funds, setFunds] = useState<Array<{id?: string; name: string}>>([]);
+  const [newFund, setNewFund] = useState('');
+  const [editingFund, setEditingFund] = useState<string | null>(null);
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
-  const [confirmAction, setConfirmAction] = useState<{ type: 'add' | 'edit' | 'delete'; value?: string; category?: 'designation' | 'accountCode' | 'fpp' }>({ type: 'add' });
+  const [confirmAction, setConfirmAction] = useState<{ type: 'add' | 'edit' | 'delete'; value?: string; category?: 'designation' | 'accountCode' | 'fpp' | 'funds' }>({ type: 'add' });
   const [pageVisibility, setPageVisibility] = useState<Record<string, boolean>>({});
   const [isPageVisibilityLoading, setIsPageVisibilityLoading] = useState(false);
   const [allowUserThemes, setAllowUserThemes] = useState(true);
@@ -169,6 +173,28 @@ export default function SettingsPage() {
       }
     };
     loadFPPs();
+  }, []);
+
+  // Load funds from Firestore on mount
+  useEffect(() => {
+    const loadFunds = async () => {
+      try {
+        const firestoreFunds = await fundsService.getFunds();
+        if (firestoreFunds.length > 0) {
+          setFunds(firestoreFunds);
+        } else {
+          // Initialize with default funds if none exist
+          const defaultFunds = ['General Fund', 'Trust Fund', 'Special Education Fund', 'Development Fund'];
+          await fundsService.setFunds(defaultFunds);
+          const loaded = await fundsService.getFunds();
+          setFunds(loaded);
+        }
+      } catch (err) {
+        console.error('Failed to load funds:', err);
+        setFunds([]);
+      }
+    };
+    loadFunds();
   }, []);
 
   useEffect(() => {
@@ -823,6 +849,46 @@ export default function SettingsPage() {
     setConfirmDialogOpen(true);
   };
 
+  // Funds handlers
+  const handleAddFund = () => {
+    setError('');
+    setSuccess('');
+    if (!newFund.trim()) {
+      setError('Fund name is required');
+      return;
+    }
+    if (funds.find(f => f.name === newFund.trim())) {
+      setError('This fund already exists');
+      return;
+    }
+    setConfirmAction({ type: 'add', value: newFund.trim(), category: 'funds' });
+    setConfirmDialogOpen(true);
+  };
+
+  const handleEditFund = (oldFund: string) => {
+    setError('');
+    setSuccess('');
+    if (!newFund.trim()) {
+      setError('Fund name is required');
+      return;
+    }
+    if (newFund.trim() === oldFund) {
+      setError('New fund name must be different from current');
+      return;
+    }
+    if (funds.find(f => f.name === newFund.trim())) {
+      setError('This fund already exists');
+      return;
+    }
+    setConfirmAction({ type: 'edit', value: JSON.stringify({ oldName: oldFund, newName: newFund.trim() }), category: 'funds' });
+    setConfirmDialogOpen(true);
+  };
+
+  const handleDeleteFund = (fundName: string) => {
+    setConfirmAction({ type: 'delete', value: fundName, category: 'funds' });
+    setConfirmDialogOpen(true);
+  };
+
   const confirmDesignationAction = async () => {
     setIsLoading(true);
     try {
@@ -946,6 +1012,34 @@ export default function SettingsPage() {
           setError('');
         }
         window.dispatchEvent(new Event('fppsUpdated'));
+      } else if (category === 'funds') {
+        if (confirmAction.type === 'add' && confirmAction.value) {
+          await fundsService.addFund(confirmAction.value);
+          const updated = await fundsService.getFunds();
+          setFunds(updated);
+          setSuccess('Fund added successfully!');
+          setNewFund('');
+          setFundsDialogOpen(false);
+          setEditingFund(null);
+          setError('');
+        } else if (confirmAction.type === 'edit' && confirmAction.value && editingFund) {
+          const updateData = JSON.parse(confirmAction.value);
+          await fundsService.updateFund(updateData.oldName, updateData.newName);
+          const updated = await fundsService.getFunds();
+          setFunds(updated);
+          setSuccess('Fund updated successfully!');
+          setNewFund('');
+          setEditingFund(null);
+          setFundsDialogOpen(false);
+          setError('');
+        } else if (confirmAction.type === 'delete' && confirmAction.value) {
+          await fundsService.deleteFund(confirmAction.value);
+          const updated = await fundsService.getFunds();
+          setFunds(updated);
+          setSuccess('Fund deleted successfully!');
+          setError('');
+        }
+        window.dispatchEvent(new Event('fundsUpdated'));
       }
     } catch (err) {
       console.error('Error updating:', err);
@@ -1334,12 +1428,13 @@ export default function SettingsPage() {
         ) : (
           // Admin View - Full Settings with Tabs
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-7">
+            <TabsList className="grid w-full grid-cols-8">
               <TabsTrigger value="profile">Profile</TabsTrigger>
               {isSystemAdmin && <TabsTrigger value="users">User Management</TabsTrigger>}
               <TabsTrigger value="designations">Designations</TabsTrigger>
               <TabsTrigger value="accountCodes">Account Codes</TabsTrigger>
               <TabsTrigger value="fpps">FPP</TabsTrigger>
+              <TabsTrigger value="funds">Funds</TabsTrigger>
               {isSystemAdmin && <TabsTrigger value="pages">Pages</TabsTrigger>}
               {isSystemAdmin && <TabsTrigger value="system">System Settings</TabsTrigger>}
             </TabsList>
@@ -2395,6 +2490,87 @@ export default function SettingsPage() {
               </Card>
             </TabsContent>
 
+            {/* Funds Tab */}
+            <TabsContent value="funds" className="space-y-4">
+              <Card className="flex flex-col max-h-[70vh]">
+                <CardHeader className="pb-3 shrink-0">
+                  <CardTitle className="text-lg">Funds Management</CardTitle>
+                  <CardDescription className="text-xs">Manage available fund types</CardDescription>
+                  <Button
+                    onClick={() => {
+                      setNewFund('');
+                      setEditingFund(null);
+                      setFundsDialogOpen(true);
+                      setError('');
+                      setSuccess('');
+                    }}
+                    className="w-fit bg-indigo-600 hover:bg-indigo-700 mt-2"
+                    size="sm"
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Fund
+                  </Button>
+                </CardHeader>
+                <CardContent className="flex-1 overflow-auto">
+                  {funds.length > 0 ? (
+                    <Table>
+                      <TableHeader className="sticky top-0 bg-white z-10">
+                        <TableRow>
+                          <TableHead className="text-xs">Fund Name</TableHead>
+                          <TableHead className="text-xs text-right">Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {funds.map((fund) => (
+                          <TableRow key={fund.id}>
+                            <TableCell className="text-xs py-3">{fund.name}</TableCell>
+                            <TableCell className="text-right">
+                              <div className="flex items-center justify-end gap-1">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => {
+                                    setNewFund(fund.name);
+                                    setEditingFund(fund.name);
+                                    setFundsDialogOpen(true);
+                                    setError('');
+                                    setSuccess('');
+                                  }}
+                                  className="h-8 w-8 p-0 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded"
+                                  title="Edit"
+                                >
+                                  <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                  </svg>
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => handleDeleteFund(fund.name)}
+                                  className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50 rounded"
+                                  title="Delete"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  ) : (
+                    <div className="text-center py-12 text-gray-500">
+                      <svg className="h-12 w-12 mx-auto mb-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <p className="text-sm font-medium">No funds yet</p>
+                      <p className="text-xs mt-1">Add one to get started</p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+
             {/* System Settings Tab */}
             {isSystemAdmin && (
               <TabsContent value="system" className="space-y-4">
@@ -2495,60 +2671,60 @@ export default function SettingsPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Confirmation Dialog for Designation, Account Code, and FPP */}
+      {/* Confirmation Dialog for Designation, Account Code, FPP, and Funds */}
       <Dialog open={confirmDialogOpen} onOpenChange={setConfirmDialogOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>
-              {confirmAction.category === 'designation' && (
-                <>
-                  {confirmAction.type === 'add' && 'Add Designation'}
-                  {confirmAction.type === 'edit' && 'Update Designation'}
-                  {confirmAction.type === 'delete' && 'Delete Designation'}
-                </>
-              )}
-              {confirmAction.category === 'accountCode' && (
-                <>
-                  {confirmAction.type === 'add' && 'Add Account Code'}
-                  {confirmAction.type === 'edit' && 'Update Account Code'}
-                  {confirmAction.type === 'delete' && 'Delete Account Code'}
-                </>
-              )}
-              {confirmAction.category === 'fpp' && (
-                <>
-                  {confirmAction.type === 'add' && 'Add FPP'}
-                  {confirmAction.type === 'edit' && 'Update FPP'}
-                  {confirmAction.type === 'delete' && 'Delete FPP'}
-                </>
-              )}
-            </DialogTitle>
+            <DialogTitle>Confirm Action</DialogTitle>
           </DialogHeader>
-          <p className="text-sm text-gray-600 py-4">
-            {confirmAction.type === 'add' && confirmAction.category === 'designation' && `Are you sure you want to add the designation(s)?`}
-            {confirmAction.type === 'edit' && confirmAction.category === 'designation' && `Are you sure you want to update this designation to "${confirmAction.value}"?`}
-            {confirmAction.type === 'delete' && confirmAction.category === 'designation' && `Are you sure you want to delete "${confirmAction.value}"? This action cannot be undone.`}
-            
-            {confirmAction.type === 'add' && confirmAction.category === 'accountCode' && `Are you sure you want to add the account code(s)?`}
-            {confirmAction.type === 'edit' && confirmAction.category === 'accountCode' && `Are you sure you want to update this account code to "${confirmAction.value}"?`}
-            {confirmAction.type === 'delete' && confirmAction.category === 'accountCode' && `Are you sure you want to delete "${confirmAction.value}"? This action cannot be undone.`}
-            
-            {confirmAction.type === 'add' && confirmAction.category === 'fpp' && `Are you sure you want to add the FPP(s)?`}
-            {confirmAction.type === 'edit' && confirmAction.category === 'fpp' && `Are you sure you want to update this FPP to "${confirmAction.value}"?`}
-            {confirmAction.type === 'delete' && confirmAction.category === 'fpp' && `Are you sure you want to delete "${confirmAction.value}"? This action cannot be undone.`}
-          </p>
-          <div className="flex gap-3 justify-end">
+          
+          <div className="py-6 px-2">
+            <p className="text-base text-gray-700 leading-relaxed">
+              {(() => {
+                const { type, category, value } = confirmAction;
+                
+                if (category === 'funds') {
+                  if (type === 'add') return `Are you sure you want to add "${value}"?`;
+                  if (type === 'edit') return 'Are you sure you want to update this fund?';
+                  if (type === 'delete') return `Are you sure you want to delete "${value}"? This action cannot be undone.`;
+                }
+                
+                if (category === 'designation') {
+                  if (type === 'add') return 'Are you sure you want to add the designation(s)?';
+                  if (type === 'edit') return `Are you sure you want to update this designation to "${value}"?`;
+                  if (type === 'delete') return `Are you sure you want to delete "${value}"? This action cannot be undone.`;
+                }
+                
+                if (category === 'accountCode') {
+                  if (type === 'add') return 'Are you sure you want to add the account code(s)?';
+                  if (type === 'edit') return 'Are you sure you want to update this account code?';
+                  if (type === 'delete') return `Are you sure you want to delete "${value}"? This action cannot be undone.`;
+                }
+                
+                if (category === 'fpp') {
+                  if (type === 'add') return 'Are you sure you want to add the FPP(s)?';
+                  if (type === 'edit') return 'Are you sure you want to update this FPP?';
+                  if (type === 'delete') return `Are you sure you want to delete "${value}"? This action cannot be undone.`;
+                }
+                
+                return 'Are you sure you want to proceed with this action?';
+              })()}
+            </p>
+          </div>
+          
+          <div className="flex gap-3 justify-end pb-2">
             <Button
               variant="outline"
               onClick={() => setConfirmDialogOpen(false)}
               disabled={isLoading}
-              className="px-4"
+              className="px-6"
             >
               Cancel
             </Button>
             <Button
               onClick={confirmDesignationAction}
               disabled={isLoading}
-              className={`px-4 ${confirmAction.type === 'delete' ? 'bg-red-600 hover:bg-red-700' : 'bg-indigo-600 hover:bg-indigo-700'}`}
+              className={`px-6 ${confirmAction.type === 'delete' ? 'bg-red-600 hover:bg-red-700' : 'bg-indigo-600 hover:bg-indigo-700'}`}
             >
               {isLoading ? 'Processing...' : 'Confirm'}
             </Button>
@@ -2584,7 +2760,66 @@ export default function SettingsPage() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Funds Dialog */}
+      <Dialog open={fundsDialogOpen} onOpenChange={(open) => {
+        setFundsDialogOpen(open);
+        if (!open) {
+          setNewFund('');
+          setEditingFund(null);
+        }
+      }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>{editingFund ? 'Edit Fund' : 'Add Fund'}</DialogTitle>
+            <DialogDescription>
+              {editingFund ? 'Update the fund name' : 'Enter a new fund name'}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="fundName">Fund Name *</Label>
+              <Input
+                id="fundName"
+                placeholder="e.g., General Fund"
+                value={newFund}
+                onChange={(e) => setNewFund(e.target.value)}
+                disabled={isLoading}
+              />
+            </div>
+            
+            <div className="flex gap-2 pt-4">
+              <Button
+                type="button"
+                variant="outline"
+                className="flex-1"
+                onClick={() => {
+                  setFundsDialogOpen(false);
+                  setNewFund('');
+                  setEditingFund(null);
+                }}
+                disabled={isLoading}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                className="flex-1"
+                onClick={() => {
+                  if (editingFund) {
+                    handleEditFund(editingFund);
+                  } else {
+                    handleAddFund();
+                  }
+                }}
+                disabled={isLoading}
+              >
+                {isLoading ? (editingFund ? 'Updating...' : 'Adding...') : (editingFund ? 'Update' : 'Add')}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
-

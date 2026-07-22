@@ -845,14 +845,14 @@ export default function ObligationRequestPage() {
                       Add Record
                     </Button>
                   </DialogTrigger>
-                <DialogContent className="max-w-2xl">
+                <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
                   <DialogHeader>
                     <DialogTitle>{editingId ? 'Edit' : 'Add New'} Obligation Request</DialogTitle>
                     <DialogDescription>
                       Fill in the form to {editingId ? 'update' : 'add'} an obligation request
                     </DialogDescription>
                   </DialogHeader>
-                  <div className="grid gap-4 py-4">
+                  <div className="grid gap-4 py-4 overflow-x-hidden max-w-full">
                     <div className="space-y-2">
                       <Label htmlFor="trackingId">Tracking ID</Label>
                       <Input

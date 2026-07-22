@@ -865,3 +865,82 @@ export const fppService = {
     }
   }
 };
+
+// Funds Service
+export const fundsService = {
+  async getFunds() {
+    try {
+      const fundsCol = collection(db, 'funds');
+      const fundsSnapshot = await getDocs(fundsCol);
+      const fundsList = fundsSnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+      return fundsList.length > 0 ? fundsList as Array<{id: string; name: string}> : [];
+    } catch (error) {
+      console.error('Error getting funds:', error);
+      return [];
+    }
+  },
+
+  async setFunds(funds: string[]) {
+    try {
+      const fundsCol = collection(db, 'funds');
+      const fundsSnapshot = await getDocs(fundsCol);
+      for (const doc of fundsSnapshot.docs) {
+        await deleteDoc(doc.ref);
+      }
+      for (const fund of funds) {
+        await addDoc(fundsCol, { name: fund });
+      }
+      return true;
+    } catch (error) {
+      console.error('Error setting funds:', error);
+      return false;
+    }
+  },
+
+  async addFund(name: string) {
+    try {
+      const funds = await this.getFunds();
+      if (!funds.find(f => f.name === name)) {
+        const fundsCol = collection(db, 'funds');
+        await addDoc(fundsCol, { name });
+      }
+      return true;
+    } catch (error) {
+      console.error('Error adding fund:', error);
+      return false;
+    }
+  },
+
+  async updateFund(oldName: string, newName: string) {
+    try {
+      const funds = await this.getFunds();
+      const fundToUpdate = funds.find(f => f.name === oldName);
+      if (fundToUpdate) {
+        const fundDoc = doc(db, 'funds', fundToUpdate.id);
+        await updateDoc(fundDoc, { name: newName });
+      }
+      return true;
+    } catch (error) {
+      console.error('Error updating fund:', error);
+      return false;
+    }
+  },
+
+  async deleteFund(name: string) {
+    try {
+      const funds = await this.getFunds();
+      const fundToDelete = funds.find(f => f.name === name);
+      if (fundToDelete) {
+        const fundDoc = doc(db, 'funds', fundToDelete.id);
+        await deleteDoc(fundDoc);
+      }
+      return true;
+    } catch (error) {
+      console.error('Error deleting fund:', error);
+      return false;
+    }
+  }
+};

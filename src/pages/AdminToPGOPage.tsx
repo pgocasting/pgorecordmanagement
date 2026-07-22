@@ -1552,7 +1552,7 @@ export default function AdminToPGOPage() {
 
                   </DialogTrigger>
 
-                  <DialogContent className="max-w-2xl">
+                  <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
 
                     <DialogHeader>
 
@@ -1566,7 +1566,7 @@ export default function AdminToPGOPage() {
 
                     </DialogHeader>
 
-                    <div className="grid gap-4 py-4">
+                    <div className="grid gap-4 py-4 overflow-x-hidden max-w-full">
 
                       <div className="space-y-2">
 

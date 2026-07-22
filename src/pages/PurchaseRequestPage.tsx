@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { purchaseRequestService, designationService, fppService } from '@/services/firebaseService';
+import { purchaseRequestService, designationService, fppService, fundsService } from '@/services/firebaseService';
 import { Sidebar } from '@/components/Sidebar';
 import { Button } from '@/components/ui/button';
 import {
@@ -177,6 +177,8 @@ export default function PurchaseRequestPage() {
   const [purchaseRequests, setPurchaseRequests] = useState<PurchaseRequest[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState<'Pending' | 'Completed' | 'Rejected'>('Pending');
+  const [activeFundsTab, setActiveFundsTab] = useState<string>('All');
+  const [availableFunds, setAvailableFunds] = useState<Array<{id?: string; name: string}>>([]);
   const [success, setSuccess] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -221,6 +223,7 @@ export default function PurchaseRequestPage() {
     fpp: '',
     fullName: '',
     designation: '',
+    funds: '',
     amount: '',
     purpose: '',
     remarks: '',
@@ -274,6 +277,30 @@ export default function PurchaseRequestPage() {
     };
   }, []);
 
+  // Load funds from Firestore
+  useEffect(() => {
+    const loadFunds = async () => {
+      try {
+        const funds = await fundsService.getFunds();
+        setAvailableFunds(funds);
+      } catch (error) {
+        console.error('Error loading funds:', error);
+        setAvailableFunds([]);
+      }
+    };
+    loadFunds();
+    
+    // Listen for funds updates from settings page
+    const handleFundsUpdate = () => {
+      loadFunds();
+    };
+    window.addEventListener('fundsUpdated', handleFundsUpdate);
+    
+    return () => {
+      window.removeEventListener('fundsUpdated', handleFundsUpdate);
+    };
+  }, []);
+
   useEffect(() => {
     const loadRequests = async () => {
       try {
@@ -291,6 +318,12 @@ export default function PurchaseRequestPage() {
   const filteredPurchaseRequests = purchaseRequests
     .filter((request) => {
       if ((request.status || 'Pending') !== activeTab) return false;
+      
+      // Filter by funds tab
+      if (activeFundsTab !== 'All') {
+        const requestFunds = (request as any).funds;
+        if (requestFunds !== activeFundsTab) return false;
+      }
 
       const term = searchTerm.trim().toLowerCase();
       if (!term) return true;
@@ -413,6 +446,7 @@ export default function PurchaseRequestPage() {
         fpp: '',
         fullName: '',
         designation: '',
+        funds: '',
         amount: '',
         purpose: '',
         remarks: '',
@@ -467,6 +501,7 @@ export default function PurchaseRequestPage() {
         fpp: '',
         fullName: '',
         designation: '',
+        funds: '',
         amount: '',
         purpose: '',
         remarks: '',
@@ -494,6 +529,7 @@ export default function PurchaseRequestPage() {
         fpp: request.fpp || '',
         fullName: request.fullName,
         designation: request.designation,
+        funds: (request as any).funds || '',
         amount: (request.amount || (request as any).estimatedCost || 0).toString(),
         purpose: request.purpose,
         remarks: request.remarks,
@@ -563,6 +599,7 @@ export default function PurchaseRequestPage() {
         fpp: '',
         fullName: '',
         designation: '',
+        funds: '',
         amount: '',
         purpose: '',
         remarks: '',
@@ -821,6 +858,7 @@ export default function PurchaseRequestPage() {
                             fpp: '',
                             fullName: '',
                             designation: '',
+                            funds: '',
                             amount: '',
                             purpose: '',
                             remarks: '',
@@ -832,15 +870,15 @@ export default function PurchaseRequestPage() {
                         Add Record
                       </Button>
                     </DialogTrigger>
-                <DialogContent className="max-w-2xl">
+                <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
                   <DialogHeader>
                     <DialogTitle>{editingId ? 'Edit' : 'Add New'} Purchase Request</DialogTitle>
                     <DialogDescription>
                       Fill in the form to {editingId ? 'update' : 'add'} a purchase request
                     </DialogDescription>
                   </DialogHeader>
-                  <div className="grid gap-4 py-4">
-                    <div className="space-y-2">
+                  <div className="grid gap-4 py-4 overflow-x-hidden max-w-full">
+                    <div className="space-y-2 w-full max-w-full">
                       <Label htmlFor="trackingId">Tracking ID</Label>
                       <Input
                         id="trackingId"
@@ -848,12 +886,12 @@ export default function PurchaseRequestPage() {
                         value={editingId ? formData.trackingId : nextTrackingId}
                         onChange={handleInputChange}
                         disabled={!editingId || user?.role !== 'admin'}
-                        className="bg-gray-50"
+                        className="bg-gray-50 w-full max-w-full"
                       />
                     </div>
 
                     {editingId && user?.role === 'admin' && (
-                      <div className="space-y-2">
+                      <div className="space-y-2 w-full max-w-full">
                         <Label htmlFor="dateTimeOut">Date/Time OUT</Label>
                         <Input
                           id="dateTimeOut"
@@ -861,10 +899,11 @@ export default function PurchaseRequestPage() {
                           type="datetime-local"
                           value={formData.dateTimeOut || ''}
                           onChange={handleInputChange}
+                          className="w-full max-w-full"
                         />
                       </div>
                     )}
-                    <div className="space-y-2">
+                    <div className="space-y-2 w-full max-w-full overflow-hidden">
                       <Label htmlFor="fpp">FPP</Label>
                       <Popover open={fppDropdownOpen} onOpenChange={setFppDropdownOpen}>
                         <PopoverTrigger asChild>
@@ -872,11 +911,12 @@ export default function PurchaseRequestPage() {
                             variant="outline"
                             role="combobox"
                             aria-expanded={fppDropdownOpen}
-                            className="w-full justify-between"
+                            className="w-full justify-between h-10 px-3 py-2 bg-background hover:bg-accent hover:text-accent-foreground border border-input items-center max-w-full"
+                            style={{ minHeight: '40px', maxHeight: '40px' }}
                           >
-                            <span className="truncate flex-1 text-left">
+                            <span className="flex-1 text-left overflow-hidden min-w-0 text-sm max-w-full" style={{ lineHeight: '1.5rem' }}>
                               {formData.fpp ? (
-                                <span>
+                                <span className="block overflow-hidden text-ellipsis whitespace-nowrap max-w-full">
                                   <span className="font-medium">{formData.fpp}</span>
                                   {fppOptions.find(f => f.code === formData.fpp)?.description && (
                                     <span className="text-muted-foreground text-sm ml-2">
@@ -885,7 +925,7 @@ export default function PurchaseRequestPage() {
                                   )}
                                 </span>
                               ) : (
-                                "Select FPP..."
+                                <span className="text-muted-foreground">Select FPP...</span>
                               )}
                             </span>
                             <Search className="ml-2 h-4 w-4 shrink-0 opacity-50" />
@@ -924,8 +964,8 @@ export default function PurchaseRequestPage() {
                         </PopoverContent>
                       </Popover>
                     </div>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2">
+                    <div className="grid grid-cols-2 gap-4 w-full max-w-full">
+                      <div className="space-y-2 min-w-0 max-w-full">
                         <Label htmlFor="dateTimeIn">Date/Time IN *</Label>
                         <Input
                           id="dateTimeIn"
@@ -934,9 +974,10 @@ export default function PurchaseRequestPage() {
                           value={formData.dateTimeIn}
                           onChange={handleInputChange}
                           required
+                          className="w-full max-w-full"
                         />
                       </div>
-                      <div className="space-y-2">
+                      <div className="space-y-2 min-w-0 max-w-full">
                         <Label htmlFor="fullName">Full Name *</Label>
                         <Input
                           id="fullName"
@@ -945,11 +986,12 @@ export default function PurchaseRequestPage() {
                           value={formData.fullName}
                           onChange={handleInputChange}
                           required
+                          className="w-full max-w-full"
                         />
                       </div>
                     </div>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2">
+                    <div className="grid grid-cols-2 gap-4 w-full max-w-full">
+                      <div className="space-y-2 min-w-0 max-w-full overflow-hidden">
                         <Label htmlFor="designation">Office *</Label>
                         <Popover open={designationDropdownOpen} onOpenChange={setDesignationDropdownOpen}>
                           <PopoverTrigger asChild>
@@ -957,10 +999,14 @@ export default function PurchaseRequestPage() {
                               variant="outline"
                               role="combobox"
                               aria-expanded={designationDropdownOpen}
-                              className="w-full justify-between"
+                              className="w-full justify-between h-10 px-3 py-2 bg-background hover:bg-accent hover:text-accent-foreground border border-input items-center max-w-full"
                             >
-                              <span className="truncate flex-1 text-left">
-                                {formData.designation || "Select office..."}
+                              <span className="flex-1 text-left overflow-hidden min-w-0 text-sm max-w-full">
+                                {formData.designation ? (
+                                  <span className="block overflow-hidden text-ellipsis whitespace-nowrap">{formData.designation}</span>
+                                ) : (
+                                  <span className="text-muted-foreground">Select office...</span>
+                                )}
                               </span>
                               <Search className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                             </Button>
@@ -993,21 +1039,65 @@ export default function PurchaseRequestPage() {
                           </PopoverContent>
                         </Popover>
                       </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="amount">Amount *</Label>
-                        <Input
-                          id="amount"
-                          name="amount"
-                          type="number"
-                          step="0.01"
-                          placeholder="Amount"
-                          value={formData.amount}
-                          onChange={handleInputChange}
-                          required
-                        />
+                      <div className="space-y-2 min-w-0 max-w-full overflow-hidden">
+                        <Label htmlFor="funds">Funds</Label>
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <Button
+                              variant="outline"
+                              role="combobox"
+                              className="w-full justify-between h-10 px-3 py-2 bg-background hover:bg-accent hover:text-accent-foreground border border-input items-center max-w-full"
+                            >
+                              <span className="flex-1 text-left overflow-hidden min-w-0 text-sm max-w-full">
+                                {formData.funds ? (
+                                  <span className="block overflow-hidden text-ellipsis whitespace-nowrap">{formData.funds}</span>
+                                ) : (
+                                  <span className="text-muted-foreground">Select funds...</span>
+                                )}
+                              </span>
+                              <Search className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-[300px] p-0" align="start">
+                            <Command>
+                              <CommandInput placeholder="Search funds..." />
+                              <CommandList>
+                                <CommandEmpty>No funds found.</CommandEmpty>
+                                <CommandGroup>
+                                  {availableFunds.map((fund) => (
+                                    <CommandItem
+                                      key={fund.id || fund.name}
+                                      value={fund.name}
+                                      onSelect={() => {
+                                        handleSelectChange('funds', fund.name);
+                                      }}
+                                      className="cursor-pointer hover:bg-gray-50 py-2"
+                                    >
+                                      {fund.name}
+                                    </CommandItem>
+                                  ))}
+                                </CommandGroup>
+                              </CommandList>
+                            </Command>
+                          </PopoverContent>
+                        </Popover>
                       </div>
                     </div>
-                    <div className="space-y-2">
+                    <div className="space-y-2 w-full max-w-full">
+                      <Label htmlFor="amount">Amount *</Label>
+                      <Input
+                        id="amount"
+                        name="amount"
+                        type="number"
+                        step="0.01"
+                        placeholder="Amount"
+                        value={formData.amount}
+                        onChange={handleInputChange}
+                        required
+                        className="w-full max-w-full"
+                      />
+                    </div>
+                    <div className="space-y-2 w-full max-w-full">
                       <Label htmlFor="purpose">Purpose *</Label>
                       <Textarea
                         id="purpose"
@@ -1017,9 +1107,10 @@ export default function PurchaseRequestPage() {
                         placeholder="Enter purpose"
                         rows={3}
                         required
+                        className="resize-none w-full max-w-full"
                       />
                     </div>
-                    <div className="space-y-2">
+                    <div className="space-y-2 w-full max-w-full">
                       <Label htmlFor="remarks">Remarks</Label>
                       <Input
                         id="remarks"
@@ -1027,6 +1118,7 @@ export default function PurchaseRequestPage() {
                         value={formData.remarks}
                         onChange={handleInputChange}
                         placeholder="Enter remarks"
+                        className="w-full max-w-full"
                       />
                     </div>
                   </div>
@@ -1116,6 +1208,33 @@ export default function PurchaseRequestPage() {
               </button>
             </div>
 
+            {/* Funds Filter Tabs */}
+            <div className="flex gap-2 border-b border-gray-200 px-4 sm:px-6 shrink-0 overflow-x-auto">
+              <button
+                onClick={() => setActiveFundsTab('All')}
+                className={`px-4 py-2 font-medium text-sm transition-colors whitespace-nowrap ${
+                  activeFundsTab === 'All'
+                    ? 'text-cyan-600 border-b-2 border-cyan-600'
+                    : 'text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                All Funds ({purchaseRequests.filter(r => (r.status || 'Pending') === activeTab).length})
+              </button>
+              {availableFunds.map((fund) => (
+                <button
+                  key={fund.id || fund.name}
+                  onClick={() => setActiveFundsTab(fund.name)}
+                  className={`px-4 py-2 font-medium text-sm transition-colors whitespace-nowrap ${
+                    activeFundsTab === fund.name
+                      ? 'text-cyan-600 border-b-2 border-cyan-600'
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                >
+                  {fund.name} ({purchaseRequests.filter(r => (r.status || 'Pending') === activeTab && (r as any).funds === fund.name).length})
+                </button>
+              ))}
+            </div>
+
             {/* Table */}
             <div className="bg-card rounded-lg border shadow-sm overflow-hidden flex-1 flex flex-col min-h-0">
               <div className="flex-1 overflow-auto min-h-0">
@@ -1128,6 +1247,7 @@ export default function PurchaseRequestPage() {
                         <TableHead className="font-semibold py-3 px-4 text-center text-xs whitespace-normal wrap-break-word max-w-[120px]">Date/Time IN</TableHead>
                         <TableHead className="font-semibold py-3 px-4 text-center text-xs whitespace-normal wrap-break-word max-w-[120px]">Date/Time OUT</TableHead>
                         <TableHead className="font-semibold py-3 px-4 text-center text-xs">FPP</TableHead>
+                        <TableHead className="font-semibold py-3 px-4 text-center text-xs">Funds</TableHead>
                         <TableHead className="font-semibold py-3 px-4 text-center text-xs">Full Name</TableHead>
                         <TableHead className="font-semibold py-3 px-4 text-center text-xs whitespace-normal wrap-break-word max-w-[240px]">Purpose</TableHead>
                         <TableHead className="font-semibold py-3 px-4 text-center text-xs">Amount</TableHead>
@@ -1139,7 +1259,7 @@ export default function PurchaseRequestPage() {
                     <TableBody>
                   {filteredPurchaseRequests.length === 0 ? (
                     <TableRow key="empty-state">
-                      <TableCell colSpan={isViewer ? 10 : 11} className="text-center py-8 text-muted-foreground">
+                      <TableCell colSpan={isViewer ? 11 : 12} className="text-center py-8 text-muted-foreground">
                         {purchaseRequests.length === 0 ? 'No purchase requests found. Click "Add Purchase Request" to create one.' : 'No purchase requests match your search.'}
                       </TableCell>
                     </TableRow>
@@ -1151,6 +1271,7 @@ export default function PurchaseRequestPage() {
                         <TableCell className="text-sm py-3 px-4 text-center whitespace-normal wrap-break-word max-w-[120px]">{formatDateTimeWithoutSeconds(request.dateTimeIn)}</TableCell>
                         <TableCell className={`text-sm py-3 px-4 text-center whitespace-normal wrap-break-word max-w-[120px] ${request.status === 'Completed' ? 'text-green-600 font-medium' : 'text-red-600'}`}>{request.dateTimeOut ? formatDateTimeWithoutSeconds(request.dateTimeOut) : '-'}</TableCell>
                         <TableCell className="text-sm py-3 px-4 text-center">{request.fpp || '-'}</TableCell>
+                        <TableCell className="text-sm py-3 px-4 text-center">{(request as any).funds || '-'}</TableCell>
                         <TableCell className="text-sm py-3 px-4 text-center">{request.fullName}</TableCell>
                         <TableCell className="text-sm py-3 px-4 text-center whitespace-normal wrap-break-word max-w-[240px]">{request.purpose}</TableCell>
                         <TableCell className="text-sm py-3 px-4 text-center">{formatAmount(request.amount || (request as any).estimatedCost)}</TableCell>

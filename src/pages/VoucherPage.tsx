@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { voucherService, designationService, fppService } from '@/services/firebaseService';
+import { voucherService, designationService, fppService, fundsService } from '@/services/firebaseService';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -208,6 +208,8 @@ export default function VoucherPage() {
   const [vouchers, setVouchers] = useState<Voucher[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState<'Pending' | 'Completed' | 'Rejected'>('Pending');
+  const [activeFundsTab, setActiveFundsTab] = useState<string>('All');
+  const [availableFunds, setAvailableFunds] = useState<Array<{id?: string; name: string}>>([]);
   const [success, setSuccess] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -309,6 +311,30 @@ export default function VoucherPage() {
     };
   }, []);
 
+  // Load funds from Firestore
+  useEffect(() => {
+    const loadFunds = async () => {
+      try {
+        const funds = await fundsService.getFunds();
+        setAvailableFunds(funds);
+      } catch (error) {
+        console.error('Error loading funds:', error);
+        setAvailableFunds([]);
+      }
+    };
+    loadFunds();
+    
+    // Listen for funds updates from settings page
+    const handleFundsUpdate = () => {
+      loadFunds();
+    };
+    window.addEventListener('fundsUpdated', handleFundsUpdate);
+    
+    return () => {
+      window.removeEventListener('fundsUpdated', handleFundsUpdate);
+    };
+  }, []);
+
   const [formData, setFormData] = useState({
     trackingId: '',
     dateTimeIn: '',
@@ -372,6 +398,11 @@ export default function VoucherPage() {
     return vouchers
       .filter((voucher) => {
         if ((voucher.status || 'Pending') !== activeTab) return false;
+        
+        // Filter by funds tab
+        if (activeFundsTab !== 'All') {
+          if (voucher.funds !== activeFundsTab) return false;
+        }
 
         const term = searchTerm.trim().toLowerCase();
         if (!term) return true;
@@ -398,7 +429,7 @@ export default function VoucherPage() {
           .some((v) => (v as string).toLowerCase().includes(term));
       })
       .sort((a, b) => (b.dateTimeIn || '').localeCompare(a.dateTimeIn || ''));
-  }, [vouchers, searchTerm, activeTab]);
+  }, [vouchers, searchTerm, activeTab, activeFundsTab]);
 
   const handleLogout = () => {
     logout();
@@ -903,8 +934,8 @@ export default function VoucherPage() {
                         {editingId ? 'Update the voucher details' : 'Fill in the form to add a new voucher'}
                       </DialogDescription>
                     </DialogHeader>
-                    <div className="space-y-3">
-                      <div className="space-y-1">
+                    <div className="space-y-3 w-full max-w-full overflow-x-hidden">
+                      <div className="space-y-1 w-full max-w-full">
                         <Label htmlFor="trackingId" className="text-xs font-medium">Tracking ID</Label>
                         <Input
                           id="trackingId"
@@ -913,12 +944,12 @@ export default function VoucherPage() {
                           value={editingId ? formData.trackingId : nextTrackingId}
                           onChange={handleInputChange}
                           disabled={!editingId || user?.role !== 'admin'}
-                          className="bg-gray-50"
+                          className="bg-gray-50 w-full max-w-full"
                         />
                       </div>
 
-                      <div className="grid grid-cols-2 gap-3">
-                        <div className="space-y-1">
+                      <div className="grid grid-cols-2 gap-3 w-full max-w-full">
+                        <div className="space-y-1 min-w-0 max-w-full">
                           <Label htmlFor="dateTimeIn" className="text-xs font-medium">Date/Time IN *</Label>
                           <Input
                             id="dateTimeIn"
@@ -926,11 +957,11 @@ export default function VoucherPage() {
                             type="datetime-local"
                             value={formData.dateTimeIn}
                             onChange={handleInputChange}
-                            className="h-8 text-xs"
+                            className="h-8 text-xs w-full max-w-full"
                           />
                         </div>
 
-                        <div className="space-y-1">
+                        <div className="space-y-1 min-w-0 max-w-full">
                           <Label htmlFor="dvNo" className="text-xs font-medium">DV No. *</Label>
                           <Input
                             id="dvNo"
@@ -938,12 +969,12 @@ export default function VoucherPage() {
                             value={formData.dvNo}
                             onChange={handleInputChange}
                             placeholder="DV No."
-                            className="h-8 text-xs"
+                            className="h-8 text-xs w-full max-w-full"
                           />
                         </div>
                       </div>
 
-                      <div className="space-y-1">
+                      <div className="space-y-1 w-full max-w-full overflow-hidden">
                         <Label htmlFor="fpp" className="text-xs font-medium">FPP</Label>
                         <Popover open={fppDropdownOpen} onOpenChange={setFppDropdownOpen}>
                           <PopoverTrigger asChild>
@@ -951,11 +982,12 @@ export default function VoucherPage() {
                               variant="outline"
                               role="combobox"
                               aria-expanded={fppDropdownOpen}
-                              className="w-full justify-between h-8 text-xs"
+                              className="w-full justify-between h-8 text-xs max-w-full items-center"
+                              style={{ minHeight: '32px', maxHeight: '32px' }}
                             >
-                              <span className="truncate flex-1 text-left">
+                              <span className="flex-1 text-left overflow-hidden min-w-0 max-w-full" style={{ lineHeight: '1.25rem' }}>
                                 {formData.fpp ? (
-                                  <span>
+                                  <span className="block overflow-hidden text-ellipsis whitespace-nowrap max-w-full">
                                     <span className="font-medium">{formData.fpp}</span>
                                     {fppOptions.find(f => f.code === formData.fpp)?.description && (
                                       <span className="text-muted-foreground text-xs ml-2">
@@ -1004,8 +1036,8 @@ export default function VoucherPage() {
                         </Popover>
                       </div>
 
-                      <div className="grid grid-cols-2 gap-3">
-                        <div className="space-y-1">
+                      <div className="grid grid-cols-2 gap-3 w-full max-w-full">
+                        <div className="space-y-1 min-w-0 max-w-full">
                           <Label htmlFor="payee" className="text-xs font-medium">Payee *</Label>
                           <Input
                             id="payee"
@@ -1013,11 +1045,11 @@ export default function VoucherPage() {
                             value={formData.payee}
                             onChange={handleInputChange}
                             placeholder="Payee"
-                            className="h-8 text-xs"
+                            className="h-8 text-xs w-full max-w-full"
                           />
                         </div>
 
-                        <div className="space-y-1">
+                        <div className="space-y-1 min-w-0 max-w-full">
                           <Label htmlFor="amount" className="text-xs font-medium">Amount *</Label>
                           <Input
                             id="amount"
@@ -1026,12 +1058,12 @@ export default function VoucherPage() {
                             value={formData.amount}
                             onChange={handleInputChange}
                             placeholder="Amount"
-                            className="h-8 text-xs"
+                            className="h-8 text-xs w-full max-w-full"
                           />
                         </div>
                       </div>
 
-                      <div className="space-y-1">
+                      <div className="space-y-1 w-full max-w-full">
                         <Label htmlFor="particulars" className="text-xs font-medium">Particulars *</Label>
                         <Textarea
                           id="particulars"
@@ -1040,12 +1072,12 @@ export default function VoucherPage() {
                           onChange={handleInputChange}
                           placeholder="Enter particulars"
                           rows={2}
-                          className="text-xs"
+                          className="text-xs resize-none w-full max-w-full"
                         />
                       </div>
 
-                      <div className="grid grid-cols-2 gap-3">
-                        <div className="space-y-1">
+                      <div className="grid grid-cols-2 gap-3 w-full max-w-full">
+                        <div className="space-y-1 min-w-0 max-w-full overflow-hidden">
                           <Label htmlFor="designationOffice" className="text-xs font-medium">Designation / Office *</Label>
                           <Popover open={designationDropdownOpen} onOpenChange={setDesignationDropdownOpen}>
                             <PopoverTrigger asChild>
@@ -1053,10 +1085,15 @@ export default function VoucherPage() {
                                 variant="outline"
                                 role="combobox"
                                 aria-expanded={designationDropdownOpen}
-                                className="w-full h-8 text-xs justify-between"
+                                className="w-full h-8 text-xs justify-between max-w-full items-center"
+                                style={{ minHeight: '32px', maxHeight: '32px' }}
                               >
-                                <span className="truncate flex-1 text-left">
-                                  {formData.designationOffice || "Select office..."}
+                                <span className="flex-1 text-left overflow-hidden min-w-0 max-w-full">
+                                  {formData.designationOffice ? (
+                                    <span className="block overflow-hidden text-ellipsis whitespace-nowrap">{formData.designationOffice}</span>
+                                  ) : (
+                                    <span className="text-muted-foreground">Select office...</span>
+                                  )}
                                 </span>
                                 <Search className="ml-2 h-3 w-3 shrink-0 opacity-50" />
                               </Button>
@@ -1090,7 +1127,7 @@ export default function VoucherPage() {
                           </Popover>
                         </div>
 
-                        <div className="space-y-1">
+                        <div className="space-y-1 min-w-0 max-w-full">
                           <Label htmlFor="voucherType" className="text-xs font-medium">Voucher Type *</Label>
                           <Input
                             id="voucherType"
@@ -1098,25 +1135,58 @@ export default function VoucherPage() {
                             value={formData.voucherType}
                             onChange={handleInputChange}
                             placeholder="Type"
-                            className="h-8 text-xs"
+                            className="h-8 text-xs w-full max-w-full"
                           />
                         </div>
                       </div>
 
-                      <div className="space-y-1">
+                      <div className="space-y-1 w-full max-w-full overflow-hidden">
                         <Label htmlFor="funds" className="text-xs font-medium">Funds *</Label>
-                        <Input
-                          id="funds"
-                          name="funds"
-                          value={formData.funds}
-                          onChange={handleInputChange}
-                          placeholder="Enter funds"
-                          className="h-8 text-xs"
-                        />
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <Button
+                              variant="outline"
+                              role="combobox"
+                              className="w-full justify-between h-8 text-xs max-w-full items-center"
+                              style={{ minHeight: '32px', maxHeight: '32px' }}
+                            >
+                              <span className="flex-1 text-left overflow-hidden min-w-0 max-w-full">
+                                {formData.funds ? (
+                                  <span className="block overflow-hidden text-ellipsis whitespace-nowrap">{formData.funds}</span>
+                                ) : (
+                                  <span className="text-muted-foreground">Select funds...</span>
+                                )}
+                              </span>
+                              <Search className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-[300px] p-0" align="start">
+                            <Command>
+                              <CommandInput placeholder="Search funds..." />
+                              <CommandList>
+                                <CommandEmpty>No funds found.</CommandEmpty>
+                                <CommandGroup>
+                                  {availableFunds.map((fund) => (
+                                    <CommandItem
+                                      key={fund.id || fund.name}
+                                      value={fund.name}
+                                      onSelect={() => {
+                                        handleSelectChange('funds', fund.name);
+                                      }}
+                                      className="cursor-pointer hover:bg-gray-50 py-2"
+                                    >
+                                      {fund.name}
+                                    </CommandItem>
+                                  ))}
+                                </CommandGroup>
+                              </CommandList>
+                            </Command>
+                          </PopoverContent>
+                        </Popover>
                       </div>
 
                       {editingId && (
-                        <div className="space-y-1">
+                        <div className="space-y-1 w-full max-w-full">
                           <Label htmlFor="remarks" className="text-xs font-medium">Remarks</Label>
                           <Textarea
                             id="remarks"
@@ -1125,7 +1195,7 @@ export default function VoucherPage() {
                             onChange={handleInputChange}
                             placeholder="Enter remarks"
                             rows={2}
-                            className="text-xs"
+                            className="text-xs resize-none w-full max-w-full"
                           />
                         </div>
                       )}
@@ -1140,46 +1210,6 @@ export default function VoucherPage() {
                     </div>
                   </DialogContent>
                 </Dialog>
-
-      {/* Return Confirmation Modal */}
-      <Dialog open={returnConfirmOpen} onOpenChange={setReturnConfirmOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Return Voucher</DialogTitle>
-            <DialogDescription>
-              Provide a reason for returning this voucher. The status will be set back to "Pending".
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="returnRemarks" className="text-sm font-medium text-gray-700">Return Remarks *</Label>
-              <textarea
-                id="returnRemarks"
-                placeholder="Enter return remarks (required)"
-                value={returnData.remarks}
-                onChange={(e) => setReturnData({ remarks: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm"
-                rows={3}
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => {
-                setReturnConfirmOpen(false);
-                setVoucherToReturn(null);
-                setReturnData({ remarks: '' });
-              }}
-            >
-              Cancel
-            </Button>
-            <Button className="bg-purple-600 hover:bg-purple-700" onClick={confirmReturnVoucher}>
-              Return
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
               </div>
             </div>
 
@@ -1214,6 +1244,33 @@ export default function VoucherPage() {
               >
                 Rejected ({vouchers.filter(v => v.status === 'Rejected').length})
               </button>
+            </div>
+
+            {/* Funds Filter Tabs */}
+            <div className="flex gap-2 border-b border-gray-200 px-4 sm:px-6 shrink-0 overflow-x-auto">
+              <button
+                onClick={() => setActiveFundsTab('All')}
+                className={`px-4 py-2 font-medium text-sm transition-colors whitespace-nowrap ${
+                  activeFundsTab === 'All'
+                    ? 'text-emerald-600 border-b-2 border-emerald-600'
+                    : 'text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                All Funds ({vouchers.filter(v => (v.status || 'Pending') === activeTab).length})
+              </button>
+              {availableFunds.map((fund) => (
+                <button
+                  key={fund.id || fund.name}
+                  onClick={() => setActiveFundsTab(fund.name)}
+                  className={`px-4 py-2 font-medium text-sm transition-colors whitespace-nowrap ${
+                    activeFundsTab === fund.name
+                      ? 'text-emerald-600 border-b-2 border-emerald-600'
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                >
+                  {fund.name} ({vouchers.filter(v => (v.status || 'Pending') === activeTab && v.funds === fund.name).length})
+                </button>
+              ))}
             </div>
 
             {/* Table */}
@@ -1525,6 +1582,46 @@ export default function VoucherPage() {
               Reject
             </Button>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Return Confirmation Modal */}
+      <Dialog open={returnConfirmOpen} onOpenChange={setReturnConfirmOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Return Voucher</DialogTitle>
+            <DialogDescription>
+              Provide a reason for returning this voucher. The status will be set back to "Pending".
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="returnRemarks" className="text-sm font-medium text-gray-700">Return Remarks *</Label>
+              <textarea
+                id="returnRemarks"
+                placeholder="Enter return remarks (required)"
+                value={returnData.remarks}
+                onChange={(e) => setReturnData({ remarks: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm"
+                rows={3}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setReturnConfirmOpen(false);
+                setVoucherToReturn(null);
+                setReturnData({ remarks: '' });
+              }}
+            >
+              Cancel
+            </Button>
+            <Button className="bg-purple-600 hover:bg-purple-700" onClick={confirmReturnVoucher}>
+              Return
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 
