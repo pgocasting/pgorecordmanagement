@@ -1067,7 +1067,7 @@ export default function ObligationRequestPage() {
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="funds">Funds *</Label>
+                        <Label htmlFor="funds">Funds</Label>
                         <Popover>
                           <PopoverTrigger asChild>
                             <Button
