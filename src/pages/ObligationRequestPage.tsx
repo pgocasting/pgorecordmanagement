@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { obligationRequestService, designationService, accountCodeService } from '@/services/firebaseService';
+import { obligationRequestService, designationService, accountCodeService, fundsService } from '@/services/firebaseService';
 import { Sidebar } from '@/components/Sidebar';
 import { Button } from '@/components/ui/button';
 import {
@@ -80,6 +80,7 @@ interface ObligationRequest {
   obligationType?: string;
   particulars?: string;
   amount: number;
+  funds?: string;
   status: string;
   remarks: string;
   remarksHistory: Array<{
@@ -184,6 +185,8 @@ export default function ObligationRequestPage() {
   const [obligationRequests, setObligationRequests] = useState<ObligationRequest[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState<'Pending' | 'Completed' | 'Rejected'>('Pending');
+  const [activeFundsTab, setActiveFundsTab] = useState<string>('All');
+  const [availableFunds, setAvailableFunds] = useState<Array<{id?: string; name: string}>>([]);
   const [success, setSuccess] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -272,6 +275,7 @@ export default function ObligationRequestPage() {
     obligationType: '',
     amount: '',
     particulars: '',
+    funds: '',
     remarks: '',
     remarksHistory: [] as Array<{
       remarks: string;
@@ -300,9 +304,41 @@ export default function ObligationRequestPage() {
     loadRequests();
   }, []);
 
-  const filteredObligationRequests = obligationRequests.filter(request =>
-    (request.status || 'Pending') === activeTab
-  ).filter((request) => {
+  // Load funds from Firestore
+  useEffect(() => {
+    const loadFunds = async () => {
+      try {
+        const funds = await fundsService.getFunds();
+        setAvailableFunds(funds);
+      } catch (error) {
+        console.error('Error loading funds:', error);
+        setAvailableFunds([]);
+      }
+    };
+    loadFunds();
+    
+    // Listen for funds updates from settings page
+    const handleFundsUpdate = () => {
+      loadFunds();
+    };
+    window.addEventListener('fundsUpdated', handleFundsUpdate);
+    
+    return () => {
+      window.removeEventListener('fundsUpdated', handleFundsUpdate);
+    };
+  }, []);
+
+  const filteredObligationRequests = obligationRequests.filter(request => {
+    // Filter by status tab
+    if ((request.status || 'Pending') !== activeTab) return false;
+    
+    // Filter by funds tab
+    if (activeFundsTab !== 'All') {
+      if (request.funds !== activeFundsTab) return false;
+    }
+    
+    return true;
+  }).filter((request) => {
     const term = searchTerm.trim().toLowerCase();
     if (!term) return true;
 
@@ -429,6 +465,7 @@ export default function ObligationRequestPage() {
         obligationType: '',
         amount: '',
         particulars: '',
+        funds: '',
         remarks: '',
         remarksHistory: []
       });
@@ -484,6 +521,7 @@ export default function ObligationRequestPage() {
         obligationType: '',
         amount: '',
         particulars: '',
+        funds: '',
         remarks: '',
         remarksHistory: []
       });
@@ -512,6 +550,7 @@ export default function ObligationRequestPage() {
         obligationType: request.obligationType || '',
         amount: request.amount.toString(),
         particulars: request.particulars || '',
+        funds: request.funds || '',
         remarks: request.remarks || '',
         remarksHistory: request.remarksHistory || []
       });
@@ -582,6 +621,7 @@ export default function ObligationRequestPage() {
         obligationType: '',
         amount: '',
         particulars: '',
+        funds: '',
         remarks: '',
         remarksHistory: []
       });
@@ -836,6 +876,7 @@ export default function ObligationRequestPage() {
                           obligationType: '',
                           amount: '',
                           particulars: '',
+                          funds: '',
                           remarks: '',
                           remarksHistory: []
                         });
@@ -1034,15 +1075,52 @@ export default function ObligationRequestPage() {
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="remarks">Remarks</Label>
-                        <Input
-                          id="remarks"
-                          name="remarks"
-                          value={formData.remarks}
-                          onChange={handleInputChange}
-                          placeholder="Enter remarks"
-                        />
+                        <Label htmlFor="funds">Funds *</Label>
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <Button
+                              variant="outline"
+                              role="combobox"
+                              className="w-full justify-between"
+                            >
+                              {formData.funds || "Select funds..."}
+                              <Search className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-[200px] p-0" align="start">
+                            <Command>
+                              <CommandInput placeholder="Search funds..." />
+                              <CommandList>
+                                <CommandEmpty>No funds found.</CommandEmpty>
+                                <CommandGroup>
+                                  {availableFunds.map((fund) => (
+                                    <CommandItem
+                                      key={fund.id || fund.name}
+                                      value={fund.name}
+                                      onSelect={() => {
+                                        handleSelectChange('funds', fund.name);
+                                      }}
+                                      className="cursor-pointer hover:bg-gray-50 py-2"
+                                    >
+                                      {fund.name}
+                                    </CommandItem>
+                                  ))}
+                                </CommandGroup>
+                              </CommandList>
+                            </Command>
+                          </PopoverContent>
+                        </Popover>
                       </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="remarks">Remarks</Label>
+                      <Input
+                        id="remarks"
+                        name="remarks"
+                        value={formData.remarks}
+                        onChange={handleInputChange}
+                        placeholder="Enter remarks"
+                      />
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="particulars">Particulars *</Label>
@@ -1142,6 +1220,33 @@ export default function ObligationRequestPage() {
               </button>
             </div>
 
+            {/* Funds Filter Tabs */}
+            <div className="flex gap-2 border-b border-gray-200 px-4 sm:px-6 shrink-0 overflow-x-auto">
+              <button
+                onClick={() => setActiveFundsTab('All')}
+                className={`px-4 py-2 font-medium text-sm transition-colors whitespace-nowrap ${
+                  activeFundsTab === 'All'
+                    ? 'text-indigo-600 border-b-2 border-indigo-600'
+                    : 'text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                All Funds ({obligationRequests.filter(r => (r.status || 'Pending') === activeTab).length})
+              </button>
+              {availableFunds.map((fund) => (
+                <button
+                  key={fund.id || fund.name}
+                  onClick={() => setActiveFundsTab(fund.name)}
+                  className={`px-4 py-2 font-medium text-sm transition-colors whitespace-nowrap ${
+                    activeFundsTab === fund.name
+                      ? 'text-indigo-600 border-b-2 border-indigo-600'
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                >
+                  {fund.name} ({obligationRequests.filter(r => (r.status || 'Pending') === activeTab && r.funds === fund.name).length})
+                </button>
+              ))}
+            </div>
+
             {/* Table */}
             <div className="bg-card rounded-lg border shadow-sm overflow-hidden flex-1 flex flex-col min-h-0">
               <div className="flex-1 overflow-auto min-h-0">
@@ -1158,6 +1263,7 @@ export default function ObligationRequestPage() {
                         <TableHead className="font-semibold py-3 px-4 text-center text-xs">Designation</TableHead>
                         <TableHead className="font-semibold py-3 px-4 text-center text-xs">Type</TableHead>
                         <TableHead className="font-semibold py-3 px-4 text-center text-xs">Amount</TableHead>
+                        <TableHead className="font-semibold py-3 px-4 text-center text-xs">Funds</TableHead>
                         <TableHead className="font-semibold py-3 px-4 text-center text-xs">Status</TableHead>
                         <TableHead className="font-semibold py-3 px-4 text-center text-xs">Remarks</TableHead>
                         <TableHead className="font-semibold py-3 px-4 text-center text-xs">Actions</TableHead>
@@ -1166,7 +1272,7 @@ export default function ObligationRequestPage() {
                     <TableBody>
                       {filteredObligationRequests.length === 0 ? (
                         <TableRow key="empty-state">
-                          <TableCell colSpan={11} className="text-center py-8 text-muted-foreground">
+                          <TableCell colSpan={12} className="text-center py-8 text-muted-foreground">
                             {obligationRequests.length === 0 ? 'No obligation requests found. Click "Add Obligation Request" to create one.' : 'No obligation requests match your search.'}
                           </TableCell>
                         </TableRow>
@@ -1192,6 +1298,7 @@ export default function ObligationRequestPage() {
                             </TableCell>
                             <TableCell className="text-sm py-3 px-4 text-center">{request.obligationType}</TableCell>
                             <TableCell className="text-sm py-3 px-4 text-center">{formatAmount(request.amount)}</TableCell>
+                            <TableCell className="text-sm py-3 px-4 text-center">{request.funds || '-'}</TableCell>
                             <TableCell className="text-sm py-3 px-4 text-center">
                               <Badge 
                                 variant={
