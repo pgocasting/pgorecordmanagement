@@ -20,50 +20,43 @@ export default function PageLayout({
   children,
 }: PageLayoutProps) {
   return (
-    <div className="flex-1 flex flex-col overflow-hidden">
+    <div className="flex-1 flex flex-col overflow-hidden relative z-10">
       {/* Top Bar */}
-      <div className="bg-white border-b border-gray-200 px-4 sm:px-6 py-3 sm:py-4">
+      <div className="bg-[#090e1f]/80 backdrop-blur-xl border-b border-white/10 px-4 sm:px-6 py-3.5 sm:py-4 shadow-lg shadow-black/20">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">{title}</h1>
-            <p className="text-sm text-gray-600">{subtitle}</p>
+            <h1 className="text-2xl font-bold text-white tracking-tight">{title}</h1>
+            <p className="text-xs sm:text-sm text-blue-200/70 mt-0.5">{subtitle}</p>
           </div>
           
           {/* User Info and Logout */}
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2.5">
             {userName && (
-              <div className="flex items-center gap-2 px-3 py-2 bg-gray-50 rounded-lg border border-gray-200">
-                <div className="w-6 h-6 rounded-full bg-indigo-100 flex items-center justify-center shrink-0">
-                  <User className="h-3 w-3 text-indigo-600" />
+              <div className="flex items-center gap-2.5 px-3.5 py-1.5 bg-white/[0.04] backdrop-blur-md rounded-xl border border-white/10 shadow-sm">
+                <div className="w-7 h-7 rounded-lg bg-blue-600/20 border border-blue-500/30 flex items-center justify-center shrink-0">
+                  <User className="h-3.5 w-3.5 text-blue-400" />
                 </div>
                 <div className="flex flex-col min-w-0">
-                  <p className="text-xs font-medium text-gray-900 truncate">{userName}</p>
-                  <p className="text-xs text-gray-500 truncate capitalize">{userRole}</p>
+                  <p className="text-xs font-semibold text-white truncate">{userName}</p>
+                  <p className="text-[10px] text-blue-400 font-medium truncate capitalize">{userRole}</p>
                 </div>
               </div>
             )}
             
             <Button
               variant="outline"
-              className="gap-2 text-red-600 hover:text-red-700 hover:bg-red-50 h-9"
+              className="gap-2 bg-red-500/10 border-red-500/30 text-red-400 hover:text-white hover:bg-red-600 hover:border-red-600 h-9 px-3 rounded-xl transition-all shadow-sm"
               onClick={onLogout}
             >
               <LogOut className="h-4 w-4" />
-              <span className="hidden sm:inline">Logout</span>
+              <span className="hidden sm:inline font-medium text-xs">Logout</span>
             </Button>
           </div>
         </div>
       </div>
 
       {/* Content Area */}
-      <div
-        className="flex-1 overflow-auto p-4 sm:p-6 bg-linear-to-br from-gray-100 via-gray-50 to-gray-100"
-        style={{
-          backgroundImage:
-            'linear-gradient(0deg, transparent 24%, rgba(200, 200, 200, 0.05) 25%, rgba(200, 200, 200, 0.05) 26%, transparent 27%, transparent 74%, rgba(200, 200, 200, 0.05) 75%, rgba(200, 200, 200, 0.05) 76%, transparent 77%, transparent), linear-gradient(90deg, transparent 24%, rgba(200, 200, 200, 0.05) 25%, rgba(200, 200, 200, 0.05) 26%, transparent 27%, transparent 74%, rgba(200, 200, 200, 0.05) 75%, rgba(200, 200, 200, 0.05) 76%, transparent 77%, transparent)',
-          backgroundSize: '50px 50px',
-        }}
-      >
+      <div className="flex-1 overflow-auto p-4 sm:p-6 bg-transparent">
         {children}
       </div>
     </div>

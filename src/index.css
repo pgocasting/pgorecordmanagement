@@ -42,38 +42,39 @@
 }
 
 :root {
-  --radius: 0.625rem;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.129 0.042 264.695);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.129 0.042 264.695);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.129 0.042 264.695);
-  --primary: oklch(0.208 0.042 265.755);
-  --primary-foreground: oklch(0.984 0.003 247.858);
-  --secondary: oklch(0.968 0.007 247.896);
-  --secondary-foreground: oklch(0.208 0.042 265.755);
-  --muted: oklch(0.968 0.007 247.896);
-  --muted-foreground: oklch(0.554 0.046 257.417);
-  --accent: oklch(0.968 0.007 247.896);
-  --accent-foreground: oklch(0.208 0.042 265.755);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.929 0.013 255.508);
-  --input: oklch(0.929 0.013 255.508);
-  --ring: oklch(0.704 0.04 256.788);
-  --chart-1: oklch(0.646 0.222 41.116);
-  --chart-2: oklch(0.6 0.118 184.704);
-  --chart-3: oklch(0.398 0.07 227.392);
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
-  --sidebar: oklch(0.984 0.003 247.858);
-  --sidebar-foreground: oklch(0.129 0.042 264.695);
-  --sidebar-primary: oklch(0.208 0.042 265.755);
-  --sidebar-primary-foreground: oklch(0.984 0.003 247.858);
-  --sidebar-accent: oklch(0.968 0.007 247.896);
-  --sidebar-accent-foreground: oklch(0.208 0.042 265.755);
-  --sidebar-border: oklch(0.929 0.013 255.508);
-  --sidebar-ring: oklch(0.704 0.04 256.788);
+  --radius: 0.75rem;
+  --background: #060b18;
+  --foreground: #f8fafc;
+  --card: rgba(15, 23, 42, 0.72);
+  --card-foreground: #f8fafc;
+  --popover: rgba(11, 18, 36, 0.98);
+  --popover-foreground: #f8fafc;
+  --primary: #2563eb;
+  --primary-foreground: #ffffff;
+  --secondary: rgba(255, 255, 255, 0.06);
+  --secondary-foreground: #f8fafc;
+  --muted: rgba(255, 255, 255, 0.06);
+  --muted-foreground: #94a3b8;
+  --accent: rgba(59, 130, 246, 0.15);
+  --accent-foreground: #60a5fa;
+  --destructive: #ef4444;
+  --destructive-foreground: #ffffff;
+  --border: rgba(255, 255, 255, 0.08);
+  --input: rgba(255, 255, 255, 0.08);
+  --ring: #3b82f6;
+  --chart-1: #3b82f6;
+  --chart-2: #10b981;
+  --chart-3: #f59e0b;
+  --chart-4: #8b5cf6;
+  --chart-5: #ec4899;
+  --sidebar: rgba(10, 16, 31, 0.92);
+  --sidebar-foreground: #f8fafc;
+  --sidebar-primary: #2563eb;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: rgba(255, 255, 255, 0.06);
+  --sidebar-accent-foreground: #ffffff;
+  --sidebar-border: rgba(255, 255, 255, 0.08);
+  --sidebar-ring: #3b82f6;
 }
 
 .chezka-theme {
@@ -154,38 +155,418 @@
   background-image: linear-gradient(to right, oklch(0.925 0.08 305), oklch(0.91 0.09 305)) !important;
 }
 
-.dark {
-  --background: oklch(0.129 0.042 264.695);
-  --foreground: oklch(0.984 0.003 247.858);
-  --card: oklch(0.208 0.042 265.755);
-  --card-foreground: oklch(0.984 0.003 247.858);
-  --popover: oklch(0.208 0.042 265.755);
-  --popover-foreground: oklch(0.984 0.003 247.858);
-  --primary: oklch(0.929 0.013 255.508);
-  --primary-foreground: oklch(0.208 0.042 265.755);
-  --secondary: oklch(0.279 0.041 260.031);
-  --secondary-foreground: oklch(0.984 0.003 247.858);
-  --muted: oklch(0.279 0.041 260.031);
-  --muted-foreground: oklch(0.704 0.04 256.788);
-  --accent: oklch(0.279 0.041 260.031);
-  --accent-foreground: oklch(0.984 0.003 247.858);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.551 0.027 264.364);
-  --chart-1: oklch(0.488 0.243 264.376);
-  --chart-2: oklch(0.696 0.17 162.48);
-  --chart-3: oklch(0.769 0.188 70.08);
-  --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.208 0.042 265.755);
-  --sidebar-foreground: oklch(0.984 0.003 247.858);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.984 0.003 247.858);
-  --sidebar-accent: oklch(0.279 0.041 260.031);
-  --sidebar-accent-foreground: oklch(0.984 0.003 247.858);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.551 0.027 264.364);
+/* ========================================================
+   LOGIN-PAGE DARK GLASS CYBER THEME (DEFAULT APP-WIDE UI)
+   ======================================================== */
+html:not(.light-mode) {
+  background-color: #060b18;
+  color-scheme: dark;
+}
+
+html.light-mode {
+  --radius: 0.625rem;
+  --background: #f8fafc;
+  --foreground: #0f172a;
+  --card: #ffffff;
+  --card-foreground: #0f172a;
+  --popover: #ffffff;
+  --popover-foreground: #0f172a;
+  --primary: #2563eb;
+  --primary-foreground: #ffffff;
+  --secondary: #f1f5f9;
+  --secondary-foreground: #0f172a;
+  --muted: #f1f5f9;
+  --muted-foreground: #64748b;
+  --border: #e2e8f0;
+  --input: #e2e8f0;
+  --ring: #3b82f6;
+  background-color: #f8fafc;
+  color-scheme: light;
+}
+
+body:not(.light-mode) {
+  background-color: #060b18 !important;
+  color: #f8fafc !important;
+}
+
+/* Make page roots transparent in dark mode so ambient orbs & grid shine through */
+body:not(.light-mode):not(.chezka-theme):not(.meng-theme) .bg-gray-50,
+body:not(.light-mode):not(.chezka-theme):not(.meng-theme) .bg-background,
+body:not(.light-mode):not(.chezka-theme):not(.meng-theme) .bg-linear-to-br.from-gray-100.via-gray-50.to-gray-100 {
+  background-color: transparent !important;
+  background-image: none !important;
+}
+
+/* Top bar frosted glass styling across all pages (Dark Mode) */
+body:not(.light-mode):not(.chezka-theme):not(.meng-theme) .border-b.shadow-sm,
+body:not(.light-mode):not(.chezka-theme):not(.meng-theme) .bg-white.border-b,
+body:not(.light-mode):not(.chezka-theme):not(.meng-theme) .border-b.px-4.sm\:px-6.py-3 {
+  background-color: rgba(9, 14, 28, 0.8) !important;
+  backdrop-filter: blur(24px) !important;
+  -webkit-backdrop-filter: blur(24px) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35) !important;
+}
+
+/* User profile pill badge in top bar */
+body:not(.light-mode):not(.chezka-theme):not(.meng-theme) .border-b .bg-gray-50,
+body:not(.light-mode):not(.chezka-theme):not(.meng-theme) .border-b .border-gray-200 {
+  background-color: rgba(255, 255, 255, 0.04) !important;
+  border-color: rgba(255, 255, 255, 0.09) !important;
+}
+
+/* Logout button styling */
+body:not(.light-mode):not(.chezka-theme):not(.meng-theme) .border-red-200,
+body:not(.light-mode):not(.chezka-theme):not(.meng-theme) button.border-red-200 {
+  background-color: rgba(239, 68, 68, 0.1) !important;
+  border-color: rgba(239, 68, 68, 0.28) !important;
+  color: #f87171 !important;
+  transition: all 0.2s ease !important;
+}
+body:not(.light-mode):not(.chezka-theme):not(.meng-theme) button.border-red-200:hover {
+  background-color: #dc2626 !important;
+  border-color: #dc2626 !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 16px rgba(220, 38, 38, 0.4) !important;
+}
+
+/* Main card containers and table wrapper cards (Dark Mode) */
+body:not(.light-mode):not(.chezka-theme):not(.meng-theme) .bg-white:not([data-sidebar-toggle]):not(.lp-checkbox) {
+  background-color: rgba(13, 20, 38, 0.72) !important;
+  backdrop-filter: blur(24px) !important;
+  -webkit-backdrop-filter: blur(24px) !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+body:not(.light-mode):not(.chezka-theme):not(.meng-theme) .border-0.shadow-md.rounded-lg.bg-white,
+body:not(.light-mode):not(.chezka-theme):not(.meng-theme) [data-slot="card"] {
+  background-color: rgba(13, 20, 38, 0.72) !important;
+  backdrop-filter: blur(24px) !important;
+  -webkit-backdrop-filter: blur(24px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  box-shadow: 0 20px 48px -8px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.06) !important;
+  border-radius: 1.25rem !important;
+}
+
+/* Card header bar above tables */
+body:not(.light-mode):not(.chezka-theme):not(.meng-theme) .bg-gradient-to-r.from-gray-50.to-white,
+body:not(.light-mode):not(.chezka-theme):not(.meng-theme) .from-gray-50.to-white,
+body:not(.light-mode):not(.chezka-theme):not(.meng-theme) [data-slot="card-header"].border-b {
+  background: rgba(255, 255, 255, 0.02) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+
+/* General border colors */
+body:not(.light-mode):not(.chezka-theme):not(.meng-theme) .border-gray-200,
+body:not(.light-mode):not(.chezka-theme):not(.meng-theme) .border-gray-100 {
+  border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+/* Text colors across all views (Dark Mode) */
+body:not(.light-mode):not(.chezka-theme):not(.meng-theme) .text-gray-900 {
+  color: #f8fafc !important;
+}
+body:not(.light-mode):not(.chezka-theme):not(.meng-theme) .text-gray-800 {
+  color: #f1f5f9 !important;
+}
+body:not(.light-mode):not(.chezka-theme):not(.meng-theme) .text-gray-700 {
+  color: #e2e8f0 !important;
+}
+body:not(.light-mode):not(.chezka-theme):not(.meng-theme) .text-gray-600 {
+  color: #94a3b8 !important;
+}
+body:not(.light-mode):not(.chezka-theme):not(.meng-theme) .text-gray-500 {
+  color: #64748b !important;
+}
+body:not(.light-mode):not(.chezka-theme):not(.meng-theme) .text-gray-400 {
+  color: #475569 !important;
+}
+
+/* Table styling (Dark Mode) */
+body:not(.light-mode):not(.chezka-theme):not(.meng-theme) [data-slot="table-header"],
+body:not(.light-mode):not(.chezka-theme):not(.meng-theme) thead,
+body:not(.light-mode):not(.chezka-theme):not(.meng-theme) thead tr.bg-muted\/50 {
+  background-color: rgba(8, 14, 28, 0.9) !important;
+  backdrop-filter: blur(12px) !important;
+}
+
+body:not(.light-mode):not(.chezka-theme):not(.meng-theme) [data-slot="table-head"],
+body:not(.light-mode):not(.chezka-theme):not(.meng-theme) th {
+  color: #94a3b8 !important;
+  font-weight: 600 !important;
+  font-size: 0.72rem !important;
+  letter-spacing: 0.04em !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+
+body:not(.light-mode):not(.chezka-theme):not(.meng-theme) [data-slot="table-cell"],
+body:not(.light-mode):not(.chezka-theme):not(.meng-theme) td {
+  color: #cbd5e1 !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
+}
+
+body:not(.light-mode):not(.chezka-theme):not(.meng-theme) [data-slot="table-row"]:hover,
+body:not(.light-mode):not(.chezka-theme):not(.meng-theme) tbody tr:hover {
+  background-color: rgba(59, 130, 246, 0.08) !important;
+}
+
+/* Tabs */
+body:not(.light-mode):not(.chezka-theme):not(.meng-theme) .border-indigo-600,
+body:not(.light-mode):not(.chezka-theme):not(.meng-theme) .border-blue-600 {
+  border-color: #3b82f6 !important;
+}
+body:not(.light-mode):not(.chezka-theme):not(.meng-theme) .text-indigo-600,
+body:not(.light-mode):not(.chezka-theme):not(.meng-theme) .text-blue-600 {
+  color: #60a5fa !important;
+}
+
+/* Inputs, Selects, and Form fields (Dark Mode) */
+body:not(.light-mode):not(.chezka-theme):not(.meng-theme) input:not([type="checkbox"]):not([type="radio"]),
+body:not(.light-mode):not(.chezka-theme):not(.meng-theme) textarea,
+body:not(.light-mode):not(.chezka-theme):not(.meng-theme) select,
+body:not(.light-mode):not(.chezka-theme):not(.meng-theme) [data-slot="input"],
+body:not(.light-mode):not(.chezka-theme):not(.meng-theme) [data-slot="select-trigger"] {
+  background-color: rgba(255, 255, 255, 0.04) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  color: #f1f5f9 !important;
+  border-radius: 0.75rem !important;
+  transition: all 0.2s ease !important;
+}
+
+body:not(.light-mode):not(.chezka-theme):not(.meng-theme) input:focus,
+body:not(.light-mode):not(.chezka-theme):not(.meng-theme) textarea:focus,
+body:not(.light-mode):not(.chezka-theme):not(.meng-theme) select:focus,
+body:not(.light-mode):not(.chezka-theme):not(.meng-theme) [data-slot="input"]:focus,
+body:not(.light-mode):not(.chezka-theme):not(.meng-theme) [data-slot="select-trigger"]:focus {
+  border-color: rgba(59, 130, 246, 0.6) !important;
+  background-color: rgba(59, 130, 246, 0.06) !important;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15), 0 0 20px rgba(59, 130, 246, 0.1) !important;
+  outline: none !important;
+}
+
+body:not(.light-mode):not(.chezka-theme):not(.meng-theme) input::placeholder,
+body:not(.light-mode):not(.chezka-theme):not(.meng-theme) textarea::placeholder {
+  color: #64748b !important;
+}
+
+/* Modals, Dialogs, Popovers, Commands, Sheets (Dark Mode) */
+body:not(.light-mode):not(.chezka-theme):not(.meng-theme) [data-slot="dialog-content"],
+body:not(.light-mode):not(.chezka-theme):not(.meng-theme) [data-slot="sheet-content"],
+body:not(.light-mode):not(.chezka-theme):not(.meng-theme) [data-slot="popover-content"],
+body:not(.light-mode):not(.chezka-theme):not(.meng-theme) [data-slot="command"] {
+  background: rgba(11, 18, 36, 0.97) !important;
+  backdrop-filter: blur(28px) !important;
+  -webkit-backdrop-filter: blur(28px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  color: #f8fafc !important;
+  box-shadow: 0 32px 64px -12px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(255, 255, 255, 0.06) !important;
+  border-radius: 1.25rem !important;
+}
+
+body:not(.light-mode):not(.chezka-theme):not(.meng-theme) [data-slot="dialog-overlay"],
+body:not(.light-mode):not(.chezka-theme):not(.meng-theme) [data-slot="sheet-overlay"] {
+  background-color: rgba(6, 11, 24, 0.78) !important;
+  backdrop-filter: blur(8px) !important;
+  -webkit-backdrop-filter: blur(8px) !important;
+}
+
+/* Primary Action Buttons */
+body:not(.light-mode):not(.chezka-theme):not(.meng-theme) button.bg-indigo-600,
+body:not(.light-mode):not(.chezka-theme):not(.meng-theme) button.bg-blue-600:not([data-sidebar-toggle]):not([data-sidebar-nav]) {
+  background: linear-gradient(135deg, #1d4ed8 0%, #4338ca 100%) !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 16px rgba(37, 99, 235, 0.4) !important;
+  border: none !important;
+  border-radius: 0.75rem !important;
+  transition: all 0.2s ease !important;
+}
+body:not(.light-mode):not(.chezka-theme):not(.meng-theme) button.bg-indigo-600:hover,
+body:not(.light-mode):not(.chezka-theme):not(.meng-theme) button.bg-blue-600:not([data-sidebar-toggle]):not([data-sidebar-nav]):hover {
+  transform: translateY(-1.5px) !important;
+  box-shadow: 0 8px 24px rgba(37, 99, 235, 0.6) !important;
+}
+
+/* Dashboard Stats Cards (Dark Mode) */
+body:not(.light-mode):not(.chezka-theme):not(.meng-theme) .from-blue-50.to-white {
+  background: radial-gradient(circle at top left, rgba(37, 99, 235, 0.2), rgba(15, 23, 42, 0.75)) !important;
+  border: 1px solid rgba(59, 130, 246, 0.3) !important;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45), 0 0 20px rgba(37, 99, 235, 0.1) !important;
+}
+body:not(.light-mode):not(.chezka-theme):not(.meng-theme) .from-yellow-50.to-white {
+  background: radial-gradient(circle at top left, rgba(245, 158, 11, 0.2), rgba(15, 23, 42, 0.75)) !important;
+  border: 1px solid rgba(245, 158, 11, 0.3) !important;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45), 0 0 20px rgba(245, 158, 11, 0.1) !important;
+}
+body:not(.light-mode):not(.chezka-theme):not(.meng-theme) .from-green-50.to-white {
+  background: radial-gradient(circle at top left, rgba(16, 185, 129, 0.2), rgba(15, 23, 42, 0.75)) !important;
+  border: 1px solid rgba(16, 185, 129, 0.3) !important;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45), 0 0 20px rgba(16, 185, 129, 0.1) !important;
+}
+body:not(.light-mode):not(.chezka-theme):not(.meng-theme) .from-red-50.to-white {
+  background: radial-gradient(circle at top left, rgba(239, 68, 68, 0.2), rgba(15, 23, 42, 0.75)) !important;
+  border: 1px solid rgba(239, 68, 68, 0.3) !important;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45), 0 0 20px rgba(239, 68, 68, 0.1) !important;
+}
+
+body:not(.light-mode):not(.chezka-theme):not(.meng-theme) .bg-blue-100 {
+  background: rgba(37, 99, 235, 0.22) !important;
+  border: 1px solid rgba(59, 130, 246, 0.35) !important;
+}
+body:not(.light-mode):not(.chezka-theme):not(.meng-theme) .text-blue-600 {
+  color: #60a5fa !important;
+}
+body:not(.light-mode):not(.chezka-theme):not(.meng-theme) .bg-yellow-100 {
+  background: rgba(245, 158, 11, 0.22) !important;
+  border: 1px solid rgba(245, 158, 11, 0.35) !important;
+}
+body:not(.light-mode):not(.chezka-theme):not(.meng-theme) .text-yellow-600 {
+  color: #fbbf24 !important;
+}
+body:not(.light-mode):not(.chezka-theme):not(.meng-theme) .bg-green-100 {
+  background: rgba(16, 185, 129, 0.22) !important;
+  border: 1px solid rgba(16, 185, 129, 0.35) !important;
+}
+body:not(.light-mode):not(.chezka-theme):not(.meng-theme) .text-green-600 {
+  color: #34d399 !important;
+}
+body:not(.light-mode):not(.chezka-theme):not(.meng-theme) .bg-red-100 {
+  background: rgba(239, 68, 68, 0.22) !important;
+  border: 1px solid rgba(239, 68, 68, 0.35) !important;
+}
+body:not(.light-mode):not(.chezka-theme):not(.meng-theme) .text-red-600 {
+  color: #f87171 !important;
+}
+
+/* Status pills (Dark Mode) */
+body:not(.light-mode):not(.chezka-theme):not(.meng-theme) .bg-green-50,
+body:not(.light-mode):not(.chezka-theme):not(.meng-theme) .text-green-700 {
+  background-color: rgba(16, 185, 129, 0.15) !important;
+  color: #34d399 !important;
+  border-color: rgba(16, 185, 129, 0.3) !important;
+}
+body:not(.light-mode):not(.chezka-theme):not(.meng-theme) .bg-yellow-50,
+body:not(.light-mode):not(.chezka-theme):not(.meng-theme) .text-yellow-700 {
+  background-color: rgba(245, 158, 11, 0.15) !important;
+  color: #fbbf24 !important;
+  border-color: rgba(245, 158, 11, 0.3) !important;
+}
+body:not(.light-mode):not(.chezka-theme):not(.meng-theme) .bg-red-50,
+body:not(.light-mode):not(.chezka-theme):not(.meng-theme) .text-red-700 {
+  background-color: rgba(239, 68, 68, 0.15) !important;
+  color: #f87171 !important;
+  border-color: rgba(239, 68, 68, 0.3) !important;
+}
+
+/* ========================================================
+   LIGHT MODE STYLING (ACTIVE WHEN LIGHT MODE TOGGLED)
+   ======================================================== */
+body.light-mode {
+  background-color: #f8fafc !important;
+  color: #0f172a !important;
+}
+
+body.light-mode .bg-white:not([data-sidebar-toggle]):not(.lp-checkbox) {
+  background-color: #ffffff !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  border-color: #e2e8f0 !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05) !important;
+}
+
+body.light-mode .border-0.shadow-md.rounded-lg.bg-white,
+body.light-mode [data-slot="card"] {
+  background-color: #ffffff !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  border: 1px solid #e2e8f0 !important;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05) !important;
+}
+
+body.light-mode .border-b.shadow-sm,
+body.light-mode .bg-white.border-b,
+body.light-mode .border-b.px-4.sm\:px-6.py-3 {
+  background-color: #ffffff !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  border-bottom: 1px solid #e2e8f0 !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05) !important;
+}
+
+body.light-mode .border-b .bg-gray-50,
+body.light-mode .border-b .border-gray-200 {
+  background-color: #f8fafc !important;
+  border-color: #e2e8f0 !important;
+}
+
+body.light-mode .bg-gray-50 {
+  background-color: #f8fafc !important;
+}
+
+body.light-mode [data-slot="table-header"],
+body.light-mode thead,
+body.light-mode thead tr.bg-muted\/50 {
+  background-color: #f8fafc !important;
+  backdrop-filter: none !important;
+}
+
+body.light-mode [data-slot="table-head"],
+body.light-mode th {
+  color: #64748b !important;
+  border-bottom: 1px solid #e2e8f0 !important;
+}
+
+body.light-mode [data-slot="table-cell"],
+body.light-mode td {
+  color: #334155 !important;
+  border-bottom: 1px solid #f1f5f9 !important;
+}
+
+body.light-mode [data-slot="table-row"]:hover,
+body.light-mode tbody tr:hover {
+  background-color: #f1f5f9 !important;
+}
+
+body.light-mode input:not([type="checkbox"]):not([type="radio"]),
+body.light-mode textarea,
+body.light-mode select,
+body.light-mode [data-slot="input"],
+body.light-mode [data-slot="select-trigger"] {
+  background-color: #ffffff !important;
+  border: 1px solid #cbd5e1 !important;
+  color: #0f172a !important;
+}
+
+body.light-mode [data-slot="dialog-content"],
+body.light-mode [data-slot="sheet-content"],
+body.light-mode [data-slot="popover-content"],
+body.light-mode [data-slot="command"] {
+  background-color: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+  color: #0f172a !important;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1) !important;
+}
+
+body.light-mode [data-slot="dialog-overlay"],
+body.light-mode [data-slot="sheet-overlay"] {
+  background-color: rgba(15, 23, 42, 0.5) !important;
+  backdrop-filter: blur(4px) !important;
+}
+
+body.light-mode .from-blue-50.to-white {
+  background: linear-gradient(to bottom right, #eff6ff, #ffffff) !important;
+  border: 1px solid #bfdbfe !important;
+}
+body.light-mode .from-yellow-50.to-white {
+  background: linear-gradient(to bottom right, #fefce8, #ffffff) !important;
+  border: 1px solid #fef08a !important;
+}
+body.light-mode .from-green-50.to-white {
+  background: linear-gradient(to bottom right, #f0fdf4, #ffffff) !important;
+  border: 1px solid #bbf7d0 !important;
+}
+body.light-mode .from-red-50.to-white {
+  background: linear-gradient(to bottom right, #fef2f2, #ffffff) !important;
+  border: 1px solid #fecaca !important;
 }
 
 @layer base {
@@ -539,4 +920,20 @@
     filter: drop-shadow(0 0 6px rgba(0, 0, 0, 0.35));
     animation: pgo-orbit-twinkle 0.9s ease-in-out infinite;
   }
+}
+
+/* Sleek cyber glass scrollbar */
+::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
+}
+::-webkit-scrollbar-track {
+  background: rgba(6, 11, 24, 0.5);
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.14);
+  border-radius: 999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(59, 130, 246, 0.5);
 }

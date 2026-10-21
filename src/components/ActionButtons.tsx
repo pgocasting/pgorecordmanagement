@@ -35,16 +35,16 @@ export function ActionButtons({
   }
   
   return (
-    <div className="flex items-center justify-center gap-2">
+    <div className="flex items-center justify-center gap-1.5">
       {/* View Button */}
       <Button
         variant="ghost"
         size="sm"
         onClick={onView}
-        className="h-6 w-6 p-0 text-green-600 hover:text-green-700 hover:bg-green-50"
+        className="h-7 w-7 p-0 text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/20 rounded-lg transition-all"
         title="View"
       >
-        <Eye className="h-3 w-3" />
+        <Eye className="h-3.5 w-3.5" />
       </Button>
 
       {/* Edit Button */}
@@ -54,14 +54,14 @@ export function ActionButtons({
           size="sm"
           onClick={onEdit}
           disabled={!canEdit}
-          className={`h-6 w-6 p-0 ${
+          className={`h-7 w-7 p-0 rounded-lg transition-all ${
             canEdit
-              ? 'text-amber-600 hover:text-amber-700 hover:bg-amber-50'
-              : 'text-gray-400 cursor-not-allowed hover:bg-transparent'
+              ? 'text-amber-400 hover:text-amber-300 hover:bg-amber-500/20'
+              : 'text-slate-600 cursor-not-allowed hover:bg-transparent'
           }`}
           title={editDisabledReason || 'Edit'}
         >
-          <Edit2 className="h-3 w-3" />
+          <Edit2 className="h-3.5 w-3.5" />
         </Button>
       )}
 
@@ -71,10 +71,10 @@ export function ActionButtons({
           variant="ghost"
           size="sm"
           onClick={onTimeOut}
-          className="h-6 w-6 p-0 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+          className="h-7 w-7 p-0 text-blue-400 hover:text-blue-300 hover:bg-blue-500/20 rounded-lg transition-all"
           title="Time Out"
         >
-          <Clock className="h-3 w-3" />
+          <Clock className="h-3.5 w-3.5" />
         </Button>
       )}
 
@@ -85,14 +85,14 @@ export function ActionButtons({
           size="sm"
           onClick={onReject}
           disabled={!canReject}
-          className={`h-6 w-6 p-0 ${
+          className={`h-7 w-7 p-0 rounded-lg transition-all ${
             canReject
-              ? 'text-red-600 hover:text-red-700 hover:bg-red-50'
-              : 'text-gray-400 cursor-not-allowed hover:bg-transparent'
+              ? 'text-rose-400 hover:text-rose-300 hover:bg-rose-500/20'
+              : 'text-slate-600 cursor-not-allowed hover:bg-transparent'
           }`}
           title={rejectDisabledReason || 'Reject'}
         >
-          <X className="h-3 w-3" />
+          <X className="h-3.5 w-3.5" />
         </Button>
       )}
     </div>

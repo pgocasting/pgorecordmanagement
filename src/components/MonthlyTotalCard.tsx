@@ -27,16 +27,16 @@ export function MonthlyTotalCard({ total, month, title, subtitle, period, onPeri
   };
 
   return (
-    <Card className="mb-6 bg-linear-to-r from-blue-50 to-indigo-50 border-blue-200">
-      <CardHeader className="pb-3">
+    <Card className="mb-6 bg-gradient-to-r from-blue-950/40 via-indigo-950/30 to-slate-900/60 border-blue-500/25 backdrop-blur-xl shadow-xl shadow-blue-950/30">
+      <CardHeader className="pb-3 border-b border-white/[0.06]">
         <div className="flex items-center justify-between gap-3">
-          <CardTitle className="text-sm font-medium text-gray-600">{displayTitle}</CardTitle>
+          <CardTitle className="text-xs font-semibold uppercase tracking-wider text-blue-300/80">{displayTitle}</CardTitle>
           {period && onPeriodChange && (
             <Select value={period} onValueChange={(v: any) => onPeriodChange(v)}>
-              <SelectTrigger className="h-7 w-32 text-xs bg-white">
+              <SelectTrigger className="h-7 w-32 text-xs bg-white/[0.06] border-white/10 text-white">
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="bg-slate-900 border-white/10 text-white">
                 <SelectItem value="daily">Daily</SelectItem>
                 <SelectItem value="weekly">Weekly</SelectItem>
                 <SelectItem value="monthly">Monthly</SelectItem>
@@ -47,11 +47,11 @@ export function MonthlyTotalCard({ total, month, title, subtitle, period, onPeri
           )}
         </div>
       </CardHeader>
-      <CardContent>
+      <CardContent className="pt-4">
         <div className="flex items-baseline justify-between">
           <div>
-            <p className="text-3xl font-bold text-blue-600">{formatCurrency(total)}</p>
-            <p className="text-xs text-gray-500 mt-1">{displaySubtitle}</p>
+            <p className="text-3xl font-extrabold bg-gradient-to-r from-blue-400 to-indigo-300 bg-clip-text text-transparent">{formatCurrency(total)}</p>
+            <p className="text-xs text-slate-400 mt-1">{displaySubtitle}</p>
           </div>
         </div>
       </CardContent>
