@@ -481,48 +481,48 @@ export default function DashboardPage() {
 
           {/* Stats Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="rounded-2xl p-4 bg-white dark:bg-gradient-to-br dark:from-[#0b1633] dark:to-[#070d1e] border border-slate-200 dark:border-blue-500/30 shadow-xs dark:shadow-lg dark:shadow-blue-950/30 transition-all hover:scale-[1.01]">
+            <div className="pgo-stat-card pgo-stat-card-all rounded-2xl p-4 transition-all hover:scale-[1.01] bg-white border border-slate-200 shadow-xs">
               <div className="flex items-center justify-between pb-2">
-                <span className="text-xs font-semibold text-slate-600 dark:text-blue-200/80 uppercase tracking-wider">All Records</span>
-                <div className="w-8 h-8 rounded-lg bg-blue-100 dark:bg-blue-500/20 border border-transparent dark:border-blue-500/30 flex items-center justify-center">
-                  <FileText className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                <span className="pgo-stat-title pgo-stat-title-all text-xs font-semibold uppercase tracking-wider text-slate-600">All Records</span>
+                <div className="w-8 h-8 rounded-lg bg-blue-100 border border-blue-200 flex items-center justify-center">
+                  <FileText className="h-4 w-4 text-blue-600" />
                 </div>
               </div>
-              <div className="text-3xl font-extrabold text-blue-600 dark:text-white">{records.length}</div>
-              <p className="text-xs text-slate-500 dark:text-blue-300/60 mt-1">Total documents</p>
+              <div className="pgo-stat-value pgo-stat-value-all text-3xl font-extrabold text-blue-600">{records.length}</div>
+              <p className="pgo-stat-sub text-xs text-slate-500 mt-1">Total documents</p>
             </div>
 
-            <div className="rounded-2xl p-4 bg-white dark:bg-gradient-to-br dark:from-[#1f1608] dark:to-[#070d1e] border border-slate-200 dark:border-amber-500/30 shadow-xs dark:shadow-lg dark:shadow-amber-950/30 transition-all hover:scale-[1.01]">
+            <div className="pgo-stat-card pgo-stat-card-pending rounded-2xl p-4 transition-all hover:scale-[1.01] bg-white border border-slate-200 shadow-xs">
               <div className="flex items-center justify-between pb-2">
-                <span className="text-xs font-semibold text-slate-600 dark:text-amber-200/80 uppercase tracking-wider">Pending</span>
-                <div className="w-8 h-8 rounded-lg bg-amber-100 dark:bg-amber-500/20 border border-transparent dark:border-amber-500/30 flex items-center justify-center">
-                  <Clock className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                <span className="pgo-stat-title pgo-stat-title-pending text-xs font-semibold uppercase tracking-wider text-slate-600">Pending</span>
+                <div className="w-8 h-8 rounded-lg bg-amber-100 border border-amber-200 flex items-center justify-center">
+                  <Clock className="h-4 w-4 text-amber-600" />
                 </div>
               </div>
-              <div className="text-3xl font-extrabold text-amber-600 dark:text-amber-400">{records.filter(r => r.status === 'pending').length}</div>
-              <p className="text-xs text-slate-500 dark:text-amber-300/60 mt-1">Awaiting completion</p>
+              <div className="pgo-stat-value pgo-stat-value-pending text-3xl font-extrabold text-amber-600">{records.filter(r => r.status === 'pending').length}</div>
+              <p className="pgo-stat-sub text-xs text-slate-500 mt-1">Awaiting completion</p>
             </div>
 
-            <div className="rounded-2xl p-4 bg-white dark:bg-gradient-to-br dark:from-[#0a1e12] dark:to-[#070d1e] border border-slate-200 dark:border-emerald-500/30 shadow-xs dark:shadow-lg dark:shadow-emerald-950/30 transition-all hover:scale-[1.01]">
+            <div className="pgo-stat-card pgo-stat-card-completed rounded-2xl p-4 transition-all hover:scale-[1.01] bg-white border border-slate-200 shadow-xs">
               <div className="flex items-center justify-between pb-2">
-                <span className="text-xs font-semibold text-slate-600 dark:text-emerald-200/80 uppercase tracking-wider">Completed</span>
-                <div className="w-8 h-8 rounded-lg bg-emerald-100 dark:bg-emerald-500/20 border border-transparent dark:border-emerald-500/30 flex items-center justify-center">
-                  <CheckCircle className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                <span className="pgo-stat-title pgo-stat-title-completed text-xs font-semibold uppercase tracking-wider text-slate-600">Completed</span>
+                <div className="w-8 h-8 rounded-lg bg-emerald-100 border border-emerald-200 flex items-center justify-center">
+                  <CheckCircle className="h-4 w-4 text-emerald-600" />
                 </div>
               </div>
-              <div className="text-3xl font-extrabold text-emerald-600 dark:text-emerald-400">{records.filter(r => r.status === 'completed').length}</div>
-              <p className="text-xs text-slate-500 dark:text-emerald-300/60 mt-1">Successfully processed</p>
+              <div className="pgo-stat-value pgo-stat-value-completed text-3xl font-extrabold text-emerald-600">{records.filter(r => r.status === 'completed').length}</div>
+              <p className="pgo-stat-sub text-xs text-slate-500 mt-1">Successfully processed</p>
             </div>
 
-            <div className="rounded-2xl p-4 bg-white dark:bg-gradient-to-br dark:from-[#1e0a0a] dark:to-[#070d1e] border border-slate-200 dark:border-rose-500/30 shadow-xs dark:shadow-lg dark:shadow-rose-950/30 transition-all hover:scale-[1.01]">
+            <div className="pgo-stat-card pgo-stat-card-rejected rounded-2xl p-4 transition-all hover:scale-[1.01] bg-white border border-slate-200 shadow-xs">
               <div className="flex items-center justify-between pb-2">
-                <span className="text-xs font-semibold text-slate-600 dark:text-rose-200/80 uppercase tracking-wider">Rejected</span>
-                <div className="w-8 h-8 rounded-lg bg-rose-100 dark:bg-rose-500/20 border border-transparent dark:border-rose-500/30 flex items-center justify-center">
-                  <XCircle className="h-4 w-4 text-rose-600 dark:text-rose-400" />
+                <span className="pgo-stat-title pgo-stat-title-rejected text-xs font-semibold uppercase tracking-wider text-slate-600">Rejected</span>
+                <div className="w-8 h-8 rounded-lg bg-rose-100 border border-rose-200 flex items-center justify-center">
+                  <XCircle className="h-4 w-4 text-rose-600" />
                 </div>
               </div>
-              <div className="text-3xl font-extrabold text-rose-600 dark:text-rose-400">{records.filter(r => r.status === 'rejected').length}</div>
-              <p className="text-xs text-slate-500 dark:text-rose-300/60 mt-1">Not approved</p>
+              <div className="pgo-stat-value pgo-stat-value-rejected text-3xl font-extrabold text-rose-600">{records.filter(r => r.status === 'rejected').length}</div>
+              <p className="pgo-stat-sub text-xs text-slate-500 mt-1">Not approved</p>
             </div>
           </div>
 
