@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import {
   Sheet,
@@ -403,7 +402,7 @@ export default function DashboardPage() {
   };
 
   return (
-    <div className="flex h-screen bg-gray-50">
+    <div className="flex h-screen bg-slate-50 dark:bg-transparent">
       {/* Sidebar */}
       <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
         <SheetTrigger asChild className="md:hidden">
@@ -417,35 +416,35 @@ export default function DashboardPage() {
       </Sheet>
 
       {/* Desktop Sidebar */}
-      <div className="hidden md:block bg-white border-r border-gray-200 shadow-sm">
+      <div className="hidden md:block bg-white dark:bg-[#070d1e] border-r border-slate-200 dark:border-white/10 shadow-xs">
         <Sidebar recordTypes={recordTypes} onNavigate={undefined} />
       </div>
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Top Bar */}
-        <div className="bg-white border-b shadow-sm pl-14 pr-4 sm:px-6 py-4">
+        <div className="bg-white/80 dark:bg-[#090e1f]/85 backdrop-blur-xl border-b border-slate-200 dark:border-white/10 shadow-xs dark:shadow-black/20 pl-14 pr-4 sm:px-6 py-3.5 transition-colors">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-indigo-600 flex items-center justify-center shadow-md">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-indigo-600 flex items-center justify-center shadow-md shadow-indigo-500/20">
                 <FileText className="h-5 w-5 text-white" />
               </div>
               <div>
-                <h1 className="text-2xl font-bold bg-gradient-to-r from-indigo-600 to-indigo-500 bg-clip-text text-transparent">Records Management</h1>
-                <p className="text-sm text-gray-500">Track and manage all documents</p>
+                <h1 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">Records Management</h1>
+                <p className="text-sm text-slate-500 dark:text-blue-200/70">Track and manage all documents</p>
               </div>
             </div>
             
             {/* User Info and Logout */}
-            <div className="flex flex-wrap items-center gap-3">
+            <div className="flex flex-wrap items-center gap-2.5">
               {user?.name && (
-                <div className="flex items-center gap-2.5 px-4 py-2.5 bg-gray-50 rounded-xl border border-gray-200">
+                <div className="flex items-center gap-2.5 px-3.5 py-1.5 bg-slate-100 dark:bg-white/[0.04] backdrop-blur-md rounded-xl border border-slate-200 dark:border-white/10 shadow-xs">
                   <div 
                     className="cursor-pointer hover:opacity-80 transition-opacity"
                     onClick={() => user.avatar && handleAvatarView(user.avatar, user.name)}
                     title={user.avatar ? "Click to view full size avatar" : "No avatar to view"}
                   >
-                    <Avatar className="h-8 w-8 ring-2 ring-indigo-100">
+                    <Avatar className="h-8 w-8 ring-2 ring-indigo-500/20">
                       <AvatarImage src={user.avatar || undefined} alt={user.name} />
                       <AvatarFallback className="bg-gradient-to-br from-indigo-500 to-indigo-600 text-white text-xs font-semibold">
                         {user.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
@@ -453,26 +452,26 @@ export default function DashboardPage() {
                     </Avatar>
                   </div>
                   <div className="flex flex-col min-w-0">
-                    <p className="text-sm font-semibold text-gray-900 truncate">{user.name}</p>
-                    <p className="text-xs text-gray-500 truncate capitalize">{user.role}</p>
+                    <p className="text-sm font-semibold text-slate-900 dark:text-white truncate">{user.name}</p>
+                    <p className="text-xs text-slate-500 dark:text-blue-400 truncate capitalize">{user.role}</p>
                   </div>
                 </div>
               )}
               
               <Button
                 variant="outline"
-                className="gap-2 text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200 h-10 px-4"
+                className="gap-2 bg-red-500/10 border-red-500/30 text-red-600 dark:text-red-400 hover:bg-red-600 hover:text-white dark:hover:bg-red-600 dark:hover:text-white h-9 px-3.5 rounded-xl transition-all shadow-xs"
                 onClick={handleLogout}
               >
                 <LogOut className="h-4 w-4" />
-                <span className="hidden sm:inline font-medium">Logout</span>
+                <span className="hidden sm:inline font-medium text-xs">Logout</span>
               </Button>
             </div>
           </div>
         </div>
 
         {/* Content Area */}
-        <div className="flex-1 min-h-0 overflow-auto p-4 sm:p-6 bg-gray-50 flex flex-col gap-4">
+        <div className="flex-1 min-h-0 overflow-auto p-4 sm:p-6 bg-slate-50/50 dark:bg-transparent flex flex-col gap-4">
           {/* Error Alert */}
           {error && (
             <Alert variant="destructive" className="mb-4">
@@ -482,266 +481,250 @@ export default function DashboardPage() {
 
           {/* Stats Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <Card className="border-0 shadow-md hover:shadow-lg transition-shadow bg-gradient-to-br from-blue-50 to-white">
-              <CardHeader className="pb-2">
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-xs font-semibold text-gray-600 uppercase tracking-wide">All Records</CardTitle>
-                  <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center">
-                    <FileText className="h-4 w-4 text-blue-600" />
-                  </div>
+            <div className="rounded-2xl p-4 bg-white dark:bg-gradient-to-br dark:from-[#0b1633] dark:to-[#070d1e] border border-slate-200 dark:border-blue-500/30 shadow-xs dark:shadow-lg dark:shadow-blue-950/30 transition-all hover:scale-[1.01]">
+              <div className="flex items-center justify-between pb-2">
+                <span className="text-xs font-semibold text-slate-600 dark:text-blue-200/80 uppercase tracking-wider">All Records</span>
+                <div className="w-8 h-8 rounded-lg bg-blue-100 dark:bg-blue-500/20 border border-transparent dark:border-blue-500/30 flex items-center justify-center">
+                  <FileText className="h-4 w-4 text-blue-600 dark:text-blue-400" />
                 </div>
-              </CardHeader>
-              <CardContent className="pt-1">
-                <div className="text-3xl font-bold text-blue-600">{records.length}</div>
-                <p className="text-xs text-gray-500 mt-1">Total documents</p>
-              </CardContent>
-            </Card>
+              </div>
+              <div className="text-3xl font-extrabold text-blue-600 dark:text-white">{records.length}</div>
+              <p className="text-xs text-slate-500 dark:text-blue-300/60 mt-1">Total documents</p>
+            </div>
 
-            <Card className="border-0 shadow-md hover:shadow-lg transition-shadow bg-gradient-to-br from-yellow-50 to-white">
-              <CardHeader className="pb-2">
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Pending</CardTitle>
-                  <div className="w-8 h-8 rounded-lg bg-yellow-100 flex items-center justify-center">
-                    <Clock className="h-4 w-4 text-yellow-600" />
-                  </div>
+            <div className="rounded-2xl p-4 bg-white dark:bg-gradient-to-br dark:from-[#1f1608] dark:to-[#070d1e] border border-slate-200 dark:border-amber-500/30 shadow-xs dark:shadow-lg dark:shadow-amber-950/30 transition-all hover:scale-[1.01]">
+              <div className="flex items-center justify-between pb-2">
+                <span className="text-xs font-semibold text-slate-600 dark:text-amber-200/80 uppercase tracking-wider">Pending</span>
+                <div className="w-8 h-8 rounded-lg bg-amber-100 dark:bg-amber-500/20 border border-transparent dark:border-amber-500/30 flex items-center justify-center">
+                  <Clock className="h-4 w-4 text-amber-600 dark:text-amber-400" />
                 </div>
-              </CardHeader>
-              <CardContent className="pt-1">
-                <div className="text-3xl font-bold text-yellow-600">{records.filter(r => r.status === 'pending').length}</div>
-                <p className="text-xs text-gray-500 mt-1">Awaiting completion</p>
-              </CardContent>
-            </Card>
+              </div>
+              <div className="text-3xl font-extrabold text-amber-600 dark:text-amber-400">{records.filter(r => r.status === 'pending').length}</div>
+              <p className="text-xs text-slate-500 dark:text-amber-300/60 mt-1">Awaiting completion</p>
+            </div>
 
-            <Card className="border-0 shadow-md hover:shadow-lg transition-shadow bg-gradient-to-br from-green-50 to-white">
-              <CardHeader className="pb-2">
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Completed</CardTitle>
-                  <div className="w-8 h-8 rounded-lg bg-green-100 flex items-center justify-center">
-                    <CheckCircle className="h-4 w-4 text-green-600" />
-                  </div>
+            <div className="rounded-2xl p-4 bg-white dark:bg-gradient-to-br dark:from-[#0a1e12] dark:to-[#070d1e] border border-slate-200 dark:border-emerald-500/30 shadow-xs dark:shadow-lg dark:shadow-emerald-950/30 transition-all hover:scale-[1.01]">
+              <div className="flex items-center justify-between pb-2">
+                <span className="text-xs font-semibold text-slate-600 dark:text-emerald-200/80 uppercase tracking-wider">Completed</span>
+                <div className="w-8 h-8 rounded-lg bg-emerald-100 dark:bg-emerald-500/20 border border-transparent dark:border-emerald-500/30 flex items-center justify-center">
+                  <CheckCircle className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
                 </div>
-              </CardHeader>
-              <CardContent className="pt-1">
-                <div className="text-3xl font-bold text-green-600">{records.filter(r => r.status === 'completed').length}</div>
-                <p className="text-xs text-gray-500 mt-1">Successfully processed</p>
-              </CardContent>
-            </Card>
+              </div>
+              <div className="text-3xl font-extrabold text-emerald-600 dark:text-emerald-400">{records.filter(r => r.status === 'completed').length}</div>
+              <p className="text-xs text-slate-500 dark:text-emerald-300/60 mt-1">Successfully processed</p>
+            </div>
 
-            <Card className="border-0 shadow-md hover:shadow-lg transition-shadow bg-gradient-to-br from-red-50 to-white">
-              <CardHeader className="pb-2">
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Rejected</CardTitle>
-                  <div className="w-8 h-8 rounded-lg bg-red-100 flex items-center justify-center">
-                    <XCircle className="h-4 w-4 text-red-600" />
-                  </div>
+            <div className="rounded-2xl p-4 bg-white dark:bg-gradient-to-br dark:from-[#1e0a0a] dark:to-[#070d1e] border border-slate-200 dark:border-rose-500/30 shadow-xs dark:shadow-lg dark:shadow-rose-950/30 transition-all hover:scale-[1.01]">
+              <div className="flex items-center justify-between pb-2">
+                <span className="text-xs font-semibold text-slate-600 dark:text-rose-200/80 uppercase tracking-wider">Rejected</span>
+                <div className="w-8 h-8 rounded-lg bg-rose-100 dark:bg-rose-500/20 border border-transparent dark:border-rose-500/30 flex items-center justify-center">
+                  <XCircle className="h-4 w-4 text-rose-600 dark:text-rose-400" />
                 </div>
-              </CardHeader>
-              <CardContent className="pt-1">
-                <div className="text-3xl font-bold text-red-600">{records.filter(r => r.status === 'rejected').length}</div>
-                <p className="text-xs text-gray-500 mt-1">Not approved</p>
-              </CardContent>
-            </Card>
+              </div>
+              <div className="text-3xl font-extrabold text-rose-600 dark:text-rose-400">{records.filter(r => r.status === 'rejected').length}</div>
+              <p className="text-xs text-slate-500 dark:text-rose-300/60 mt-1">Not approved</p>
+            </div>
           </div>
 
           {/* Records Section */}
           <div className="flex-1 min-h-[520px] flex flex-col">
-          <Card className="border-0 shadow-md flex-1 flex flex-col">
-            <CardHeader className="pb-4 border-b bg-gradient-to-r from-gray-50 to-white">
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle className="text-lg font-semibold text-gray-900">Records</CardTitle>
-                  <CardDescription className="text-sm text-gray-500 mt-1">Manage and view all records</CardDescription>
+            <div className="bg-white dark:bg-[#0d162d]/80 backdrop-blur-2xl rounded-2xl border border-slate-200 dark:border-white/10 shadow-sm dark:shadow-2xl dark:shadow-black/50 flex-1 flex flex-col overflow-hidden">
+              <div className="pb-4 p-5 sm:p-6 border-b border-slate-100 dark:border-white/10 bg-slate-50/50 dark:bg-white/[0.02]">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h2 className="text-lg font-bold text-slate-900 dark:text-white">Records</h2>
+                    <p className="text-xs sm:text-sm text-slate-500 dark:text-blue-200/70 mt-0.5">Manage and view all records</p>
+                  </div>
+                </div>
+                {/* Tabs */}
+                <div className="flex gap-2 mt-4">
+                  <button
+                    onClick={() => setActiveTab('pending')}
+                    className={`px-4 py-2 font-semibold text-sm rounded-xl transition-all ${
+                      activeTab === 'pending'
+                        ? 'bg-amber-100 text-amber-800 border border-amber-300 dark:bg-amber-500/20 dark:text-amber-300 dark:border-amber-500/40 shadow-xs'
+                        : 'text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-white/5 border border-transparent'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <Clock className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                      <span>Pending</span>
+                      <span className="px-2 py-0.5 rounded-full bg-amber-200 text-amber-800 dark:bg-amber-500/30 dark:text-amber-300 text-xs font-bold">
+                        {records.filter(r => r.status === 'pending').length}
+                      </span>
+                    </div>
+                  </button>
+                  <button
+                    onClick={() => setActiveTab('completed')}
+                    className={`px-4 py-2 font-semibold text-sm rounded-xl transition-all ${
+                      activeTab === 'completed'
+                        ? 'bg-emerald-100 text-emerald-800 border border-emerald-300 dark:bg-emerald-500/20 dark:text-emerald-300 dark:border-emerald-500/40 shadow-xs'
+                        : 'text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-white/5 border border-transparent'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <CheckCircle className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                      <span>Completed</span>
+                      <span className="px-2 py-0.5 rounded-full bg-emerald-200 text-emerald-800 dark:bg-emerald-500/30 dark:text-emerald-300 text-xs font-bold">
+                        {records.filter(r => r.status === 'completed').length}
+                      </span>
+                    </div>
+                  </button>
+                  <button
+                    onClick={() => setActiveTab('rejected')}
+                    className={`px-4 py-2 font-semibold text-sm rounded-xl transition-all ${
+                      activeTab === 'rejected'
+                        ? 'bg-rose-100 text-rose-800 border border-rose-300 dark:bg-rose-500/20 dark:text-rose-300 dark:border-rose-500/40 shadow-xs'
+                        : 'text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-white/5 border border-transparent'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <XCircle className="h-4 w-4 text-rose-600 dark:text-rose-400" />
+                      <span>Rejected</span>
+                      <span className="px-2 py-0.5 rounded-full bg-rose-200 text-rose-800 dark:bg-rose-500/30 dark:text-rose-300 text-xs font-bold">
+                        {records.filter(r => r.status === 'rejected').length}
+                      </span>
+                    </div>
+                  </button>
                 </div>
               </div>
-              {/* Tabs */}
-              <div className="flex gap-2 mt-4">
-                <button
-                  onClick={() => setActiveTab('pending')}
-                  className={`px-4 py-2.5 font-semibold text-sm rounded-lg transition-all ${
-                    activeTab === 'pending'
-                      ? 'bg-yellow-100 text-yellow-700 shadow-sm'
-                      : 'text-gray-600 hover:bg-gray-100'
-                  }`}
-                >
-                  <div className="flex items-center gap-2">
-                    <Clock className="h-4 w-4" />
-                    <span>Pending</span>
-                    <span className="px-2 py-0.5 rounded-full bg-yellow-200 text-yellow-800 text-xs font-bold">
-                      {records.filter(r => r.status === 'pending').length}
-                    </span>
+              <div className="flex-1 flex flex-col min-h-0 p-5 sm:p-6 pt-4">
+                {/* Search Bar */}
+                <div className="mb-4 flex gap-2">
+                  <div className="flex-1 relative">
+                    <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                    <Input
+                      placeholder="Search by name or category..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="pl-10 h-10 bg-slate-50 dark:bg-white/[0.04] border-slate-200 dark:border-white/10 text-slate-900 dark:text-white placeholder:text-slate-400 rounded-xl"
+                    />
                   </div>
-                </button>
-                <button
-                  onClick={() => setActiveTab('completed')}
-                  className={`px-4 py-2.5 font-semibold text-sm rounded-lg transition-all ${
-                    activeTab === 'completed'
-                      ? 'bg-green-100 text-green-700 shadow-sm'
-                      : 'text-gray-600 hover:bg-gray-100'
-                  }`}
-                >
-                  <div className="flex items-center gap-2">
-                    <CheckCircle className="h-4 w-4" />
-                    <span>Completed</span>
-                    <span className="px-2 py-0.5 rounded-full bg-green-200 text-green-800 text-xs font-bold">
-                      {records.filter(r => r.status === 'completed').length}
-                    </span>
-                  </div>
-                </button>
-                <button
-                  onClick={() => setActiveTab('rejected')}
-                  className={`px-4 py-2.5 font-semibold text-sm rounded-lg transition-all ${
-                    activeTab === 'rejected'
-                      ? 'bg-red-100 text-red-700 shadow-sm'
-                      : 'text-gray-600 hover:bg-gray-100'
-                  }`}
-                >
-                  <div className="flex items-center gap-2">
-                    <XCircle className="h-4 w-4" />
-                    <span>Rejected</span>
-                    <span className="px-2 py-0.5 rounded-full bg-red-200 text-red-800 text-xs font-bold">
-                      {records.filter(r => r.status === 'rejected').length}
-                    </span>
-                  </div>
-                </button>
-              </div>
-            </CardHeader>
-            <CardContent className="flex-1 flex flex-col min-h-0 pt-4">
-              {/* Search Bar */}
-              <div className="mb-4 flex gap-2">
-                <div className="flex-1 relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                  <Input
-                    placeholder="Search by name or category..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10 h-10 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500"
-                  />
                 </div>
-              </div>
 
-              {/* Records Table - Improved layout and design */}
-              <div className="rounded-xl border border-white/10 shadow-sm overflow-hidden flex-1 flex flex-col min-h-[350px]">
-                <div className="flex-1 overflow-auto min-h-0">
-                  <Table>
-                    <TableHeader className="sticky top-0 z-10">
-                      <TableRow className="border-b border-white/10 bg-white/[0.04]">
-                        <TableHead className="text-center text-xs font-semibold whitespace-nowrap">Received / Created By</TableHead>
-                        <TableHead className="text-center text-xs font-semibold whitespace-nowrap">Tracking ID</TableHead>
-                        <TableHead className="text-center text-xs font-semibold whitespace-nowrap">Category</TableHead>
-                        <TableHead className="text-center text-xs font-semibold whitespace-nowrap min-w-[160px]">Date/Time IN</TableHead>
-                        {(activeTab === 'completed' || activeTab === 'rejected') && (
-                          <TableHead className="text-center text-xs font-semibold whitespace-nowrap min-w-[160px]">
-                            {activeTab === 'completed' ? 'Date/Time OUT' : 'Date/Time Rejected'}
-                          </TableHead>
-                        )}
-                        <TableHead className="text-center text-xs font-semibold whitespace-nowrap">Name/Reference</TableHead>
-                        {activeTab !== 'rejected' && (
-                          <TableHead className="text-center text-xs font-semibold whitespace-nowrap">Amount</TableHead>
-                        )}
-                        <TableHead className="text-center text-xs font-semibold whitespace-nowrap">Status</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {paginatedRecords.length > 0 ? (
-                        paginatedRecords.map((record) => (
-                          <TableRow key={record.id} className="hover:bg-primary/5 cursor-pointer transition-colors border-b border-white/5">
-                            <TableCell className="text-center text-sm py-3.5">
-                              {record.receivedBy || '-'}
-                            </TableCell>
-                            <TableCell className="text-center font-semibold text-blue-400 text-sm py-3.5">
-                              {record.trackingId}
-                            </TableCell>
-                            <TableCell className="text-center text-sm font-medium py-3.5">{record.category}</TableCell>
-                            <TableCell className="text-center text-xs py-3.5 whitespace-nowrap opacity-80">
-                              {formatDateTime(record.dateTimeIn) !== '-' ? formatDateTime(record.dateTimeIn) : record.date}
-                            </TableCell>
-                            {activeTab === 'completed' && (
-                              <TableCell className="text-center text-xs py-3.5 whitespace-nowrap opacity-80">
-                                {formatDateTime(record.dateTimeOut)}
+                {/* Records Table */}
+                <div className="rounded-xl border border-slate-200 dark:border-white/10 shadow-xs overflow-hidden flex-1 flex flex-col min-h-[350px]">
+                  <div className="flex-1 overflow-auto min-h-0">
+                    <Table>
+                      <TableHeader className="sticky top-0 z-10">
+                        <TableRow className="border-b border-slate-200 dark:border-white/10 bg-slate-100/90 dark:bg-[#080e1e]/95">
+                          <TableHead className="text-center text-xs font-semibold whitespace-nowrap text-slate-700 dark:text-slate-300">Received / Created By</TableHead>
+                          <TableHead className="text-center text-xs font-semibold whitespace-nowrap text-slate-700 dark:text-slate-300">Tracking ID</TableHead>
+                          <TableHead className="text-center text-xs font-semibold whitespace-nowrap text-slate-700 dark:text-slate-300">Category</TableHead>
+                          <TableHead className="text-center text-xs font-semibold whitespace-nowrap min-w-[160px] text-slate-700 dark:text-slate-300">Date/Time IN</TableHead>
+                          {(activeTab === 'completed' || activeTab === 'rejected') && (
+                            <TableHead className="text-center text-xs font-semibold whitespace-nowrap min-w-[160px] text-slate-700 dark:text-slate-300">
+                              {activeTab === 'completed' ? 'Date/Time OUT' : 'Date/Time Rejected'}
+                            </TableHead>
+                          )}
+                          <TableHead className="text-center text-xs font-semibold whitespace-nowrap text-slate-700 dark:text-slate-300">Name/Reference</TableHead>
+                          {activeTab !== 'rejected' && (
+                            <TableHead className="text-center text-xs font-semibold whitespace-nowrap text-slate-700 dark:text-slate-300">Amount</TableHead>
+                          )}
+                          <TableHead className="text-center text-xs font-semibold whitespace-nowrap text-slate-700 dark:text-slate-300">Status</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {paginatedRecords.length > 0 ? (
+                          paginatedRecords.map((record) => (
+                            <TableRow key={record.id} className="hover:bg-slate-50 dark:hover:bg-white/[0.04] cursor-pointer transition-colors border-b border-slate-100 dark:border-white/5">
+                              <TableCell className="text-center text-sm py-3.5 text-slate-700 dark:text-slate-200 font-medium">
+                                {record.receivedBy || '-'}
                               </TableCell>
-                            )}
-                            {activeTab === 'rejected' && (
-                              <TableCell className="text-center text-xs py-3.5 whitespace-nowrap opacity-80">
-                                {formatDateTime(record.dateTimeRejected)}
+                              <TableCell className="text-center font-bold text-blue-600 dark:text-blue-400 text-sm py-3.5">
+                                {record.trackingId}
                               </TableCell>
-                            )}
-                            <TableCell className="text-center text-sm py-3.5 max-w-[200px] truncate" title={record.title}>
-                              {record.title}
-                            </TableCell>
-                            {activeTab !== 'rejected' && (
-                              <TableCell className="text-center text-sm font-semibold text-emerald-400 py-3.5 whitespace-nowrap">
-                                {record.amount ? `₱${Number(record.amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '-'}
+                              <TableCell className="text-center text-sm font-medium py-3.5 text-slate-700 dark:text-slate-300">{record.category}</TableCell>
+                              <TableCell className="text-center text-xs py-3.5 whitespace-nowrap text-slate-600 dark:text-slate-400">
+                                {formatDateTime(record.dateTimeIn) !== '-' ? formatDateTime(record.dateTimeIn) : record.date}
                               </TableCell>
-                            )}
-                            <TableCell className="text-center py-3.5">
-                              <span className={`px-3 py-1.5 rounded-full text-xs font-semibold capitalize inline-flex items-center gap-1.5 ${getStatusColor(record.status)}`}>
-                                {record.status === 'completed' ? <CheckCircle className="h-3 w-3" /> : 
-                                 record.status === 'rejected' ? <XCircle className="h-3 w-3" /> :
-                                 record.status === 'pending' ? <Clock className="h-3 w-3" /> : null}
-                                {record.status}
-                              </span>
+                              {activeTab === 'completed' && (
+                                <TableCell className="text-center text-xs py-3.5 whitespace-nowrap text-slate-600 dark:text-slate-400">
+                                  {formatDateTime(record.dateTimeOut)}
+                                </TableCell>
+                              )}
+                              {activeTab === 'rejected' && (
+                                <TableCell className="text-center text-xs py-3.5 whitespace-nowrap text-slate-600 dark:text-slate-400">
+                                  {formatDateTime(record.dateTimeRejected)}
+                                </TableCell>
+                              )}
+                              <TableCell className="text-center text-sm py-3.5 max-w-[200px] truncate text-slate-700 dark:text-slate-200" title={record.title}>
+                                {record.title}
+                              </TableCell>
+                              {activeTab !== 'rejected' && (
+                                <TableCell className="text-center text-sm font-semibold text-emerald-600 dark:text-emerald-400 py-3.5 whitespace-nowrap">
+                                  {record.amount ? `₱${Number(record.amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '-'}
+                                </TableCell>
+                              )}
+                              <TableCell className="text-center py-3.5">
+                                <span className={`px-3 py-1.5 rounded-full text-xs font-semibold capitalize inline-flex items-center gap-1.5 ${getStatusColor(record.status)}`}>
+                                  {record.status === 'completed' ? <CheckCircle className="h-3 w-3" /> : 
+                                   record.status === 'rejected' ? <XCircle className="h-3 w-3" /> :
+                                   record.status === 'pending' ? <Clock className="h-3 w-3" /> : null}
+                                  {record.status}
+                                </span>
+                              </TableCell>
+                            </TableRow>
+                          ))
+                        ) : (
+                          <TableRow>
+                            <TableCell colSpan={activeTab === 'pending' ? 7 : activeTab === 'rejected' ? 7 : 8} className="text-center py-12 text-slate-400">
+                              <div className="flex flex-col items-center gap-3">
+                                <div className="w-16 h-16 rounded-full bg-slate-100 dark:bg-white/5 flex items-center justify-center">
+                                  <Search className="h-8 w-8 text-slate-400" />
+                                </div>
+                                <p className="text-base font-medium text-slate-600 dark:text-slate-300">No records found</p>
+                                <p className="text-sm text-slate-400">Try adjusting your search or filter</p>
+                              </div>
                             </TableCell>
                           </TableRow>
-                        ))
-                      ) : (
-                        <TableRow>
-                          <TableCell colSpan={activeTab === 'pending' ? 7 : activeTab === 'rejected' ? 7 : 8} className="text-center py-12 text-gray-500">
-                            <div className="flex flex-col items-center gap-3">
-                              <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center">
-                                <Search className="h-8 w-8 text-gray-400" />
-                              </div>
-                              <p className="text-base font-medium">No records found</p>
-                              <p className="text-sm">Try adjusting your search or filter</p>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      )}
-                    </TableBody>
-                  </Table>
-                </div>
-
-                {/* Improved Pagination Controls */}
-                <div className="border-t border-white/10 px-4 py-3 flex items-center justify-between shrink-0">
-                  <div className="flex items-center gap-2 text-sm opacity-80">
-                    <span className="hidden sm:inline">Showing</span>
-                    <span className="font-semibold text-foreground">{filteredRecords.length > 0 ? startIndex + 1 : 0}</span>
-                    <span className="hidden sm:inline">to</span>
-                    <span className="sm:hidden">-</span>
-                    <span className="font-semibold text-foreground">{Math.min(endIndex, filteredRecords.length)}</span>
-                    <span className="hidden sm:inline">of</span>
-                    <span className="sm:hidden">/</span>
-                    <span className="font-semibold text-foreground">{filteredRecords.length}</span>
-                    <span className="hidden md:inline">records</span>
+                        )}
+                      </TableBody>
+                    </Table>
                   </div>
-                  <div className="flex items-center gap-3">
-                    <span className="text-sm font-medium hidden sm:inline opacity-80">
-                      Page <span className="text-blue-400 font-semibold">{currentPage}</span> of <span className="text-blue-400 font-semibold">{totalPages}</span>
-                    </span>
-                    <div className="flex gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="h-9 px-4 text-sm font-medium border-border/40 hover:bg-white/10 disabled:opacity-40"
-                        disabled={currentPage === 1}
-                        onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                      >
-                        Previous
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="h-9 px-4 text-sm font-medium border-border/40 hover:bg-white/10 disabled:opacity-40"
-                        disabled={currentPage >= totalPages}
-                        onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                      >
-                        Next
-                      </Button>
+
+                  {/* Improved Pagination Controls */}
+                  <div className="border-t border-slate-200 dark:border-white/10 bg-slate-50/60 dark:bg-[#080e1e]/90 px-4 py-3 flex items-center justify-between shrink-0">
+                    <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
+                      <span className="hidden sm:inline">Showing</span>
+                      <span className="font-bold text-slate-900 dark:text-white">{filteredRecords.length > 0 ? startIndex + 1 : 0}</span>
+                      <span className="hidden sm:inline">to</span>
+                      <span className="sm:hidden">-</span>
+                      <span className="font-bold text-slate-900 dark:text-white">{Math.min(endIndex, filteredRecords.length)}</span>
+                      <span className="hidden sm:inline">of</span>
+                      <span className="sm:hidden">/</span>
+                      <span className="font-bold text-slate-900 dark:text-white">{filteredRecords.length}</span>
+                      <span className="hidden md:inline">records</span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <span className="text-sm font-medium hidden sm:inline text-slate-600 dark:text-slate-300">
+                        Page <span className="text-blue-600 dark:text-blue-400 font-bold">{currentPage}</span> of <span className="text-blue-600 dark:text-blue-400 font-bold">{totalPages}</span>
+                      </span>
+                      <div className="flex gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="h-9 px-4 text-sm font-medium border-slate-200 dark:border-white/10 hover:bg-slate-100 dark:hover:bg-white/10 disabled:opacity-40"
+                          disabled={currentPage === 1}
+                          onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                        >
+                          Previous
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="h-9 px-4 text-sm font-medium border-slate-200 dark:border-white/10 hover:bg-slate-100 dark:hover:bg-white/10 disabled:opacity-40"
+                          disabled={currentPage >= totalPages}
+                          onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                        >
+                          Next
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 </div>
               </div>
-            </CardContent>
-          </Card>
+            </div>
           </div>
         </div>
       </div>
