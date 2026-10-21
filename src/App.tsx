@@ -1,6 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
-import { ThemeProvider } from './contexts/ThemeContext';
 import LoginPage from './pages/LoginPage';
 import DashboardPage from './pages/DashboardPage';
 import SettingsPage from './pages/SettingsPage';
@@ -18,7 +17,6 @@ import PurchaseRequestPage from './pages/PurchaseRequestPage';
 import ReceivingCopyPage from './pages/ReceivingCopyPage';
 import ProcessingPage from './pages/ProcessingPage';
 import LoadingScreen from './components/LoadingScreen';
-import AmbientBackground from './components/AmbientBackground';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuth();
@@ -173,12 +171,9 @@ function AppRoutes() {
 function App() {
   return (
     <BrowserRouter>
-      <ThemeProvider>
-        <AuthProvider>
-          <AmbientBackground />
-          <AppRoutes />
-        </AuthProvider>
-      </ThemeProvider>
+      <AuthProvider>
+        <AppRoutes />
+      </AuthProvider>
     </BrowserRouter>
   );
 }

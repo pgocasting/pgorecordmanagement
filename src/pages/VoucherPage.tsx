@@ -1280,19 +1280,19 @@ export default function VoucherPage() {
                   <Table>
                     <TableHeader>
                       <TableRow className="bg-muted/50 sticky top-0 z-10">
-                        <TableHead className="font-semibold py-3 px-4 text-center text-xs">Received / Created By</TableHead>
-                        <TableHead className="font-semibold py-3 px-4 text-center text-xs">Tracking ID</TableHead>
-                        <TableHead className="font-semibold py-3 px-4 text-center text-xs whitespace-normal wrap-break-word max-w-[120px]">Date/Time IN</TableHead>
-                        <TableHead className="font-semibold py-3 px-4 text-center text-xs whitespace-normal wrap-break-word max-w-[120px]">Date/Time OUT</TableHead>
-                        <TableHead className="font-semibold py-3 px-4 text-center text-xs">FPP</TableHead>
-                        <TableHead className="font-semibold py-3 px-4 text-center text-xs">DV No.</TableHead>
-                        <TableHead className="font-semibold py-3 px-4 text-center text-xs">Payee</TableHead>
-                        <TableHead className="font-semibold py-3 px-4 text-center text-xs">Office</TableHead>
-                        <TableHead className="font-semibold py-3 px-4 text-center text-xs">Amount</TableHead>
-                        <TableHead className="font-semibold py-3 px-4 text-center text-xs">Type</TableHead>
-                        <TableHead className="font-semibold py-3 px-4 text-center text-xs">Status</TableHead>
-                        <TableHead className="font-semibold py-3 px-4 text-center text-xs">Remarks</TableHead>
-                        <TableHead className="font-semibold py-3 px-4 text-center text-xs">Actions</TableHead>
+                        <TableHead className="font-semibold py-3 px-4 text-center text-xs bg-muted/50">Received / Created By</TableHead>
+                        <TableHead className="font-semibold py-3 px-4 text-center text-xs bg-muted/50">Tracking ID</TableHead>
+                        <TableHead className="font-semibold py-3 px-4 text-center text-xs whitespace-normal wrap-break-word max-w-[120px] bg-muted/50">Date/Time IN</TableHead>
+                        <TableHead className="font-semibold py-3 px-4 text-center text-xs whitespace-normal wrap-break-word max-w-[120px] bg-muted/50">Date/Time OUT</TableHead>
+                        <TableHead className="font-semibold py-3 px-4 text-center text-xs bg-muted/50">FPP</TableHead>
+                        <TableHead className="font-semibold py-3 px-4 text-center text-xs bg-muted/50">DV No.</TableHead>
+                        <TableHead className="font-semibold py-3 px-4 text-center text-xs bg-muted/50">Payee</TableHead>
+                        <TableHead className="font-semibold py-3 px-4 text-center text-xs bg-muted/50">Office</TableHead>
+                        <TableHead className="font-semibold py-3 px-4 text-center text-xs bg-muted/50">Amount</TableHead>
+                        <TableHead className="font-semibold py-3 px-4 text-center text-xs bg-muted/50">Type</TableHead>
+                        <TableHead className="font-semibold py-3 px-4 text-center text-xs bg-muted/50">Status</TableHead>
+                        <TableHead className="font-semibold py-3 px-4 text-center text-xs bg-muted/50">Remarks</TableHead>
+                        <TableHead className="font-semibold py-3 px-4 text-center text-xs bg-muted/50">Actions</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
