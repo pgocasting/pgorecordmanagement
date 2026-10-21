@@ -804,18 +804,18 @@ export default function ReportPage() {
               <div className="flex-1 overflow-auto min-h-0">
                 <Table>
                   <TableHeader className="sticky top-0 z-10">
-                    <TableRow className="bg-gradient-to-r from-gray-100 to-gray-50 border-b-2 border-gray-200">
-                      <TableHead className="text-center text-xs font-semibold bg-gray-100">Received By</TableHead>
-                      <TableHead className="text-center text-xs font-semibold bg-gray-100">Tracking ID</TableHead>
-                      <TableHead className="text-center text-xs font-semibold bg-gray-100">Category</TableHead>
-                      <TableHead className="text-center text-xs font-semibold bg-gray-100 min-w-[140px]">Date/Time IN</TableHead>
-                      <TableHead className="text-center text-xs font-semibold bg-gray-100 min-w-[140px]">Date/Time OUT</TableHead>
-                      <TableHead className="text-center text-xs font-semibold bg-gray-100">Name/Reference</TableHead>
-                      <TableHead className="text-center text-xs font-semibold bg-gray-100">Designation/Type</TableHead>
-                      <TableHead className="text-center text-xs font-semibold bg-gray-100 min-w-[200px]">Purpose/Description</TableHead>
-                      <TableHead className="text-center text-xs font-semibold bg-gray-100 whitespace-nowrap">Amount</TableHead>
-                      <TableHead className="text-center text-xs font-semibold bg-gray-100 whitespace-nowrap">Status</TableHead>
-                      <TableHead className="text-center text-xs font-semibold bg-gray-100">Action</TableHead>
+                    <TableRow className="border-b border-white/10 bg-white/[0.04]">
+                      <TableHead className="text-center text-xs font-semibold">Received By</TableHead>
+                      <TableHead className="text-center text-xs font-semibold">Tracking ID</TableHead>
+                      <TableHead className="text-center text-xs font-semibold">Category</TableHead>
+                      <TableHead className="text-center text-xs font-semibold min-w-[140px]">Date/Time IN</TableHead>
+                      <TableHead className="text-center text-xs font-semibold min-w-[140px]">Date/Time OUT</TableHead>
+                      <TableHead className="text-center text-xs font-semibold">Name/Reference</TableHead>
+                      <TableHead className="text-center text-xs font-semibold">Designation/Type</TableHead>
+                      <TableHead className="text-center text-xs font-semibold min-w-[200px]">Purpose/Description</TableHead>
+                      <TableHead className="text-center text-xs font-semibold whitespace-nowrap">Amount</TableHead>
+                      <TableHead className="text-center text-xs font-semibold whitespace-nowrap">Status</TableHead>
+                      <TableHead className="text-center text-xs font-semibold">Action</TableHead>
                     </TableRow>
                   </TableHeader>
                     <TableBody>
@@ -823,7 +823,7 @@ export default function ReportPage() {
                         <TableRow>
                           <TableCell colSpan={11} className="text-center py-12 text-gray-500">
                             <div className="flex flex-col items-center gap-3">
-                              <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center">
+                              <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center">
                                 <TrendingUp className="h-8 w-8 text-gray-400" />
                               </div>
                               <p className="text-base font-medium">No records found</p>
@@ -838,16 +838,16 @@ export default function ReportPage() {
                           const endIndex = startIndex + rowsPerPage;
                           const pageData = reportData.slice(startIndex, endIndex);
                           return pageData;
-                        })().map((record, idx) => (
-                          <TableRow key={record.id} className={`hover:bg-indigo-50/50 cursor-pointer transition-colors ${idx % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'}`} onClick={() => { setSelectedRecord(record); setDetailDialogOpen(true); }}>
-                            <TableCell className="text-center text-sm text-gray-700">
+                        })().map((record) => (
+                          <TableRow key={record.id} className="hover:bg-primary/5 cursor-pointer transition-colors border-b border-white/5" onClick={() => { setSelectedRecord(record); setDetailDialogOpen(true); }}>
+                            <TableCell className="text-center text-sm">
                               {record.receivedBy || '-'}
                             </TableCell>
-                            <TableCell className="text-center font-semibold text-indigo-600 text-sm">
+                            <TableCell className="text-center font-semibold text-blue-400 text-sm">
                               {record.trackingId}
                             </TableCell>
                             <TableCell className="text-center text-sm font-medium">{record.category}</TableCell>
-                            <TableCell className="text-center text-xs text-gray-600 min-w-[140px]">
+                            <TableCell className="text-center text-xs min-w-[140px] opacity-80">
                               {record.dateTimeIn ? new Date(record.dateTimeIn).toLocaleString('en-US', { 
                                 month: 'short', 
                                 day: '2-digit', 

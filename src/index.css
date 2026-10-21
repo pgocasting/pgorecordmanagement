@@ -285,13 +285,13 @@ body:not(.light-mode):not(.chezka-theme):not(.meng-theme) .text-gray-400 {
 /* Table styling (Dark Mode) */
 body:not(.light-mode):not(.chezka-theme):not(.meng-theme) [data-slot="table-header"],
 body:not(.light-mode):not(.chezka-theme):not(.meng-theme) thead,
-body:not(.light-mode):not(.chezka-theme):not(.meng-theme) thead tr.bg-muted\/50 {
-  background-color: rgba(8, 14, 28, 0.9) !important;
-  backdrop-filter: blur(12px) !important;
-}
-
+body:not(.light-mode):not(.chezka-theme):not(.meng-theme) thead tr,
+body:not(.light-mode):not(.chezka-theme):not(.meng-theme) [data-slot="table-header"] tr,
+body:not(.light-mode):not(.chezka-theme):not(.meng-theme) thead th,
 body:not(.light-mode):not(.chezka-theme):not(.meng-theme) [data-slot="table-head"],
 body:not(.light-mode):not(.chezka-theme):not(.meng-theme) th {
+  background-color: rgba(9, 15, 30, 0.95) !important;
+  background-image: none !important;
   color: #94a3b8 !important;
   font-weight: 600 !important;
   font-size: 0.72rem !important;
@@ -305,9 +305,52 @@ body:not(.light-mode):not(.chezka-theme):not(.meng-theme) td {
   border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
 }
 
+body:not(.light-mode):not(.chezka-theme):not(.meng-theme) tbody tr {
+  background-color: rgba(10, 16, 32, 0.5) !important;
+}
+
+body:not(.light-mode):not(.chezka-theme):not(.meng-theme) tbody tr.bg-white,
+body:not(.light-mode):not(.chezka-theme):not(.meng-theme) tbody tr.bg-gray-50,
+body:not(.light-mode):not(.chezka-theme):not(.meng-theme) tbody tr.bg-gray-50\/50,
+body:not(.light-mode):not(.chezka-theme):not(.meng-theme) tbody tr.bg-muted\/30,
+body:not(.light-mode):not(.chezka-theme):not(.meng-theme) tbody tr.bg-muted\/50,
+body:not(.light-mode):not(.chezka-theme):not(.meng-theme) tbody tr:nth-child(even) {
+  background-color: rgba(14, 23, 44, 0.65) !important;
+}
+
 body:not(.light-mode):not(.chezka-theme):not(.meng-theme) [data-slot="table-row"]:hover,
 body:not(.light-mode):not(.chezka-theme):not(.meng-theme) tbody tr:hover {
-  background-color: rgba(59, 130, 246, 0.08) !important;
+  background-color: rgba(59, 130, 246, 0.12) !important;
+}
+
+/* Pagination bar in dark mode */
+body:not(.light-mode):not(.chezka-theme):not(.meng-theme) .border-t.bg-white,
+body:not(.light-mode):not(.chezka-theme):not(.meng-theme) .border-t.bg-muted\/50 {
+  background-color: rgba(9, 15, 30, 0.95) !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+  color: #cbd5e1 !important;
+}
+
+/* Dashboard stat cards dark mode */
+body:not(.light-mode):not(.chezka-theme):not(.meng-theme) .from-blue-50.to-white,
+body:not(.light-mode):not(.chezka-theme):not(.meng-theme) .from-yellow-50.to-white,
+body:not(.light-mode):not(.chezka-theme):not(.meng-theme) .from-green-50.to-white,
+body:not(.light-mode):not(.chezka-theme):not(.meng-theme) .from-red-50.to-white {
+  background-image: linear-gradient(135deg, rgba(13, 20, 38, 0.8) 0%, rgba(9, 14, 28, 0.9) 100%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+
+body:not(.light-mode):not(.chezka-theme):not(.meng-theme) .bg-blue-100 {
+  background-color: rgba(59, 130, 246, 0.15) !important;
+}
+body:not(.light-mode):not(.chezka-theme):not(.meng-theme) .bg-yellow-100 {
+  background-color: rgba(234, 179, 8, 0.15) !important;
+}
+body:not(.light-mode):not(.chezka-theme):not(.meng-theme) .bg-green-100 {
+  background-color: rgba(34, 197, 94, 0.15) !important;
+}
+body:not(.light-mode):not(.chezka-theme):not(.meng-theme) .bg-red-100 {
+  background-color: rgba(239, 68, 68, 0.15) !important;
 }
 
 /* Tabs */

@@ -544,8 +544,8 @@ export default function DashboardPage() {
           </div>
 
           {/* Records Section */}
-          <div className="flex-1 min-h-0">
-          <Card className="border-0 shadow-md h-full flex flex-col">
+          <div className="flex-1 min-h-[520px] flex flex-col">
+          <Card className="border-0 shadow-md flex-1 flex flex-col">
             <CardHeader className="pb-4 border-b bg-gradient-to-r from-gray-50 to-white">
               <div className="flex items-center justify-between">
                 <div>
@@ -620,56 +620,56 @@ export default function DashboardPage() {
               </div>
 
               {/* Records Table - Improved layout and design */}
-              <div className="rounded-lg border border-gray-200 shadow-sm overflow-hidden flex-1 flex flex-col">
+              <div className="rounded-xl border border-white/10 shadow-sm overflow-hidden flex-1 flex flex-col min-h-[350px]">
                 <div className="flex-1 overflow-auto min-h-0">
                   <Table>
                     <TableHeader className="sticky top-0 z-10">
-                      <TableRow className="bg-gradient-to-r from-gray-100 to-gray-50 border-b-2 border-gray-200">
-                        <TableHead className="text-center text-xs font-semibold bg-gray-100 whitespace-nowrap">Received / Created By</TableHead>
-                        <TableHead className="text-center text-xs font-semibold bg-gray-100 whitespace-nowrap">Tracking ID</TableHead>
-                        <TableHead className="text-center text-xs font-semibold bg-gray-100 whitespace-nowrap">Category</TableHead>
-                        <TableHead className="text-center text-xs font-semibold bg-gray-100 whitespace-nowrap min-w-[160px]">Date/Time IN</TableHead>
+                      <TableRow className="border-b border-white/10 bg-white/[0.04]">
+                        <TableHead className="text-center text-xs font-semibold whitespace-nowrap">Received / Created By</TableHead>
+                        <TableHead className="text-center text-xs font-semibold whitespace-nowrap">Tracking ID</TableHead>
+                        <TableHead className="text-center text-xs font-semibold whitespace-nowrap">Category</TableHead>
+                        <TableHead className="text-center text-xs font-semibold whitespace-nowrap min-w-[160px]">Date/Time IN</TableHead>
                         {(activeTab === 'completed' || activeTab === 'rejected') && (
-                          <TableHead className="text-center text-xs font-semibold bg-gray-100 whitespace-nowrap min-w-[160px]">
+                          <TableHead className="text-center text-xs font-semibold whitespace-nowrap min-w-[160px]">
                             {activeTab === 'completed' ? 'Date/Time OUT' : 'Date/Time Rejected'}
                           </TableHead>
                         )}
-                        <TableHead className="text-center text-xs font-semibold bg-gray-100 whitespace-nowrap">Name/Reference</TableHead>
+                        <TableHead className="text-center text-xs font-semibold whitespace-nowrap">Name/Reference</TableHead>
                         {activeTab !== 'rejected' && (
-                          <TableHead className="text-center text-xs font-semibold bg-gray-100 whitespace-nowrap">Amount</TableHead>
+                          <TableHead className="text-center text-xs font-semibold whitespace-nowrap">Amount</TableHead>
                         )}
-                        <TableHead className="text-center text-xs font-semibold bg-gray-100 whitespace-nowrap">Status</TableHead>
+                        <TableHead className="text-center text-xs font-semibold whitespace-nowrap">Status</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {paginatedRecords.length > 0 ? (
-                        paginatedRecords.map((record, idx) => (
-                          <TableRow key={record.id} className={`hover:bg-indigo-50/50 cursor-pointer transition-colors ${idx % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'}`}>
-                            <TableCell className="text-center text-sm text-gray-700 py-3.5">
+                        paginatedRecords.map((record) => (
+                          <TableRow key={record.id} className="hover:bg-primary/5 cursor-pointer transition-colors border-b border-white/5">
+                            <TableCell className="text-center text-sm py-3.5">
                               {record.receivedBy || '-'}
                             </TableCell>
-                            <TableCell className="text-center font-semibold text-indigo-600 text-sm py-3.5">
+                            <TableCell className="text-center font-semibold text-blue-400 text-sm py-3.5">
                               {record.trackingId}
                             </TableCell>
                             <TableCell className="text-center text-sm font-medium py-3.5">{record.category}</TableCell>
-                            <TableCell className="text-center text-xs text-gray-600 py-3.5 whitespace-nowrap">
+                            <TableCell className="text-center text-xs py-3.5 whitespace-nowrap opacity-80">
                               {formatDateTime(record.dateTimeIn) !== '-' ? formatDateTime(record.dateTimeIn) : record.date}
                             </TableCell>
                             {activeTab === 'completed' && (
-                              <TableCell className="text-center text-xs text-gray-600 py-3.5 whitespace-nowrap">
+                              <TableCell className="text-center text-xs py-3.5 whitespace-nowrap opacity-80">
                                 {formatDateTime(record.dateTimeOut)}
                               </TableCell>
                             )}
                             {activeTab === 'rejected' && (
-                              <TableCell className="text-center text-xs text-gray-600 py-3.5 whitespace-nowrap">
+                              <TableCell className="text-center text-xs py-3.5 whitespace-nowrap opacity-80">
                                 {formatDateTime(record.dateTimeRejected)}
                               </TableCell>
                             )}
-                            <TableCell className="text-center text-sm text-gray-700 py-3.5 max-w-[200px] truncate" title={record.title}>
+                            <TableCell className="text-center text-sm py-3.5 max-w-[200px] truncate" title={record.title}>
                               {record.title}
                             </TableCell>
                             {activeTab !== 'rejected' && (
-                              <TableCell className="text-center text-sm font-semibold text-blue-700 py-3.5 whitespace-nowrap">
+                              <TableCell className="text-center text-sm font-semibold text-emerald-400 py-3.5 whitespace-nowrap">
                                 {record.amount ? `₱${Number(record.amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '-'}
                               </TableCell>
                             )}
@@ -687,7 +687,7 @@ export default function DashboardPage() {
                         <TableRow>
                           <TableCell colSpan={activeTab === 'pending' ? 7 : activeTab === 'rejected' ? 7 : 8} className="text-center py-12 text-gray-500">
                             <div className="flex flex-col items-center gap-3">
-                              <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center">
+                              <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center">
                                 <Search className="h-8 w-8 text-gray-400" />
                               </div>
                               <p className="text-base font-medium">No records found</p>
@@ -701,27 +701,27 @@ export default function DashboardPage() {
                 </div>
 
                 {/* Improved Pagination Controls */}
-                <div className="border-t bg-white px-4 py-3 flex items-center justify-between shrink-0 shadow-sm">
-                  <div className="flex items-center gap-2 text-sm text-gray-700">
+                <div className="border-t border-white/10 px-4 py-3 flex items-center justify-between shrink-0">
+                  <div className="flex items-center gap-2 text-sm opacity-80">
                     <span className="hidden sm:inline">Showing</span>
-                    <span className="font-semibold">{filteredRecords.length > 0 ? startIndex + 1 : 0}</span>
+                    <span className="font-semibold text-foreground">{filteredRecords.length > 0 ? startIndex + 1 : 0}</span>
                     <span className="hidden sm:inline">to</span>
                     <span className="sm:hidden">-</span>
-                    <span className="font-semibold">{Math.min(endIndex, filteredRecords.length)}</span>
+                    <span className="font-semibold text-foreground">{Math.min(endIndex, filteredRecords.length)}</span>
                     <span className="hidden sm:inline">of</span>
                     <span className="sm:hidden">/</span>
-                    <span className="font-semibold">{filteredRecords.length}</span>
+                    <span className="font-semibold text-foreground">{filteredRecords.length}</span>
                     <span className="hidden md:inline">records</span>
                   </div>
                   <div className="flex items-center gap-3">
-                    <span className="text-sm text-gray-700 font-medium hidden sm:inline">
-                      Page <span className="text-indigo-600">{currentPage}</span> of <span className="text-indigo-600">{totalPages}</span>
+                    <span className="text-sm font-medium hidden sm:inline opacity-80">
+                      Page <span className="text-blue-400 font-semibold">{currentPage}</span> of <span className="text-blue-400 font-semibold">{totalPages}</span>
                     </span>
                     <div className="flex gap-2">
                       <Button
                         variant="outline"
                         size="sm"
-                        className="h-9 px-4 text-sm font-medium border-gray-300 hover:bg-gray-50 disabled:opacity-50"
+                        className="h-9 px-4 text-sm font-medium border-border/40 hover:bg-white/10 disabled:opacity-40"
                         disabled={currentPage === 1}
                         onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
                       >
@@ -730,7 +730,7 @@ export default function DashboardPage() {
                       <Button
                         variant="outline"
                         size="sm"
-                        className="h-9 px-4 text-sm font-medium border-gray-300 hover:bg-gray-50 disabled:opacity-50"
+                        className="h-9 px-4 text-sm font-medium border-border/40 hover:bg-white/10 disabled:opacity-40"
                         disabled={currentPage >= totalPages}
                         onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
                       >
