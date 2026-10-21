@@ -919,19 +919,7 @@ export default function ReportPage() {
                     </TableBody>
                   </Table>
                 </div>
-                {isLoading && (
-                  <div className="absolute inset-0 z-20 bg-white/90 backdrop-blur-sm flex items-center justify-center">
-                    <div className="pgo-logo-spinner" role="status" aria-label="Loading">
-                      <div className="pgo-logo-spinner__ring" aria-hidden="true" />
-                      <img
-                        src="/images/bataan-logo.png"
-                        alt="Bataan"
-                        className="h-20 w-20 object-contain"
-                        draggable={false}
-                      />
-                    </div>
-                  </div>
-                )}
+
               
               {/* Pagination Controls */}
               <div className="flex items-center justify-between gap-4 p-4 border-t shrink-0 bg-white">
