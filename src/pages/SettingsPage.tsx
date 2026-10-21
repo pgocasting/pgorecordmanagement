@@ -1220,58 +1220,59 @@ export default function SettingsPage() {
       {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Top Bar */}
-        <div className="bg-gradient-to-br from-gray-50 to-white border-b pl-14 pr-4 sm:px-6 py-3">
+        <div className="bg-[#090e1f]/80 backdrop-blur-xl border-b border-white/10 px-4 sm:px-6 py-3.5 shadow-lg shadow-black/20">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-3">
-              <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-br from-slate-500 to-gray-600 shadow-md">
+              <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-indigo-600 shadow-md shadow-indigo-500/20">
                 <Settings className="h-5 w-5 text-white" />
               </div>
               <div>
-                <h1 className="text-2xl font-bold bg-gradient-to-r from-slate-600 to-gray-600 bg-clip-text text-transparent">
+                <h1 className="text-2xl font-bold text-white tracking-tight">
                   Settings
                 </h1>
+                <p className="text-xs sm:text-sm text-blue-200/70 mt-0.5">Manage system preferences and user permissions</p>
               </div>
             </div>
             
             {/* User Info and Logout */}
-            <div className="flex flex-wrap items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2.5">
               {user?.name && (
-                <div className="flex items-center gap-2 px-3 py-2 bg-white/80 rounded-lg border border-slate-200 shadow-sm">
+                <div className="flex items-center gap-2.5 px-3.5 py-1.5 bg-white/[0.04] backdrop-blur-md rounded-xl border border-white/10 shadow-sm">
                   <div 
                     className="cursor-pointer hover:opacity-80 transition-opacity"
                     onClick={() => user.avatar && handleAvatarView(user.avatar, user.name)}
                     title={user.avatar ? "Click to view full size avatar" : "No avatar to view"}
                   >
-                    <Avatar className="h-8 w-8 rounded-lg ring-2 ring-slate-100">
+                    <Avatar className="h-8 w-8 rounded-lg ring-1 ring-white/20">
                       <AvatarImage src={user.avatar || undefined} alt={user.name} />
-                      <AvatarFallback className="bg-slate-100 text-slate-600 text-xs font-medium rounded-lg">
+                      <AvatarFallback className="bg-indigo-600/30 text-indigo-300 text-xs font-semibold rounded-lg">
                         {user.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
                       </AvatarFallback>
                     </Avatar>
                   </div>
                   <div className="flex flex-col min-w-0">
-                    <p className="text-xs font-medium text-gray-800 truncate">{user.name}</p>
-                    <p className="text-xs text-gray-500 truncate capitalize">{user.role}</p>
+                    <p className="text-xs font-semibold text-white truncate">{user.name}</p>
+                    <p className="text-[10px] text-blue-400 font-medium truncate capitalize">{user.role}</p>
                   </div>
                 </div>
               )}
               
               <Button
                 variant="outline"
-                className="gap-2 text-destructive hover:text-destructive hover:bg-destructive/10 h-9 border-slate-200"
+                className="gap-2 bg-red-500/10 border-red-500/30 text-red-400 hover:text-white hover:bg-red-600 hover:border-red-600 h-9 px-3 rounded-xl transition-all shadow-sm"
                 onClick={handleLogout}
               >
                 <LogOut className="h-4 w-4" />
-                <span className="hidden sm:inline">Logout</span>
+                <span className="hidden sm:inline font-medium text-xs">Logout</span>
               </Button>
             </div>
           </div>
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-hidden p-4 sm:p-6 bg-gradient-to-br from-slate-50 to-gray-100">
+        <div className="flex-1 overflow-hidden p-4 sm:p-6 bg-transparent">
           <div className="h-full">
-            <div className="bg-white rounded-lg shadow-md border-0 overflow-hidden h-full flex flex-col">
+            <div className="bg-[#0d1426]/75 backdrop-blur-2xl rounded-2xl border border-white/10 shadow-2xl overflow-hidden h-full flex flex-col">
               <div className="p-4 sm:p-6 space-y-4 flex-1 overflow-auto min-h-0">
                 {/* Alerts */}
                 {error && (

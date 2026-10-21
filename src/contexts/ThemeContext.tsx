@@ -28,9 +28,11 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
 
     root.classList.toggle('light-mode', isLight);
     root.classList.toggle('dark-mode', !isLight);
+    root.classList.toggle('dark', !isLight);
     if (body) {
       body.classList.toggle('light-mode', isLight);
       body.classList.toggle('dark-mode', !isLight);
+      body.classList.toggle('dark', !isLight);
     }
     root.style.colorScheme = isLight ? 'light' : 'dark';
 

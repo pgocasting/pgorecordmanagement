@@ -296,13 +296,29 @@ body:not(.light-mode):not(.chezka-theme):not(.meng-theme) th {
   font-weight: 600 !important;
   font-size: 0.72rem !important;
   letter-spacing: 0.04em !important;
+  white-space: nowrap !important;
+  word-break: normal !important;
+  overflow-wrap: normal !important;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
 }
 
 body:not(.light-mode):not(.chezka-theme):not(.meng-theme) [data-slot="table-cell"],
 body:not(.light-mode):not(.chezka-theme):not(.meng-theme) td {
   color: #cbd5e1 !important;
+  white-space: nowrap !important;
+  word-break: normal !important;
   border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
+}
+
+/* Ensure data tables never collapse columns into vertical letters */
+[data-slot="table"],
+table {
+  min-width: max-content !important;
+}
+[data-slot="table-container"],
+.overflow-x-auto {
+  overflow-x: auto !important;
+  -webkit-overflow-scrolling: touch !important;
 }
 
 body:not(.light-mode):not(.chezka-theme):not(.meng-theme) tbody tr {
