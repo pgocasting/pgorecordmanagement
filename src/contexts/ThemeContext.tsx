@@ -11,40 +11,29 @@ interface ThemeContextType {
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [theme, setThemeState] = useState<ThemeMode>(() => {
-    try {
-      const saved = localStorage.getItem('pgo-theme-mode');
-      if (saved === 'light' || saved === 'dark') return saved;
-    } catch {
-      // fallback
-    }
-    return 'dark';
-  });
+  const [theme, setThemeState] = useState<ThemeMode>('dark');
 
   useEffect(() => {
-    const root = document.documentElement;
-    const body = document.body;
-    const isLight = theme === 'light';
-
-    root.classList.toggle('light-mode', isLight);
-    root.classList.toggle('dark-mode', !isLight);
-    root.classList.toggle('dark', !isLight);
-    if (body) {
-      body.classList.toggle('light-mode', isLight);
-      body.classList.toggle('dark-mode', !isLight);
-      body.classList.toggle('dark', !isLight);
-    }
-    root.style.colorScheme = isLight ? 'light' : 'dark';
-
     try {
-      localStorage.setItem('pgo-theme-mode', theme);
+      localStorage.removeItem('pgo-theme-mode');
     } catch {
       // ignore
     }
-  }, [theme]);
+
+    const root = document.documentElement;
+    const body = document.body;
+
+    root.classList.remove('light-mode');
+    root.classList.add('dark-mode', 'dark');
+    if (body) {
+      body.classList.remove('light-mode');
+      body.classList.add('dark-mode', 'dark');
+    }
+    root.style.colorScheme = 'dark';
+  }, []);
 
   const toggleTheme = () => {
-    setThemeState((prev) => (prev === 'dark' ? 'light' : 'dark'));
+    // Light/Dark mode toggling currently disabled per user request
   };
 
   const setTheme = (newTheme: ThemeMode) => {

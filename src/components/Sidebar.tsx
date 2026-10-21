@@ -3,8 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { pageVisibilityService } from '@/services/firebaseService';
 import { Button } from '@/components/ui/button';
-import { Home, FileText, BarChart3, Settings, Printer, ChevronLeft, ChevronRight, Clock, ChevronDown, ChevronUp, Sun, Moon } from 'lucide-react';
-import { useTheme } from '@/contexts/ThemeContext';
+import { Home, FileText, BarChart3, Settings, Printer, ChevronLeft, ChevronRight, Clock, ChevronDown, ChevronUp } from 'lucide-react';
 
 interface SidebarProps {
   onNavigate?: () => void;
@@ -28,8 +27,7 @@ const recordTypeRoutes: { [key: string]: string } = {
 
 export function Sidebar({ onNavigate, recordTypes = [] }: SidebarProps) {
   const { user } = useAuth();
-  const { theme, toggleTheme } = useTheme();
-  const isDark = theme === 'dark';
+  const isDark = true;
   const navigate = useNavigate();
   const location = useLocation();
   const [isCollapsed, setIsCollapsed] = useState(false);
@@ -233,58 +231,7 @@ export function Sidebar({ onNavigate, recordTypes = [] }: SidebarProps) {
         )}
       </nav>
 
-      {/* Dark / Light Mode Toggle Button */}
-      {!isCollapsed ? (
-        <div className={`p-3 border-t transition-colors ${isDark ? 'border-white/10 bg-white/[0.01]' : 'border-slate-200 bg-slate-50/40'}`}>
-          <button
-            type="button"
-            id="theme-toggle-btn"
-            onClick={toggleTheme}
-            className={`w-full flex items-center justify-between px-3 py-2 rounded-xl transition-all cursor-pointer ${
-              isDark
-                ? 'bg-white/[0.04] hover:bg-white/[0.08] text-slate-300 border border-white/10'
-                : 'bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 shadow-xs'
-            }`}
-            title={isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
-          >
-            <div className="flex items-center gap-2.5">
-              <div className={`w-7 h-7 rounded-lg flex items-center justify-center ${
-                isDark ? 'bg-blue-600/20 text-blue-400 border border-blue-500/30' : 'bg-amber-100 text-amber-600 border border-amber-200'
-              }`}>
-                {isDark ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
-              </div>
-              <div className="text-left">
-                <p className="text-xs font-semibold leading-tight">{isDark ? 'Dark Mode' : 'Light Mode'}</p>
-                <p className={`text-[10px] leading-tight ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Click to switch</p>
-              </div>
-            </div>
-            <div
-              className={`w-9 h-5 rounded-full p-0.5 transition-colors flex items-center ${
-                isDark ? 'bg-blue-600 justify-end' : 'bg-slate-300 justify-start'
-              }`}
-            >
-              <div className="w-4 h-4 rounded-full bg-white shadow-md transition-transform" />
-            </div>
-          </button>
-        </div>
-      ) : (
-        <div className={`p-2 border-t flex justify-center transition-colors ${isDark ? 'border-white/10' : 'border-slate-200'}`}>
-          <button
-            type="button"
-            id="theme-toggle-btn-collapsed"
-            onClick={toggleTheme}
-            className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all cursor-pointer ${
-              isDark
-                ? 'bg-white/[0.04] hover:bg-white/[0.08] text-blue-400 border border-white/10'
-                : 'bg-white hover:bg-slate-100 text-amber-500 border border-slate-200 shadow-xs'
-            }`}
-            title={isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
-            aria-label={isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
-          >
-            {isDark ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
-          </button>
-        </div>
-      )}
+
 
       {/* Date and Time Display */}
       <div className={`p-3 border-t ${isDark ? 'border-white/10 bg-white/[0.01]' : 'border-slate-200 bg-slate-50/50'}`}>
